@@ -1,5 +1,7 @@
 # Day 1 Execution Checklist
 
+> **Living status:** What is done and what is next lives in [`docs/PROGRESS.md`](./PROGRESS.md). This file is the **timeboxed runbook** for Day 1, not a live checklist maintained here.
+
 ## Purpose
 
 Provide a concrete, timeboxed Day 1 plan to move from planning into implementation with minimal thrash.

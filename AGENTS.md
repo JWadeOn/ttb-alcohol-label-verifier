@@ -29,7 +29,7 @@ This file defines how coding agents should work in this repository.
   - test-first for deterministic core and failover behavior,
   - integration wiring can be implementation-first with immediate test follow-up.
 - Do not close a task without passing lint/type/relevant tests.
-- Keep docs aligned with implementation decisions: update the relevant **`docs/modules/<module>.md`** when that code changes, and adjust **`docs/ARCHITECTURE.md`** only when system-level flow or phase snapshot changes.
+- Keep docs aligned with implementation decisions: update the relevant **`docs/modules/<module>.md`** when that code changes, adjust **`docs/ARCHITECTURE.md`** when system-level flow or phase snapshot changes, and touch **`docs/PROGRESS.md`** when meaningful scope or priorities shift (so status stays easy to find).
 
 ## Repo Hygiene
 

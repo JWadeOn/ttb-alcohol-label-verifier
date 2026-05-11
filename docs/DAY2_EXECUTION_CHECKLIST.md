@@ -1,5 +1,7 @@
 # Day 2 Execution Checklist
 
+> **Living status:** What is done and what is next lives in [`docs/PROGRESS.md`](./PROGRESS.md). This file is the **timeboxed runbook** for Day 2, not a live checklist maintained here.
+
 ## Purpose
 
 Translate Day 1 foundations into real core behavior:

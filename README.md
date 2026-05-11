@@ -151,6 +151,7 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 
 Regulatory references used for framing are documented in project docs and should be treated as source material for prototype checks, not as exhaustive legal implementation.
 
+- `docs/PROGRESS.md` — **living** short status: done recently, next steps, blockers (update as you ship)
 - `docs/ARCHITECTURE.md` — **living** system overview (data flow, phase snapshot, links to module docs)
 - `docs/modules/README.md` — index of **per-module** living docs (`docs/modules/*.md`: responsibilities, decisions, tests for each unit)
 - `docs/PRD.md`

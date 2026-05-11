@@ -2,7 +2,7 @@
 
 **Purpose:** High-level **system** view: how pieces connect, current phase snapshot, and where to find detail. **Per-module** behavior, decisions, and contracts live in **`docs/modules/`** — update the relevant file there when you change that code (see [`docs/modules/README.md`](./modules/README.md) index).
 
-**Companion docs:** Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
+**Companion docs:** Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
 
 ---
 

@@ -1,5 +1,7 @@
 # Day 3 Execution Checklist
 
+> **Living status:** What is done and what is next lives in [`docs/PROGRESS.md`](./PROGRESS.md). This file is the **timeboxed runbook** for Day 3, not a live checklist maintained here.
+
 ## Purpose
 
 Convert a functional build into an evaluator-ready prototype by closing evidence gaps:

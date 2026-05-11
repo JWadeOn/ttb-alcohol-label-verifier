@@ -6,6 +6,8 @@ Provide a single runbook for the implementation week by linking daily checklists
 
 Use this as the top-level execution map; use day-level docs for task detail.
 
+**Living status (done / next / blockers):** [`docs/PROGRESS.md`](./PROGRESS.md)
+
 ## Source Plan and Governance
 
 - `docs/PRD.md`
