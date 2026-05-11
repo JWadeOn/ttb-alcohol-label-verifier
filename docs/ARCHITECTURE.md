@@ -2,7 +2,7 @@
 
 **Purpose:** High-level **system** view: how pieces connect, current phase snapshot, and where to find detail. **Per-module** behavior, decisions, and contracts live in **`docs/modules/`** — update the relevant file there when you change that code (see [`docs/modules/README.md`](./modules/README.md) index).
 
-**Companion docs:** Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
+**Companion docs:** Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Day 1 runbook **sign-off** (POC-1 primary sample + OCR blocker): [`docs/DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -17,6 +17,7 @@
 | **Persistence** | None; in-memory per request. |
 | **Container** | `Dockerfile` (Next **standalone**); `npm run docker:build`. OCR packages not in image until Phase 2. |
 | **Fixtures / eval** | `fixtures/manifest.json` + `npm run fixtures:generate`; `npm run eval:primary-latency` (see README). |
+| **Day 1 execution** | **Closed** 2026-05-11 — evidence in [`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). |
 
 ---
 

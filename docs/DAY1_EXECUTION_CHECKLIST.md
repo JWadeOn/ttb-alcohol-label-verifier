@@ -142,6 +142,10 @@ Exit check:
 
 Only commit green states (lint/type/relevant tests passing).
 
+## Completion record
+
+**Day 1 runbook is closed as of 2026-05-11** with evidence and POC-1 exit criteria satisfied (**primary-path sample + documented OCR blocker**). See **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** and the Day 1 rows in [`PROGRESS.md`](./PROGRESS.md) → *Execution checklist audit*.
+
 ## Risks to Avoid on Day 1
 
 - Overbuilding architecture before the skeleton works.

@@ -22,6 +22,8 @@ Each file below is the **living description** of one code unit: responsibilities
 
 **System overview (flow, snapshot, maintenance):** [`../ARCHITECTURE.md`](../ARCHITECTURE.md)
 
+**Day 1 runbook sign-off (POC-1 primary sample + OCR blocker):** [`../DAY1_COMPLETION_RECORD.md`](../DAY1_COMPLETION_RECORD.md)
+
 ---
 
 ## Vitest map (cross-module)

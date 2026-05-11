@@ -8,7 +8,7 @@ Short **human index** of where the prototype stands. **Git history** remains the
 
 ## Current focus
 
-Phase 1 **core path** is shipped and **Day 1 closeout is committed** (Docker + fixtures + eval scaffold + docs).
+Phase 1 **core path** is shipped; **Day 1 is formally closed** — see **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + OCR blocker, governance index, branch notes).
 
 **Day 2 is not skipped in the plan** — it lives in **`docs/DAY2_EXECUTION_CHECKLIST.md`** and aligns with **Phase 1 — Core Engine** in **`docs/WEEK_EXECUTION_OVERVIEW.md`**. Most Day 2 *outcomes* (primary OpenAI provider, validator + tests, `extractWithFailover`, UI on live `/api/verify`) **already landed** in earlier Phase 1 commits (`741ce0d`, `fd759d6`, related tests), so recent “next” emphasis jumped to **deploy + evidence + polish** (Day 3 / Render / §16) without saying that loudly enough. **Still do:** an explicit **Day 2 sign-off pass** (checklist vs repo + POC notes + any error-UX gaps).
 
@@ -18,12 +18,14 @@ Phase 1 **core path** is shipped and **Day 1 closeout is committed** (Docker + f
 
 Legend: **Done** = implemented and usable in-repo unless noted. **Partial** = materially there; formal sign-off, evidence artifact, or edge case still open. **Not started** = no meaningful delivery yet. Sources: [`DAY1_EXECUTION_CHECKLIST.md`](./DAY1_EXECUTION_CHECKLIST.md), [`DAY2_EXECUTION_CHECKLIST.md`](./DAY2_EXECUTION_CHECKLIST.md), [`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md).
 
-### Day 1 — [`docs/DAY1_EXECUTION_CHECKLIST.md`](./DAY1_EXECUTION_CHECKLIST.md)
+### Day 1 — [`docs/DAY1_EXECUTION_CHECKLIST.md`](./DAY1_EXECUTION_CHECKLIST.md) — **closed**
+
+Formal sign-off: **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (2026-05-11).
 
 | Block | Status | Evidence / notes |
 |-------|--------|-------------------|
-| **Outcomes (summary)** | **Partial → Done** | Skeleton + contracts + parallel kickoff artifacts exist; POC-1 *measurement* is partial (see 5:00–6:00). |
-| 0:00–0:30 Setup / branch | **Partial** | Work is on **`main`** and committed green; “implementation branch” and “re-read governance docs” are process items, not tracked in-repo. |
+| **Outcomes (summary)** | **Done** | Thin vertical, contracts, parallel kickoff, POC-1 prep with **primary sample + documented OCR blocker** (completion record). |
+| 0:00–0:30 Setup / branch | **Done** | `main` + green commits; governance set **indexed** in completion record; Render-first documented. |
 | 0:30–2:00 Thin vertical | **Done** | `POST /api/verify`, workbench UI (upload + application + submit + results), wiring tests (`tests/verify-handler.test.ts`, etc.). Response is **live pipeline** today, not a static stub only. |
 | 2:00–3:00 Contract lock | **Done** | Zod schemas, multipart boundary validation, enums in `lib/schemas.ts`; example/stub patterns in tests and `lib/stub-response.ts`. |
 | 3:00–5:00 WS-B extraction | **Done** | `ExtractionProvider`, `extractWithFailover`, OpenAI + `unavailable` providers (`lib/extraction/*`). |
@@ -31,8 +33,8 @@ Legend: **Done** = implemented and usable in-repo unless noted. **Partial** = ma
 | 3:00–5:00 WS-D UI | **Done** | Live `fetch` to `/api/verify`; provider + field statuses surfaced (`app/page.tsx`). |
 | 3:00–5:00 WS-E fixtures / eval | **Done** | `fixtures/`, `fixtures/manifest.json`, `scripts/generate-fixture-pngs.mjs`, `evals/run-primary-latency.mjs`, `tests/fixtures-manifest.test.ts` (commit `2fd9bb5`). |
 | 3:00–5:00 WS-F Docker / env | **Done** | `Dockerfile`, `.dockerignore`, standalone `next.config`; README + `.env.example` for secrets and optional timeouts; local **`docker build`** validated on OrbStack. |
-| 5:00–6:00 POC-1 prep | **Partial** | **`docs/POC1_FALLBACK.md`** locks thresholds + measurement contract; **`eval:primary-latency`** exists. **Primary-path numbers** in-repo as a pinned artifact are optional; **OCR fallback** metrics are **deferred** (no Tesseract in app). |
-| 6:00–6:30 Stabilization | **Done** | Lint/tests/build green on touched scope; commits `2fd9bb5`, `edcaed0`, `b479e3c`, `f5153bd`, `dee585a`, etc. |
+| 5:00–6:00 POC-1 prep | **Done** | Thresholds + contract in **`docs/POC1_FALLBACK.md`**; **`eval:primary-latency`**; **first primary data point** + **OCR blocker** in **`DAY1_COMPLETION_RECORD.md`**. |
+| 6:00–6:30 Stabilization | **Done** | Lint/tests/build green on touched scope; commits `2fd9bb5`, `edcaed0`, `b479e3c`, `f5153bd`, `dee585a`, `155d047`, etc. |
 
 ### Day 2 — [`docs/DAY2_EXECUTION_CHECKLIST.md`](./DAY2_EXECUTION_CHECKLIST.md)
 
@@ -65,6 +67,7 @@ Legend: **Done** = implemented and usable in-repo unless noted. **Partial** = ma
 
 ## Done recently
 
+- **Day 1 runbook formally closed** — sign-off doc **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + documented OCR blocker; governance index; `DAY1` / `WEEK` / `ARCHITECTURE` / `POC1_FALLBACK` cross-links).
 - **Phase 1 pipeline** — verify API, extraction with timeout failover to `unavailable` placeholder, validator, tests (`741ce0d`).
 - **UI/UX** — light theme, workbench (label + application), formatted vs JSON application editor, results with label + field comparison + raw JSON (`fd759d6`).
 - **Docs** — `docs/ARCHITECTURE.md`, `docs/modules/*`, README / AGENTS pointers; dev script and `.next` troubleshooting in README.

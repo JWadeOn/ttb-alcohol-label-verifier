@@ -30,7 +30,7 @@ This document records **locked thresholds from research** so POC-1 can be execut
 
 ## First measurement
 
-- **Primary path:** run `eval:primary-latency` with `OPENAI_API_KEY` and `BASE_URL` (documented in README).
+- **Primary path:** run `eval:primary-latency` with `OPENAI_API_KEY` and `BASE_URL` (documented in README). A **single captured dev observation** (timings + provider) is recorded in **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (Day 1 sign-off).
 - **Fallback OCR path:** *deferred* — run the same shape of harness once `tesseract-provider` (or chosen path) exists; record results here or in `docs/PROGRESS.md`.
 
 ## Decision log
@@ -38,3 +38,4 @@ This document records **locked thresholds from research** so POC-1 can be execut
 | Date | Outcome |
 |------|---------|
 | 2026-05-11 | OCR POC **not run** in code (no Tesseract). Thresholds **recorded**; primary latency **scaffold** added for evidence collection. |
+| 2026-05-11 | **Day 1 closed:** primary-path **first data point** (single dev request, ~6.0s extraction, `openai` provider) + **documented blocker** for OCR metrics → [`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). |
