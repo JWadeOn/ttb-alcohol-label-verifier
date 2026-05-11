@@ -166,7 +166,7 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 ### Railway (current)
 
 - Service root: connect the GitHub repo and use **Dockerfile** build (root `Dockerfile`).
-- Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`** (see eval snapshot below).
+- Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`**. With the key set, responses are **200**; synthetic eval fixtures may still show **`extraction.provider: unavailable`** if vision hits default timeouts (see eval snapshot).
 - **Public URL:** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
 - **Production eval snapshot (primary-path latency harness):** [`docs/evals/primary-latency-production-2026-05-11.json`](docs/evals/primary-latency-production-2026-05-11.json) — index: [`docs/evals/README.md`](docs/evals/README.md). After the key is set on Railway, re-run:  
   `BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency`  

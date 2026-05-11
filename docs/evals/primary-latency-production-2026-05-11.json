@@ -1,24 +1,24 @@
 {
   "artifact": "primary-latency-production",
-  "generatedAt": "2026-05-11T21:19:07Z",
+  "generatedAt": "2026-05-11T21:27:22Z",
   "baseUrl": "https://ttb-alcohol-label-verifier-production.up.railway.app",
   "clientOpenAiKeyPresent": true,
-  "summary": "Both flagged fixtures received HTTP 503 with code OPENAI_NOT_CONFIGURED. The Railway service does not have OPENAI_API_KEY set (or it is empty) in its runtime environment.",
-  "rerun": "After setting OPENAI_API_KEY on the Railway service: BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency",
+  "summary": "HTTP 200 for both manifest fixtures (seed-texture-01/02). extraction.provider is \"unavailable\" — primary vision path did not win within the default soft/hard window (or returned unusable output), so the pipeline surfaced the placeholder fallback. Confirms OPENAI_API_KEY is set on Railway; for openai on production, raise VERIFY_EXTRACT_* on the service or use a clearer label fixture.",
+  "rerun": "BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency",
   "results": [
     {
       "id": "seed-texture-01",
-      "httpStatus": 503,
-      "durationMs": 525,
-      "extractionProvider": null,
-      "code": "OPENAI_NOT_CONFIGURED"
+      "httpStatus": 200,
+      "durationMs": 4134,
+      "extractionProvider": "unavailable",
+      "code": null
     },
     {
       "id": "seed-texture-02",
-      "httpStatus": 503,
-      "durationMs": 140,
-      "extractionProvider": null,
-      "code": "OPENAI_NOT_CONFIGURED"
+      "httpStatus": 200,
+      "durationMs": 3678,
+      "extractionProvider": "unavailable",
+      "code": null
     }
   ]
 }
