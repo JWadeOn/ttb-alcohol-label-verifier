@@ -1,0 +1,24 @@
+{
+  "artifact": "primary-latency-production",
+  "generatedAt": "2026-05-11T21:19:07Z",
+  "baseUrl": "https://ttb-alcohol-label-verifier-production.up.railway.app",
+  "clientOpenAiKeyPresent": true,
+  "summary": "Both flagged fixtures received HTTP 503 with code OPENAI_NOT_CONFIGURED. The Railway service does not have OPENAI_API_KEY set (or it is empty) in its runtime environment.",
+  "rerun": "After setting OPENAI_API_KEY on the Railway service: BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency",
+  "results": [
+    {
+      "id": "seed-texture-01",
+      "httpStatus": 503,
+      "durationMs": 525,
+      "extractionProvider": null,
+      "code": "OPENAI_NOT_CONFIGURED"
+    },
+    {
+      "id": "seed-texture-02",
+      "httpStatus": 503,
+      "durationMs": 140,
+      "extractionProvider": null,
+      "code": "OPENAI_NOT_CONFIGURED"
+    }
+  ]
+}

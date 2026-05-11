@@ -2,7 +2,7 @@
 
 **Purpose:** High-level **system** view: how pieces connect, current phase snapshot, and where to find detail. **Per-module** behavior, decisions, and contracts live in **`docs/modules/`** — update the relevant file there when you change that code (see [`docs/modules/README.md`](./modules/README.md) index).
 
-**Companion docs:** Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Day 1 **sign-off:** [`docs/DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). Day 2 **sign-off:** [`docs/DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md). **Render deploy runbook:** [`docs/RENDER_DEPLOY.md`](./RENDER_DEPLOY.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
+**Companion docs:** Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Day 1 **sign-off:** [`docs/DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). Day 2 **sign-off:** [`docs/DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md). **Live prototype (Railway):** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app). **Render deploy runbook (alternate host):** [`docs/RENDER_DEPLOY.md`](./RENDER_DEPLOY.md). **Eval artifacts:** [`docs/evals/README.md`](./evals/README.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -19,7 +19,7 @@
 | **Fixtures / eval** | `fixtures/manifest.json` + `npm run fixtures:generate`; `npm run eval:primary-latency` (see README). |
 | **Day 1 execution** | **Closed** 2026-05-11 — [`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). |
 | **Day 2 execution** | **Closed** 2026-05-11 — [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md). |
-| **Public deploy** | **Pending** — follow [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md); add URL to README when live. |
+| **Public deploy** | **Railway (live URL)** — see [`README.md`](../README.md) deployment section; set **`OPENAI_API_KEY`** on the service for working `POST /api/verify`. Alternate: [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md). |
 
 ---
 

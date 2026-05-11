@@ -10,7 +10,9 @@ Short **human index** of where the prototype stands. **Git history** remains the
 
 Phase 1 **core path** is shipped; **Day 1** and **Day 2** are formally closed — **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)**, **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)**. Optional quality follow-ups stay listed in the Day 2 completion doc (they do not reopen the runbook).
 
-**Next emphasis:** **Render** (see [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)), **Day 3** eval evidence + UX polish, **`IMPLEMENTATION_PLAN.md` §16** acceptance.
+**Live prototype:** **Railway** — [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app) (see `README.md`). **Render** remains a documented alternate ([`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)).
+
+**Next emphasis:** set **`OPENAI_API_KEY`** on the Railway service (production currently returns **`OPENAI_NOT_CONFIGURED`** for `POST /api/verify` — see [`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json)), then **re-run** production eval; **Day 3** UX polish; **`IMPLEMENTATION_PLAN.md` §16** acceptance when intentionally signed off.
 
 ---
 
@@ -56,19 +58,20 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 
 | Block | Status | Evidence / notes |
 |-------|--------|-------------------|
-| **Outcomes (summary)** | **Not started** | No stable public URL, no published eval result bundle, demo-ready polish incomplete. |
+| **Outcomes (summary)** | **Partial** | **Stable public URL** (Railway) + README; committed **production eval artifact** with real HTTP outcomes; **primary-path latency with OpenAI on production** blocked until **`OPENAI_API_KEY`** is set on Railway; demo polish still open. |
 | 0:00–0:30 Health check | **Partial** | Local health strong; “lock Day 3 must-complete” not recorded here beyond **Next** list. |
-| 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures exist; **no** committed eval output / “concise artifact” with correctness + latency matrix for the full fixture set. |
+| 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures exist; production snapshot: **[`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json)** (`503` / `OPENAI_NOT_CONFIGURED`). Re-run after Railway secret is set for **200** + `extraction.provider` timings. |
 | 2:00–3:30 Fallback go/no-go (Tesseract metrics) | **Not started** | **No** in-app Tesseract path yet; **`docs/POC1_FALLBACK.md`** records policy/thresholds only. True go/no-go **waits Phase 2 OCR** (or an explicit pivot doc). |
-| 3:30–5:00 Render deploy | **Partial** | Runbook **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** + README placeholder; **no** captured **public URL** or smoke notes in-repo until you deploy. |
+| 3:30–5:00 Deploy (Railway / Render) | **Partial** | **Railway:** URL in README + smoke via eval artifact; **set `OPENAI_API_KEY`** on the service to complete end-to-end verify. **Render:** runbook **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** still valid if you switch hosts. |
 | 5:00–6:00 UX / error polish | **Partial** | Usable UI; Day 3 asks for evaluator-grade clarity pass (copy, edge errors, image-quality messaging) — not fully closed out. |
-| 6:00–6:45 Docs sync | **Partial** | Module docs + README track behavior; Day 3 asks for eval results + deploy URL + fallback **outcome** in README — pending. |
+| 6:00–6:45 Docs sync | **Partial** | PROGRESS + ARCHITECTURE + `docs/evals/*` updated this pass; fallback **outcome** still “OCR deferred” per README / POC1 doc. |
 | 6:45–7:00 Final stabilization | **Not started** | Tied to Day 3 scope completion. |
 
 ---
 
 ## Done recently
 
+- **Day 3 doc + eval pass (2026-05-11)** — **Railway** public URL reflected in **`README.md`**, **`docs/ARCHITECTURE.md`**, this file; production **`eval:primary-latency`** snapshot committed under **`docs/evals/`** (documents **`OPENAI_NOT_CONFIGURED`** until Railway has **`OPENAI_API_KEY`**).
 - **Day 1 runbook formally closed** — **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + documented OCR blocker; governance index).
 - **Day 2 runbook formally closed** — **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** (Phase 1 core engine sign-off; optional follow-ups listed). **Render runbook:** [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md).
 - **Phase 1 pipeline** — verify API, extraction with timeout failover to `unavailable` placeholder, validator, tests (`741ce0d`).
@@ -77,17 +80,20 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 - **Sample asset** — `fixtures/labels/liquor_label_happy_path.png` for manual runs (`9a4c108`).
 - **Day 1 closeout (committed `2fd9bb5`)** — production **`Dockerfile`** + **`.dockerignore`**, `next.config` **`output: "standalone"`**, `public/.gitkeep`; **`fixtures/`** manifest + default application JSON + nine **`seed-texture-*.png`** + **`scripts/generate-fixture-pngs.mjs`**; **`evals/run-primary-latency.mjs`** + npm script; **`docs/POC1_FALLBACK.md`**; Vitest **`fixtures-manifest`**; ESLint ignores for `scripts/**` and `evals/**`; **`pnpm-lock.yaml`** removed from workflow and **ignored**.
 - **Repo hygiene (`edcaed0`)** — ignore stray **`docs/docs.code-workspace`** so local IDE files do not clutter `git status`.
-- **Docker / npm-in-image stability** — `npm ci` tuned for flaky registry (parallelism + cache mount) so **`docker build`** (including **`--no-cache`**) succeeds on OrbStack when the network is healthy.
+- **Docker / npm-in-image stability** — `npm ci` tuned for flaky registry (parallelism limits; **no** BuildKit cache mount so **Render Metal / Railway** parse the same `Dockerfile`) so **`docker build`** succeeds when the network is healthy.
 - **Verify observability & dev controls (`b479e3c`)** — structured logs for **`[extractWithFailover]`**, **`[verify-pipeline]`**, **`[verify]`** (incl. **`pipelineMs`**, **`totalMs`**, timeouts); env **`VERIFY_EXTRACT_SOFT_TIMEOUT_MS`** / **`VERIFY_EXTRACT_HARD_TIMEOUT_MS`** for local perf experiments; **`OPENAI_DISABLED`** to skip OpenAI while keeping a key; README **credits / usage** section; tests for **`OPENAI_DISABLED`**.
 
 ---
 
 ## Next (ordered)
 
-1. **Render:** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** — deploy Docker service, set **`OPENAI_API_KEY`**, smoke test, paste **public URL** + notes into **`README.md`** / here.
-2. Run **Day 3** items: fuller eval pass on `liquor_label_happy_path` + notes, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`).
+1. **Railway:** add **`OPENAI_API_KEY`** to the production service environment, redeploy if needed, then re-run  
+   `BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency`  
+   and refresh **[`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json)** (or add a dated sibling file) so the artifact shows **200** + extraction timings.
+2. Run **Day 3** items: fuller eval / correctness notes on **`liquor_label_happy_path`**, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`).
 3. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
 4. Optional: Day 3 **UX polish** (manual-review / provider / image-quality / client error copy) and **optional Day 2 follow-ups** in [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md).
+5. **Render (optional):** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** if you want a second host; Dockerfile is shared.
 
 ---
 
@@ -104,6 +110,7 @@ None recorded in-repo. Add a dated bullet here when something external (keys, pl
 | `docs/DAY1–3_EXECUTION_CHECKLIST.md` | **How** to execute a day (timeboxed runbooks). Day 2 ↔ Phase 1 core engine (`WEEK_EXECUTION_OVERVIEW.md`). |
 | `docs/DAY1_COMPLETION_RECORD.md` / `docs/DAY2_COMPLETION_RECORD.md` | Formal **Day 1 / Day 2 sign-off** (evidence + optional follow-ups). |
 | `docs/RENDER_DEPLOY.md` | **Render** operator checklist (secrets, smoke, where to paste the public URL). |
+| `docs/evals/README.md` | Index of **committed eval artifacts** (e.g. production primary-latency snapshot). |
 | `docs/WEEK_EXECUTION_OVERVIEW.md` | Week map and phase gates. |
 | `docs/PROGRESS.md` (this file) | **What’s done / next / blocked** in plain language. |
 | `docs/ARCHITECTURE.md` | System flow and links to **per-module** detail. |

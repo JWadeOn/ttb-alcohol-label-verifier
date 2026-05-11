@@ -154,20 +154,27 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 - **Regenerate noise PNGs** (optional, after editing `scripts/generate-fixture-pngs.mjs`): `npm run fixtures:generate`
 - **Primary-path latency eval** (calls OpenAI; requires running app + key): start `npm run dev` in another terminal, then  
   `OPENAI_API_KEY=... npm run eval:primary-latency`  
-  (override base URL with `BASE_URL=http://127.0.0.1:3000`). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold).
+  (override base URL with `BASE_URL=http://127.0.0.1:3000` or your **Railway** URL). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold). A **production** snapshot lives under **`docs/evals/`** (see Railway section above).
 - **Docker production image:** `npm run docker:build` then run as in `docs/modules/dockerfile.md`. POC-1 OCR thresholds and measurement contract are documented in **`docs/POC1_FALLBACK.md`** (OCR path still deferred in code).
 
 ## Deployment Decision
 
-- Default deployment target: **Render** using the project Dockerfile.
-- Fallback targets if blocked by platform limits: **Fly.io** or **Hugging Face Spaces (Docker mode)**.
-- Deployment objective: stable public HTTPS URL for evaluator testing with `OPENAI_API_KEY` managed as a platform secret.
+- **Production prototype:** deployed on **Railway** from this repo’s **`Dockerfile`** (multi-stage Node 22 / Next standalone).
+- **Alternative hosts:** the same image pattern works on **Render** (see below), **Fly.io**, or **Hugging Face Spaces (Docker mode)** if you need a different platform.
+- **Secrets:** set **`OPENAI_API_KEY`** in the host’s environment (never commit it). Health check: **`/`**; smoke **`POST /api/verify`** with a small PNG + application JSON.
+
+### Railway (current)
+
+- Service root: connect the GitHub repo and use **Dockerfile** build (root `Dockerfile`).
+- Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`** (see eval snapshot below).
+- **Public URL:** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
+- **Production eval snapshot (primary-path latency harness):** [`docs/evals/primary-latency-production-2026-05-11.json`](docs/evals/primary-latency-production-2026-05-11.json) — index: [`docs/evals/README.md`](docs/evals/README.md). After the key is set on Railway, re-run:  
+  `BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency`  
+  and commit an updated JSON (or a new dated file).
 
 ### Render (operator checklist)
 
-Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (create Web Service from this repo’s `Dockerfile`, set **`OPENAI_API_KEY`** as a secret, health check on `/`, smoke `POST /api/verify`).
-
-**Public prototype URL (fill in after deploy):** _Not set — run `docs/RENDER_DEPLOY.md` then paste your Render HTTPS base URL here._
+Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (Web Service from this repo’s `Dockerfile`, **`OPENAI_API_KEY`** secret, health check on `/`, smoke `POST /api/verify`). Render’s builders may reject generic BuildKit **`RUN --mount=type=cache`** `id=` values; this Dockerfile uses plain **`RUN npm ci`** so the file stays portable across hosts.
 
 ## Repository Deliverables
 
@@ -187,4 +194,5 @@ Regulatory references used for framing are documented in project docs and should
 - `docs/PRESEARCH.md`
 - `docs/IMPLEMENTATION_PLAN.md` — technical contracts, phases, evals, and PRD traceability for implementation
 - `docs/POC1_FALLBACK.md` — OCR fallback go/no-go thresholds and measurement contract (OCR still deferred in code)
+- `docs/evals/README.md` — committed **eval artifacts** (e.g. production primary-latency run)
 

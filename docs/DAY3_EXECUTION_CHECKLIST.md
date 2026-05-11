@@ -7,7 +7,7 @@
 Convert a functional build into an evaluator-ready prototype by closing evidence gaps:
 
 - complete eval runs and open-question measurements,
-- finalize deployment on Render,
+- finalize deployment (e.g. **Railway** or **Render** from the repo `Dockerfile`),
 - polish UX and docs for clear reviewability.
 
 ## Day 3 Outcomes
@@ -60,10 +60,10 @@ Exit check:
 
 - fallback decision is explicit, evidence-based, and documented.
 
-## 3:30-5:00 — Deployment Finalization on Render (WS-F)
+## 3:30-5:00 — Deployment Finalization (Railway / Render) (WS-F)
 
-- Build and deploy Docker image to Render.
-- Configure required secrets (e.g., API key).
+- Build and deploy Docker image (e.g. **Railway** from GitHub + root `Dockerfile`, or **Render** per [`RENDER_DEPLOY.md`](../RENDER_DEPLOY.md)).
+- Configure required secrets (**`OPENAI_API_KEY`** on the host; never in git).
 - Verify deployed app behavior:
   - upload flow works,
   - verify route responds correctly,
@@ -117,7 +117,7 @@ Exit check:
 
 1. `test(eval): add and run correctness and latency evaluation suite`
 2. `chore(fallback): record tesseract go-no-go decision with metrics`
-3. `chore(deploy): finalize render deployment and runtime config`
+3. `chore(deploy): finalize Railway (or Render) deployment and runtime config`
 4. `fix(ui): improve error and manual-review clarity`
 5. `docs(readme): publish eval results and deployment instructions`
 
