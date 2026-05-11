@@ -12,7 +12,9 @@ Next.js configuration for this app:
 
 - Keep config minimal; deployment target and env vars are documented in `README.md`.
 
-## Dependencies
+## Related npm scripts
+
+- **`npm run dev:clean`** — **`rm -rf .next && next dev`**. Use when Next 15 dev throws **React Client Manifest** / **`MetadataBoundary`** errors (see **`README.md`** troubleshooting).
 
 - `next`
 - Node `path` / `url` for `import.meta.url` resolution

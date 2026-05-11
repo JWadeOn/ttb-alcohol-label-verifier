@@ -111,6 +111,8 @@ Set **`OPENAI_API_KEY`** (for example in `.env.local` at the project root). Next
 npm run dev
 ```
 
+Use **`npm run dev:clean`** (`rm -rf .next && next dev`) if the dev overlay throws **React Client Manifest** / **`MetadataBoundary`** errors (see **Dev server issues** below).
+
 Then open the app URL printed by Next.js (default **http://localhost:3000**). Upload a label image and application JSON — **`POST /api/verify`** runs **image quality → OpenAI vision extraction (`gpt-4o-mini`) → deterministic validation**. If the primary path errors after retries, an **`unavailable`** fallback placeholder is returned until Phase 2 wires Tesseract.
 
 ```bash
@@ -150,14 +152,21 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 
 ### Next.js dev: `Could not find the module … in the React Client Manifest`
 
-If the terminal shows errors mentioning **`ViewportBoundary`**, **`MetadataBoundary`**, **`global-error.js`**, or **`segment-explorer-node`** / **SegmentViewNode** right after **Fast Refresh** or a large edit, that is usually a **stale dev cache** or a **transient RSC bundler glitch** in Next 15’s dev overlay — not your app routes.
+If the **browser** or terminal shows **`MetadataBoundary`**, **`ViewportBoundary`**, **`layout-router`**, **`ClientPageRoot`**, **`segment-explorer-node`**, etc., that is almost always a **broken dev client manifest** (Next 15 dev / RSC + Fast Refresh), **not** a bug in your page code. **`npm run build`** should still pass.
 
-1. Stop **all** `next dev` processes.
-2. **`rm -rf .next`** then **`npm run dev`** again (same as the ENOENT fix above).
-3. If it still happens: **`rm -rf node_modules/.cache`** (if present), then restart dev; last resort **`rm -rf node_modules && npm ci`**.
-4. To confirm the app itself: **`npm run build && npm run start`** — production mode does not use the same dev-only overlay path.
+**Common triggers (from real logs):**
 
-The log may still end with **`GET / 200`** after a full reload; treat repeated manifest errors as a signal to clear **`.next`** before chasing application code.
+- **`Port 3000 is in use … using … 3002`** — you have **two** `next dev` processes. Only **one** should own this repo. Stop the stray one (macOS: `lsof -ti :3000` to see PID, then quit that process), then restart a **single** `npm run dev`.
+- **`Reload env: .env`** — saving `.env` mid-session can leave dev in a bad state. Prefer **stop dev → save `.env` → `npm run dev:clean`** (below) instead of relying on hot env reload when you see manifest spam.
+
+**Fix (in order):**
+
+1. Stop **every** `next dev` for this project (all terminals / ports).
+2. Start fresh: **`npm run dev:clean`** (same as `rm -rf .next && next dev`). Or manually: **`rm -rf .next && npm run dev`**.
+3. If it still happens: **`rm -rf node_modules/.cache`** (if present), then **`npm run dev:clean`** again; last resort **`rm -rf node_modules && npm ci`**.
+4. Sanity check without dev overlay: **`npm run build && npm run start`**.
+
+The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while errors print — treat repeated manifest lines as **cache / process hygiene**, not application logic, until a clean dev run is stable.
 
 ### Fixtures and eval scaffold (Day 1)
 
