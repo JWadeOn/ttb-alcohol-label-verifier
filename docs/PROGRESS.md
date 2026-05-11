@@ -8,7 +8,7 @@ Short **human index** of where the prototype stands. **Git history** remains the
 
 ## Current focus
 
-Phase 1 **core path** is in place (image quality → OpenAI extraction → deterministic validation); next emphasis is **eval evidence, deploy smoke on Render, and Day 3 polish** (errors, manual-review copy) per `docs/DAY3_EXECUTION_CHECKLIST.md`.
+Phase 1 **core path** is shipped and **Day 1 closeout is committed** (Docker + fixtures + eval scaffold + docs). Emphasis now: **Render deploy smoke**, **Day 3 eval / polish** (`docs/DAY3_EXECUTION_CHECKLIST.md`), and **§16 acceptance** in `docs/IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -18,7 +18,10 @@ Phase 1 **core path** is in place (image quality → OpenAI extraction → deter
 - **UI/UX** — light theme, workbench (label + application), formatted vs JSON application editor, results with label + field comparison + raw JSON (`fd759d6`).
 - **Docs** — `docs/ARCHITECTURE.md`, `docs/modules/*`, README / AGENTS pointers; dev script and `.next` troubleshooting in README.
 - **Sample asset** — `fixtures/labels/liquor_label_happy_path.png` for manual runs (`9a4c108`).
-- **Day 1 completion (remaining checklist)** — `Dockerfile` + `.dockerignore` + `next.config` **`output: "standalone"`**; **`fixtures/`** manifest, default application JSON, nine deterministic `seed-texture-*.png` generators; **`evals/run-primary-latency.mjs`** + `npm run eval:primary-latency`; **`docs/POC1_FALLBACK.md`** thresholds + measurement contract; Vitest **`fixtures-manifest`** coverage.
+- **Day 1 closeout (committed `2fd9bb5`)** — production **`Dockerfile`** + **`.dockerignore`**, `next.config` **`output: "standalone"`**, `public/.gitkeep`; **`fixtures/`** manifest + default application JSON + nine **`seed-texture-*.png`** + **`scripts/generate-fixture-pngs.mjs`**; **`evals/run-primary-latency.mjs`** + npm script; **`docs/POC1_FALLBACK.md`**; Vitest **`fixtures-manifest`**; ESLint ignores for `scripts/**` and `evals/**`; **`pnpm-lock.yaml`** removed from workflow and **ignored**.
+- **Repo hygiene (`edcaed0`)** — ignore stray **`docs/docs.code-workspace`** so local IDE files do not clutter `git status`.
+- **Docker / npm-in-image stability** — `npm ci` tuned for flaky registry (parallelism + cache mount) so **`docker build`** (including **`--no-cache`**) succeeds on OrbStack when the network is healthy.
+- **Verify observability & dev controls (`b479e3c`)** — structured logs for **`[extractWithFailover]`**, **`[verify-pipeline]`**, **`[verify]`** (incl. **`pipelineMs`**, **`totalMs`**, timeouts); env **`VERIFY_EXTRACT_SOFT_TIMEOUT_MS`** / **`VERIFY_EXTRACT_HARD_TIMEOUT_MS`** for local perf experiments; **`OPENAI_DISABLED`** to skip OpenAI while keeping a key; README **credits / usage** section; tests for **`OPENAI_DISABLED`**.
 
 ---
 
