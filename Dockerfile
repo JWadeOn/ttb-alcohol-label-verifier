@@ -17,7 +17,8 @@ ENV npm_config_fetch_retries=5 \
     npm_config_maxsockets=1 \
     npm_config_audit=false \
     npm_config_fund=false
-RUN --mount=type=cache,target=/root/.npm \
+# `id=` required by some remote builders (e.g. Render) for cache mount stability.
+RUN --mount=type=cache,id=npm-ci-cache,target=/root/.npm \
     npm ci --no-audit --no-fund
 
 FROM base AS builder
