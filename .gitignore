@@ -37,3 +37,4 @@ yarn-error.log*
 .cursor/
 .idea
 .vscode/*.log
+docs/docs.code-workspace
