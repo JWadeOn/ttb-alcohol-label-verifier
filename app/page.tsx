@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApplicationEditor } from "@/components/ApplicationEditor";
 import { CANONICAL_GOVERNMENT_WARNING } from "@/lib/canonical-warning";
 import {
@@ -37,6 +37,24 @@ const FIELD_LABELS: Record<FieldId, string> = {
   governmentWarning: "Government warning",
   nameAddress: "Name & address",
   countryOfOrigin: "Country of origin",
+};
+
+/** Plain-language rule the deterministic validator applies for this field. */
+const FIELD_REQUIREMENTS: Record<FieldId, string> = {
+  brandName:
+    "Fuzzy match: normalized label text vs application brand, above a minimum similarity score.",
+  classType:
+    "Fuzzy match: normalized label text vs application class/type line.",
+  alcoholContent:
+    "Parsed strength (percent ABV or proof) must agree within a small tolerance.",
+  netContents:
+    "Parsed volume (mL, L, fl oz, etc.) must agree within tolerance after unit conversion.",
+  governmentWarning:
+    "Exact match: label warning text must equal the application string (case-sensitive).",
+  nameAddress:
+    "Compared when application includes text; if application omits it, the row is manual review even when the label is blank.",
+  countryOfOrigin:
+    "Not applicable when import is unchecked. For imports, fuzzy match when both sides include text.",
 };
 
 function parseExtractionField(raw: unknown): {
@@ -94,35 +112,63 @@ function formatStatusLabel(status: FieldStatus): string {
   }
 }
 
-function ValueBlock({
-  label,
+function FieldComparisonPanel({
+  role,
+  title,
+  titleShort,
+  children,
+}: {
+  role: "extracted" | "application" | "requirement";
+  title: string;
+  /** Shorter label for tight mobile layout */
+  titleShort: string;
+  children: ReactNode;
+}) {
+  const shell =
+    role === "extracted"
+      ? "border-sky-200/90 bg-gradient-to-b from-sky-50 to-white ring-1 ring-sky-500/10 border-l-sky-500"
+      : role === "application"
+        ? "border-violet-200/90 bg-gradient-to-b from-violet-50 to-white ring-1 ring-violet-500/10 border-l-violet-600"
+        : "border-amber-200/90 bg-gradient-to-b from-amber-50/80 to-amber-50/30 ring-1 ring-amber-600/10 border-l-amber-600";
+
+  return (
+    <div
+      className={`flex min-h-0 flex-col gap-2 rounded-lg border border-stone-200/80 pl-3 shadow-sm ${shell} border-l-4`}
+    >
+      <div className="pr-2 pt-2">
+        <span className="hidden text-[11px] font-bold uppercase tracking-wide text-stone-600 sm:inline">
+          {title}
+        </span>
+        <span className="text-[11px] font-bold uppercase tracking-wide text-stone-600 sm:hidden">
+          {titleShort}
+        </span>
+      </div>
+      <div className="min-h-0 flex-1 px-2 pb-2">{children}</div>
+    </div>
+  );
+}
+
+function MonospaceValueBox({
   text,
   sub,
 }: {
-  label: string;
   text: string | null;
   sub?: string | null;
 }) {
-  const display =
-    text !== null && text.trim() !== "" ? text : "—";
+  const display = text !== null && text.trim() !== "" ? text : "—";
   const isLong = display.length > 200;
 
   return (
-    <div className="flex min-h-0 flex-col gap-1">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-        {label}
-      </span>
+    <>
       <div
-        className={`rounded-md border border-stone-200 bg-stone-50 px-3 py-2 font-mono text-xs leading-relaxed text-stone-900 break-words whitespace-pre-wrap ${
+        className={`rounded-md border border-stone-200/90 bg-white/90 px-3 py-2 font-mono text-xs leading-relaxed text-stone-900 break-words whitespace-pre-wrap shadow-sm ${
           isLong ? "max-h-40 overflow-y-auto" : ""
         }`}
       >
         {display}
       </div>
-      {sub ? (
-        <span className="text-[11px] text-stone-500">{sub}</span>
-      ) : null}
-    </div>
+      {sub ? <span className="mt-1 block text-[11px] text-stone-500">{sub}</span> : null}
+    </>
   );
 }
 
@@ -436,12 +482,35 @@ export default function HomePage() {
                     <h3 className="text-sm font-semibold text-stone-800">
                       Field comparison
                     </h3>
-                    <p className="text-xs text-stone-500">
-                      Compare <strong className="text-stone-700">From label</strong>{" "}
-                      (model read) to <strong className="text-stone-700">From application</strong>{" "}
-                      (submitted JSON). Status reflects automated rules.
+                    <p className="text-xs leading-relaxed text-stone-600">
+                      Three columns per field: what the model read from the label, what you submitted in
+                      application JSON, and the rule this prototype uses. The badge is the outcome for that
+                      field; the line below is the validator explanation for this run.
                     </p>
-                    <ul className="space-y-4">
+                    <div
+                      className="flex flex-wrap gap-2 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-2 text-[11px] text-stone-700"
+                      aria-label="Column legend"
+                    >
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-sky-500" aria-hidden />
+                        Label (extracted)
+                      </span>
+                      <span className="text-stone-300" aria-hidden>
+                        |
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-violet-600" aria-hidden />
+                        Application (submitted)
+                      </span>
+                      <span className="text-stone-300" aria-hidden>
+                        |
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-amber-600" aria-hidden />
+                        Requirement (rule)
+                      </span>
+                    </div>
+                    <ul className="space-y-5">
                       {successPayload.validation.fields.map((row) => {
                         const rawEx = successPayload.extraction.fields[row.fieldId];
                         const ex = parseExtractionField(rawEx);
@@ -466,22 +535,40 @@ export default function HomePage() {
                                 {formatStatusLabel(row.status)}
                               </span>
                             </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <ValueBlock
-                                label="From label (extracted)"
-                                text={row.extractedValue}
-                                sub={
-                                  confLabel
-                                    ? `${confLabel}${ex.reason ? ` · ${ex.reason}` : ""}`
-                                    : ex.reason ?? undefined
-                                }
-                              />
-                              <ValueBlock
-                                label="From application (submitted)"
-                                text={row.applicationValue}
-                              />
+                            <div className="grid gap-3 lg:grid-cols-3">
+                              <FieldComparisonPanel
+                                role="extracted"
+                                title="From label (extracted)"
+                                titleShort="Label"
+                              >
+                                <MonospaceValueBox
+                                  text={row.extractedValue}
+                                  sub={
+                                    confLabel
+                                      ? `${confLabel}${ex.reason ? ` · ${ex.reason}` : ""}`
+                                      : ex.reason ?? undefined
+                                  }
+                                />
+                              </FieldComparisonPanel>
+                              <FieldComparisonPanel
+                                role="application"
+                                title="From application (submitted)"
+                                titleShort="Application"
+                              >
+                                <MonospaceValueBox text={row.applicationValue} />
+                              </FieldComparisonPanel>
+                              <FieldComparisonPanel
+                                role="requirement"
+                                title="Requirement (this prototype)"
+                                titleShort="Rule"
+                              >
+                                <p className="rounded-md border border-amber-200/70 bg-white/70 px-3 py-2 text-xs leading-snug text-stone-800">
+                                  {FIELD_REQUIREMENTS[row.fieldId]}
+                                </p>
+                              </FieldComparisonPanel>
                             </div>
-                            <p className="mt-3 border-t border-stone-100 pt-3 text-xs leading-relaxed text-stone-600">
+                            <p className="mt-3 border-t border-stone-100 pt-3 text-xs font-medium leading-relaxed text-stone-800">
+                              <span className="text-stone-500">Outcome for this run: </span>
                               {row.message}
                             </p>
                           </li>

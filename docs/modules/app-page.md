@@ -32,7 +32,7 @@ Goal: let an agent or evaluator compare **the physical label** to **extracted vs
 | Region | Purpose |
 |--------|---------|
 | **Results — left column (lg+)** | Large label image (same bytes sent to the API); sticky on wide viewports. |
-| **Results — right column** | Run summary (request id, extraction provider, duration, image quality). **Field cards:** each row from `validation.fields` rendered as a card with **From label (extracted)** and **From application (submitted)** side by side, status badge, validator message, and optional model confidence/reason from `extraction.fields`. Long values scroll inside the card. |
+| **Results — right column** | Run summary (request id, extraction provider, duration, image quality). **Field cards:** each row from `validation.fields` as a **three-column** layout — **From label (extracted)** (sky accent), **From application (submitted)** (violet accent), **Requirement (this prototype)** (amber accent, static rule text from `FIELD_REQUIREMENTS` in `app/page.tsx`). Legend row explains the color coding. Per-field status badge, then **Outcome for this run** (validator `message`). Model confidence/reason still under extracted column. Long values scroll inside monospace boxes. |
 | **Raw API JSON** | Collapsed `<details>` for debugging or copy/paste. |
 
 ## Dependencies
