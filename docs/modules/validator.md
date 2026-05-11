@@ -25,7 +25,8 @@
 
 ## Related tests
 
-- `tests/validator.test.ts`
+- `tests/validator.test.ts` — unit cases (fuzzy brand, strict warning, confidence gate, import `not_applicable`).
+- `tests/golden-default-application.test.ts` — **golden path** against committed **`fixtures/default-application.json`** + synthetic matching extraction (no OpenAI).
 
 ## See also
 

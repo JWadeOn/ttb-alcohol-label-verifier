@@ -35,6 +35,7 @@ Each file below is the **living description** of one code unit: responsibilities
 | Test file | Focus |
 |-----------|--------|
 | `tests/validator.test.ts` | Field rules, fuzzy/strict edges, import behavior. |
+| `tests/golden-default-application.test.ts` | Golden path: `fixtures/default-application.json` + matching synthetic extraction → MVP passes; warning strict fail case. |
 | `tests/image-quality.test.ts` | Tiny image reject; textured PNG accept (`tests/helpers/test-image.ts`). |
 | `tests/extract-failover.test.ts` | `extractWithFailover` timing and mock providers. |
 | `tests/verify-handler.test.ts` | Multipart parsing, env 503, pipeline delegation with stub. |
