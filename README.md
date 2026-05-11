@@ -158,6 +158,7 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 - **Latency benchmark** (same harness, per-fixture **min / max / mean / P95** over multiple POSTs):  
   `npm run eval:primary-latency:bench`  
   (defaults: **5** iterations per fixture, **400 ms** cooldown between requests — tune with **`EVAL_ITERATIONS`**, **`EVAL_COOLDOWN_MS`**, optional **`EVAL_WARMUP=1`** one throwaway request per fixture before timing). Set **`BASE_URL`** and **`OPENAI_API_KEY`** as for the single-pass eval.
+- **Eval policy (cost + drift):** any script that calls a **live** app with **OpenAI** (local or Railway) is **manual-only** — run when *you* choose (e.g. from your machine). **Do not** schedule nightly/cron jobs or CI workflows that hit production or spend keys automatically; keep **`npm run test`** as the always-on gate with deterministic tests.
 - **Docker production image:** `npm run docker:build` then run as in `docs/modules/dockerfile.md`. POC-1 OCR thresholds and measurement contract are documented in **`docs/POC1_FALLBACK.md`** (OCR path still deferred in code).
 
 ## Deployment Decision

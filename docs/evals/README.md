@@ -2,6 +2,8 @@
 
 Committed outputs from **optional** eval scripts (see `README.md` → fixtures / eval scaffold).
 
+**Triggering:** regenerating these artifacts (or running latency scripts against **Railway** with **`OPENAI_API_KEY`**) is **intentionally manual** — no scheduled or CI-automated production model runs. That avoids surprise cost and flaky comparisons when the model changes. **`npm run test`** remains the default always-on check.
+
 | File | What it is |
 |------|----------------|
 | [`primary-latency-production-2026-05-11.json`](./primary-latency-production-2026-05-11.json) | `npm run eval:primary-latency` against the **Railway** production `BASE_URL` (fixtures with `includeInPrimaryLatencyEval`). Latest: **HTTP 200**, **`unavailable`** extraction on seed textures (~3.7–4.1s). Regenerate after changing secrets, timeouts, or manifest flags. |
