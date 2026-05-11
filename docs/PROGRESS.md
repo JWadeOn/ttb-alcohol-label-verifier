@@ -14,9 +14,57 @@ Phase 1 **core path** is shipped and **Day 1 closeout is committed** (Docker + f
 
 ---
 
+## Execution checklist audit (explicit)
+
+Legend: **Done** = implemented and usable in-repo unless noted. **Partial** = materially there; formal sign-off, evidence artifact, or edge case still open. **Not started** = no meaningful delivery yet. Sources: [`DAY1_EXECUTION_CHECKLIST.md`](./DAY1_EXECUTION_CHECKLIST.md), [`DAY2_EXECUTION_CHECKLIST.md`](./DAY2_EXECUTION_CHECKLIST.md), [`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md).
+
+### Day 1 — [`docs/DAY1_EXECUTION_CHECKLIST.md`](./DAY1_EXECUTION_CHECKLIST.md)
+
+| Block | Status | Evidence / notes |
+|-------|--------|-------------------|
+| **Outcomes (summary)** | **Partial → Done** | Skeleton + contracts + parallel kickoff artifacts exist; POC-1 *measurement* is partial (see 5:00–6:00). |
+| 0:00–0:30 Setup / branch | **Partial** | Work is on **`main`** and committed green; “implementation branch” and “re-read governance docs” are process items, not tracked in-repo. |
+| 0:30–2:00 Thin vertical | **Done** | `POST /api/verify`, workbench UI (upload + application + submit + results), wiring tests (`tests/verify-handler.test.ts`, etc.). Response is **live pipeline** today, not a static stub only. |
+| 2:00–3:00 Contract lock | **Done** | Zod schemas, multipart boundary validation, enums in `lib/schemas.ts`; example/stub patterns in tests and `lib/stub-response.ts`. |
+| 3:00–5:00 WS-B extraction | **Done** | `ExtractionProvider`, `extractWithFailover`, OpenAI + `unavailable` providers (`lib/extraction/*`). |
+| 3:00–5:00 WS-C validator | **Done** | `tests/validator.test.ts` (warning strictness, brand fuzz, import / `not_applicable`, ABV parsing helpers). |
+| 3:00–5:00 WS-D UI | **Done** | Live `fetch` to `/api/verify`; provider + field statuses surfaced (`app/page.tsx`). |
+| 3:00–5:00 WS-E fixtures / eval | **Done** | `fixtures/`, `fixtures/manifest.json`, `scripts/generate-fixture-pngs.mjs`, `evals/run-primary-latency.mjs`, `tests/fixtures-manifest.test.ts` (commit `2fd9bb5`). |
+| 3:00–5:00 WS-F Docker / env | **Done** | `Dockerfile`, `.dockerignore`, standalone `next.config`; README + `.env.example` for secrets and optional timeouts; local **`docker build`** validated on OrbStack. |
+| 5:00–6:00 POC-1 prep | **Partial** | **`docs/POC1_FALLBACK.md`** locks thresholds + measurement contract; **`eval:primary-latency`** exists. **Primary-path numbers** in-repo as a pinned artifact are optional; **OCR fallback** metrics are **deferred** (no Tesseract in app). |
+| 6:00–6:30 Stabilization | **Done** | Lint/tests/build green on touched scope; commits `2fd9bb5`, `edcaed0`, `b479e3c`, `f5153bd`, `dee585a`, etc. |
+
+### Day 2 — [`docs/DAY2_EXECUTION_CHECKLIST.md`](./DAY2_EXECUTION_CHECKLIST.md)
+
+| Block | Status | Evidence / notes |
+|-------|--------|-------------------|
+| **Outcomes (summary)** | **Partial** | Core engine behaviors are **in** the tree; formal “POC measurements in working notes” and some test nuance remain **Partial** (see below). |
+| 0:00–0:30 Rebaseline | **Partial** | Baseline scripts exist; “lock top 3 must-wins” is a session ritual, not a file. |
+| 0:30–2:00 Primary provider | **Done** | `lib/extraction/openai-provider.ts` (`gpt-4o-mini` vision + JSON + Zod). |
+| 0:30–2:00 Provider **contract tests** (mocked OpenAI) | **Partial** | Failover tests use **mock providers** (`tests/extract-failover.test.ts`). There is **no** dedicated unit file that mocks the HTTP/SDK for `createOpenAIProvider` only. |
+| 2:00–3:30 Validator expansion | **Done** | Targeted `validateLabelFields` tests as above; manual_review paths exercised via low-confidence / fallback paths in validator + UI. |
+| 3:30–5:00 Failover orchestration | **Partial** | **Done:** soft/hard timers + `AbortSignal`, primary success vs hard-abort fallback (`tests/extract-failover.test.ts`). **Not separately asserted in tests:** “fallback promise started at soft timeout while primary still in flight” (implementation exists in `lib/extraction/provider.ts`; only abort path is asserted). |
+| 3:30–5:00 Route surfaces provider metadata | **Done** | JSON includes `extraction.provider`, `extraction.durationMs`, per-field reasons. |
+| 5:00–6:00 UI integration + errors | **Partial** | **Done:** live route-driven UI + status mix (`pass` / `fail` / `manual_review` / `not_applicable`). **Partial:** rich **client** error UX for every provider/route failure mode (some errors are JSON-only; server logs improved in `b479e3c`). |
+| 6:00–6:30 POC + stabilization | **Partial** | Dev logs capture **`pipelineMs` / `totalMs`**; optional env timeouts. **Missing as explicit artifact:** written “first meaningful POC” summary in docs (beyond POC1 threshold table + ad-hoc runs). |
+
+### Day 3 — [`docs/DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md)
+
+| Block | Status | Evidence / notes |
+|-------|--------|-------------------|
+| **Outcomes (summary)** | **Not started** | No stable public URL, no published eval result bundle, demo-ready polish incomplete. |
+| 0:00–0:30 Health check | **Partial** | Local health strong; “lock Day 3 must-complete” not recorded here beyond **Next** list. |
+| 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures exist; **no** committed eval output / “concise artifact” with correctness + latency matrix for the full fixture set. |
+| 2:00–3:30 Fallback go/no-go (Tesseract metrics) | **Not started** | **No** in-app Tesseract path yet; **`docs/POC1_FALLBACK.md`** records policy/thresholds only. True go/no-go **waits Phase 2 OCR** (or an explicit pivot doc). |
+| 3:30–5:00 Render deploy | **Not started** | README still points at target; no captured **public URL** or smoke notes in-repo. |
+| 5:00–6:00 UX / error polish | **Partial** | Usable UI; Day 3 asks for evaluator-grade clarity pass (copy, edge errors, image-quality messaging) — not fully closed out. |
+| 6:00–6:45 Docs sync | **Partial** | Module docs + README track behavior; Day 3 asks for eval results + deploy URL + fallback **outcome** in README — pending. |
+| 6:45–7:00 Final stabilization | **Not started** | Tied to Day 3 scope completion. |
+
+---
+
 ## Done recently
 
-- **Day 2 / Phase 1 core engine (substantially complete in tree)** — per **`docs/DAY2_EXECUTION_CHECKLIST.md`**: primary extraction behind the provider interface, deterministic validator with tests, soft/hard failover orchestration, UI driven by real verify responses (see Phase 1 / UI bullets below). Formal checklist walk and POC write-ups remain as **sign-off**, not greenfield implementation.
 - **Phase 1 pipeline** — verify API, extraction with timeout failover to `unavailable` placeholder, validator, tests (`741ce0d`).
 - **UI/UX** — light theme, workbench (label + application), formatted vs JSON application editor, results with label + field comparison + raw JSON (`fd759d6`).
 - **Docs** — `docs/ARCHITECTURE.md`, `docs/modules/*`, README / AGENTS pointers; dev script and `.next` troubleshooting in README.
