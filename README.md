@@ -155,6 +155,9 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 - **Primary-path latency eval** (calls OpenAI; requires running app + key): start `npm run dev` in another terminal, then  
   `OPENAI_API_KEY=... npm run eval:primary-latency`  
   (override base URL with `BASE_URL=http://127.0.0.1:3000` or your **Railway** URL). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold). A **production** snapshot lives under **`docs/evals/`** (see Railway section above).
+- **Latency benchmark** (same harness, per-fixture **min / max / mean / P95** over multiple POSTs):  
+  `npm run eval:primary-latency:bench`  
+  (defaults: **5** iterations per fixture, **400 ms** cooldown between requests — tune with **`EVAL_ITERATIONS`**, **`EVAL_COOLDOWN_MS`**, optional **`EVAL_WARMUP=1`** one throwaway request per fixture before timing). Set **`BASE_URL`** and **`OPENAI_API_KEY`** as for the single-pass eval.
 - **Docker production image:** `npm run docker:build` then run as in `docs/modules/dockerfile.md`. POC-1 OCR thresholds and measurement contract are documented in **`docs/POC1_FALLBACK.md`** (OCR path still deferred in code).
 
 ## Deployment Decision
