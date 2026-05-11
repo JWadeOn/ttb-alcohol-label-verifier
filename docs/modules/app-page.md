@@ -21,7 +21,7 @@ Client-only page: file upload, application data editor, `POST /api/verify` via `
 
 - **Compact header:** one line title + optional **How this works** `<details>` so the page leads with actions, not prose.
 - **Primary action bar (first inside the form):** **Choose label image** + filename, and a large **Run verification** submit control—always visible above the two-column workbench.
-- **Two-column grid (`lg`):** **Label preview** (replace link when a file is loaded) and **Application data** (`ApplicationEditor`). Shorter min-heights so results stay closer to the fold.
+- **Two-column grid (`lg`):** **Label preview** (subtitle: image is sent for extraction; extracted text appears in results after run) and **Application data** (`ApplicationEditor`; subtitle clarifies JSON is the “submitted application” side and rules appear in results after run). Optional dashed **Tip** banner below the form until a response exists: extracted text and requirements live under **Verification results**, not in the workbench.
 
 The native file input is **visually hidden** (`sr-only`); the action bar and “Replace image” use the same ref to open the picker.
 

@@ -274,9 +274,11 @@ export default function HomePage() {
           </summary>
           <p className="mt-2 text-left text-stone-600 sm:text-right">
             Pick a label image, confirm or edit application fields on the right, then{" "}
-            <strong className="font-medium text-stone-700">Run verification</strong>. Results
-            appear below with the label next to extracted vs submitted values. Uses OpenAI
-            vision plus deterministic checks (see README).
+            <strong className="font-medium text-stone-700">Run verification</strong>. In{" "}
+            <strong className="font-medium text-stone-700">Verification results</strong> (below),
+            each field shows three columns: text read from the label, what you submitted, and the
+            comparison rule — plus pass / manual review / fail. Uses OpenAI vision plus deterministic
+            checks (see README).
           </p>
         </details>
       </header>
@@ -328,9 +330,15 @@ export default function HomePage() {
             className="flex min-h-[min(40vh,420px)] flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
           >
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-2">
-              <h2 id="workbench-label-heading" className="text-sm font-semibold text-stone-900">
-                Label preview
-              </h2>
+              <div>
+                <h2 id="workbench-label-heading" className="text-sm font-semibold text-stone-900">
+                  Label preview
+                </h2>
+                <p className="mt-0.5 max-w-md text-[11px] leading-snug text-stone-500">
+                  This file is sent to the server as the label image. After you run verification,
+                  extracted text appears in results — not here.
+                </p>
+              </div>
               {file ? (
                 <button
                   type="button"
@@ -371,14 +379,27 @@ export default function HomePage() {
               <h2 id="workbench-json-heading" className="text-sm font-semibold text-stone-900">
                 Application data
               </h2>
-              <p className="mt-0.5 text-[11px] text-stone-500">
-                Formatted fields or <strong className="text-stone-700">JSON</strong> toggle — edit if needed before you run verification.
+              <p className="mt-0.5 text-[11px] leading-snug text-stone-500">
+                Formatted fields or <strong className="text-stone-700">JSON</strong> toggle — edit
+                before you run. This JSON is the &quot;submitted application&quot; side of the
+                comparison. Field-by-field <strong className="text-stone-700">rules</strong> and
+                model-extracted text show only under{" "}
+                <strong className="text-stone-700">Verification results</strong> after a run.
               </p>
             </header>
             <ApplicationEditor value={applicationJson} onChange={setApplicationJson} />
           </section>
         </div>
       </form>
+
+      {!showResultsPanel ? (
+        <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-2 text-center text-xs leading-relaxed text-stone-600 sm:text-left">
+          <span className="font-medium text-stone-800">Tip:</span> Extracted label text and per-field
+          requirements are shown in{" "}
+          <strong className="text-stone-800">Verification results</strong> after you click{" "}
+          <strong className="text-stone-800">Run verification</strong> — not in the workbench above.
+        </p>
+      ) : null}
 
       {errorText ? (
         <section className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
