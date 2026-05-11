@@ -13,7 +13,7 @@ docker run --rm -p 3000:3000 -e OPENAI_API_KEY=sk-... ttb-label-verifier:local
 
 ## Decisions
 
-- **`deps` stage:** `npm_config_fetch_*` env vars plus a BuildKit **cache mount** on `/root/.npm` around `npm ci` (`id=npm-ci-cache`) so flaky registry connections can retry without always redownloading from scratch; **some hosts (e.g. Render) require an explicit `id=`** on cache mounts.
+- **`deps` stage:** `npm_config_fetch_*` env vars around plain `npm ci` (no `RUN --mount=type=cache`): **Render's Metal builder** validates cache-mount `id=` against a **service-scoped cacheKey prefix**, which cannot be represented portably in a shared repo Dockerfile. **Docker layer cache** still avoids re-running `npm ci` when `package.json` / `package-lock.json` are unchanged.
 - **Install stability:** limit npm parallelism (`npm_config_jobs=1`, `npm_config_maxsockets=1`) and disable audit/fund during `npm ci` to reduce the number of concurrent registry requests that can trigger `ECONNRESET` in Docker/OrbStack builds.
 - **Alpine + Node 22** for a small image; `libc6-compat` for native modules.
 - **No Tesseract in image yet** — OCR fallback is Phase 2; the Dockerfile satisfies Day 1 / deployment **baseline** (image builds and runs the current stack).

@@ -17,9 +17,10 @@ ENV npm_config_fetch_retries=5 \
     npm_config_maxsockets=1 \
     npm_config_audit=false \
     npm_config_fund=false
-# `id=` required by some remote builders (e.g. Render) for cache mount stability.
-RUN --mount=type=cache,id=npm-ci-cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
+# No BuildKit `RUN --mount=type=cache` here: Render's Metal builder rejects generic
+# cache `id=` values (requires a platform cacheKey prefix tied to the service). Layer
+# cache still speeds rebuilds when package manifests are unchanged.
+RUN npm ci --no-audit --no-fund
 
 FROM base AS builder
 WORKDIR /app
