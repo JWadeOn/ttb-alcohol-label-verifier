@@ -77,5 +77,7 @@ Single dev observation (not P95, not a committed machine log file):
 ## References
 
 - [`DAY1_EXECUTION_CHECKLIST.md`](./DAY1_EXECUTION_CHECKLIST.md)
+- [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md) — Phase 1 core engine sign-off (sequencing).
+- [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md) — public URL next step.
 - [`POC1_FALLBACK.md`](./POC1_FALLBACK.md)
 - [`PROGRESS.md`](./PROGRESS.md)

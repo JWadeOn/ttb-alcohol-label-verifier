@@ -163,6 +163,12 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 - Fallback targets if blocked by platform limits: **Fly.io** or **Hugging Face Spaces (Docker mode)**.
 - Deployment objective: stable public HTTPS URL for evaluator testing with `OPENAI_API_KEY` managed as a platform secret.
 
+### Render (operator checklist)
+
+Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (create Web Service from this repo’s `Dockerfile`, set **`OPENAI_API_KEY`** as a secret, health check on `/`, smoke `POST /api/verify`).
+
+**Public prototype URL (fill in after deploy):** _Not set — run `docs/RENDER_DEPLOY.md` then paste your Render HTTPS base URL here._
+
 ## Repository Deliverables
 
 - Source code for UI, API, extraction, and validation

@@ -110,6 +110,10 @@ Exit check:
 
 Only commit green states (lint/type/relevant tests passing).
 
+## Completion record
+
+**Day 2 runbook is closed as of 2026-05-11** with evidence and optional follow-ups documented. See **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** and the Day 2 rows in [`PROGRESS.md`](./PROGRESS.md) → *Execution checklist audit*. Public deploy: **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)**.
+
 ## Risks to Avoid on Day 2
 
 - Letting provider-specific logic leak across route/UI layers.

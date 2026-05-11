@@ -24,6 +24,10 @@ Each file below is the **living description** of one code unit: responsibilities
 
 **Day 1 runbook sign-off (POC-1 primary sample + OCR blocker):** [`../DAY1_COMPLETION_RECORD.md`](../DAY1_COMPLETION_RECORD.md)
 
+**Day 2 runbook sign-off (Phase 1 core engine):** [`../DAY2_COMPLETION_RECORD.md`](../DAY2_COMPLETION_RECORD.md)
+
+**Render deployment runbook:** [`../RENDER_DEPLOY.md`](../RENDER_DEPLOY.md)
+
 ---
 
 ## Vitest map (cross-module)

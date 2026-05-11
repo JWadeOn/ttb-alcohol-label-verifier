@@ -18,7 +18,7 @@ Use this as the top-level execution map; use day-level docs for task detail.
 ## Daily Execution Docs
 
 - Day 1: `docs/DAY1_EXECUTION_CHECKLIST.md` — **closed** 2026-05-11: `docs/DAY1_COMPLETION_RECORD.md`
-- Day 2: `docs/DAY2_EXECUTION_CHECKLIST.md`
+- Day 2: `docs/DAY2_EXECUTION_CHECKLIST.md` — **closed** 2026-05-11: `docs/DAY2_COMPLETION_RECORD.md`
 - Day 3: `docs/DAY3_EXECUTION_CHECKLIST.md`
 
 ## Weekly Objectives

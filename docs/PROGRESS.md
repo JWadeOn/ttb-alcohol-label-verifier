@@ -8,9 +8,9 @@ Short **human index** of where the prototype stands. **Git history** remains the
 
 ## Current focus
 
-Phase 1 **core path** is shipped; **Day 1 is formally closed** — see **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + OCR blocker, governance index, branch notes).
+Phase 1 **core path** is shipped; **Day 1** and **Day 2** are formally closed — **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)**, **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)**. Optional quality follow-ups stay listed in the Day 2 completion doc (they do not reopen the runbook).
 
-**Day 2 is not skipped in the plan** — it lives in **`docs/DAY2_EXECUTION_CHECKLIST.md`** and aligns with **Phase 1 — Core Engine** in **`docs/WEEK_EXECUTION_OVERVIEW.md`**. Most Day 2 *outcomes* (primary OpenAI provider, validator + tests, `extractWithFailover`, UI on live `/api/verify`) **already landed** in earlier Phase 1 commits (`741ce0d`, `fd759d6`, related tests), so recent “next” emphasis jumped to **deploy + evidence + polish** (Day 3 / Render / §16) without saying that loudly enough. **Still do:** an explicit **Day 2 sign-off pass** (checklist vs repo + POC notes + any error-UX gaps).
+**Next emphasis:** **Render** (see [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)), **Day 3** eval evidence + UX polish, **`IMPLEMENTATION_PLAN.md` §16** acceptance.
 
 ---
 
@@ -36,19 +36,21 @@ Formal sign-off: **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** 
 | 5:00–6:00 POC-1 prep | **Done** | Thresholds + contract in **`docs/POC1_FALLBACK.md`**; **`eval:primary-latency`**; **first primary data point** + **OCR blocker** in **`DAY1_COMPLETION_RECORD.md`**. |
 | 6:00–6:30 Stabilization | **Done** | Lint/tests/build green on touched scope; commits `2fd9bb5`, `edcaed0`, `b479e3c`, `f5153bd`, `dee585a`, `155d047`, etc. |
 
-### Day 2 — [`docs/DAY2_EXECUTION_CHECKLIST.md`](./DAY2_EXECUTION_CHECKLIST.md)
+### Day 2 — [`docs/DAY2_EXECUTION_CHECKLIST.md`](./DAY2_EXECUTION_CHECKLIST.md) — **closed**
+
+Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** (2026-05-11). **Optional follow-ups** (mocked OpenAI unit tests, extra failover assertion, client error UX pass, committed eval matrix) are listed there — **non-blocking** for Day 2 outcomes.
 
 | Block | Status | Evidence / notes |
 |-------|--------|-------------------|
-| **Outcomes (summary)** | **Partial** | Core engine behaviors are **in** the tree; formal “POC measurements in working notes” and some test nuance remain **Partial** (see below). |
-| 0:00–0:30 Rebaseline | **Partial** | Baseline scripts exist; “lock top 3 must-wins” is a session ritual, not a file. |
+| **Outcomes (summary)** | **Done** | All four Day 2 outcomes satisfied in code; POC context cross-ref **Day 1** completion + logs + eval harness. |
+| 0:00–0:30 Rebaseline | **Done** | Lint / test / build baseline; priorities in this file. |
 | 0:30–2:00 Primary provider | **Done** | `lib/extraction/openai-provider.ts` (`gpt-4o-mini` vision + JSON + Zod). |
-| 0:30–2:00 Provider **contract tests** (mocked OpenAI) | **Partial** | Failover tests use **mock providers** (`tests/extract-failover.test.ts`). There is **no** dedicated unit file that mocks the HTTP/SDK for `createOpenAIProvider` only. |
-| 2:00–3:30 Validator expansion | **Done** | Targeted `validateLabelFields` tests as above; manual_review paths exercised via low-confidence / fallback paths in validator + UI. |
-| 3:30–5:00 Failover orchestration | **Partial** | **Done:** soft/hard timers + `AbortSignal`, primary success vs hard-abort fallback (`tests/extract-failover.test.ts`). **Not separately asserted in tests:** “fallback promise started at soft timeout while primary still in flight” (implementation exists in `lib/extraction/provider.ts`; only abort path is asserted). |
-| 3:30–5:00 Route surfaces provider metadata | **Done** | JSON includes `extraction.provider`, `extraction.durationMs`, per-field reasons. |
-| 5:00–6:00 UI integration + errors | **Partial** | **Done:** live route-driven UI + status mix (`pass` / `fail` / `manual_review` / `not_applicable`). **Partial:** rich **client** error UX for every provider/route failure mode (some errors are JSON-only; server logs improved in `b479e3c`). |
-| 6:00–6:30 POC + stabilization | **Partial** | Dev logs capture **`pipelineMs` / `totalMs`**; optional env timeouts. **Missing as explicit artifact:** written “first meaningful POC” summary in docs (beyond POC1 threshold table + ad-hoc runs). |
+| 0:30–2:00 Provider **contract tests** (mocked OpenAI SDK) | **Follow-up** | Mock **`ExtractionProvider`** tests in `tests/extract-failover.test.ts`; dedicated SDK-mock file optional per **Day 2 completion**. |
+| 2:00–3:30 Validator expansion | **Done** | `tests/validator.test.ts` + `manual_review` / fallback semantics in pipeline + UI. |
+| 3:30–5:00 Failover orchestration | **Done** | `extractWithFailover` + tests; soft-parallel assertion = optional **follow-up** (see completion doc). |
+| 3:30–5:00 Route surfaces provider metadata | **Done** | `extraction.provider`, `extraction.durationMs`, per-field reasons in JSON. |
+| 5:00–6:00 UI integration + errors | **Done** | Live route-driven UI + status mix; client error UX polish = **Day 3** optional. |
+| 6:00–6:30 POC + stabilization | **Done** | POC notes consolidated in **Day 2 completion** + **Day 1** primary sample; further artifacts = Day 3. |
 
 ### Day 3 — [`docs/DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md)
 
@@ -58,7 +60,7 @@ Formal sign-off: **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** 
 | 0:00–0:30 Health check | **Partial** | Local health strong; “lock Day 3 must-complete” not recorded here beyond **Next** list. |
 | 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures exist; **no** committed eval output / “concise artifact” with correctness + latency matrix for the full fixture set. |
 | 2:00–3:30 Fallback go/no-go (Tesseract metrics) | **Not started** | **No** in-app Tesseract path yet; **`docs/POC1_FALLBACK.md`** records policy/thresholds only. True go/no-go **waits Phase 2 OCR** (or an explicit pivot doc). |
-| 3:30–5:00 Render deploy | **Not started** | README still points at target; no captured **public URL** or smoke notes in-repo. |
+| 3:30–5:00 Render deploy | **Partial** | Runbook **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** + README placeholder; **no** captured **public URL** or smoke notes in-repo until you deploy. |
 | 5:00–6:00 UX / error polish | **Partial** | Usable UI; Day 3 asks for evaluator-grade clarity pass (copy, edge errors, image-quality messaging) — not fully closed out. |
 | 6:00–6:45 Docs sync | **Partial** | Module docs + README track behavior; Day 3 asks for eval results + deploy URL + fallback **outcome** in README — pending. |
 | 6:45–7:00 Final stabilization | **Not started** | Tied to Day 3 scope completion. |
@@ -67,7 +69,8 @@ Formal sign-off: **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** 
 
 ## Done recently
 
-- **Day 1 runbook formally closed** — sign-off doc **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + documented OCR blocker; governance index; `DAY1` / `WEEK` / `ARCHITECTURE` / `POC1_FALLBACK` cross-links).
+- **Day 1 runbook formally closed** — **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + documented OCR blocker; governance index).
+- **Day 2 runbook formally closed** — **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** (Phase 1 core engine sign-off; optional follow-ups listed). **Render runbook:** [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md).
 - **Phase 1 pipeline** — verify API, extraction with timeout failover to `unavailable` placeholder, validator, tests (`741ce0d`).
 - **UI/UX** — light theme, workbench (label + application), formatted vs JSON application editor, results with label + field comparison + raw JSON (`fd759d6`).
 - **Docs** — `docs/ARCHITECTURE.md`, `docs/modules/*`, README / AGENTS pointers; dev script and `.next` troubleshooting in README.
@@ -81,11 +84,10 @@ Formal sign-off: **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** 
 
 ## Next (ordered)
 
-1. **Day 2 sign-off:** walk **`docs/DAY2_EXECUTION_CHECKLIST.md`** against the repo; note what is already satisfied vs any gap (error display, POC latency / failover notes, “first meaningful measurements”). Update this file when Day 2 is intentionally closed.
-2. **Render:** push image, configure secrets, capture public URL; paste smoke results into README / here.
-3. Run **Day 3** items: fuller eval pass on `liquor_label_happy_path` + notes, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`).
-4. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
-5. Optional: Day 3 **UX polish** block (manual-review / provider / image-quality messaging) if anything still feels unclear in a fresh walkthrough.
+1. **Render:** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** — deploy Docker service, set **`OPENAI_API_KEY`**, smoke test, paste **public URL** + notes into **`README.md`** / here.
+2. Run **Day 3** items: fuller eval pass on `liquor_label_happy_path` + notes, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`).
+3. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
+4. Optional: Day 3 **UX polish** (manual-review / provider / image-quality / client error copy) and **optional Day 2 follow-ups** in [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md).
 
 ---
 
@@ -100,6 +102,8 @@ None recorded in-repo. Add a dated bullet here when something external (keys, pl
 | Doc | Role |
 |-----|------|
 | `docs/DAY1–3_EXECUTION_CHECKLIST.md` | **How** to execute a day (timeboxed runbooks). Day 2 ↔ Phase 1 core engine (`WEEK_EXECUTION_OVERVIEW.md`). |
+| `docs/DAY1_COMPLETION_RECORD.md` / `docs/DAY2_COMPLETION_RECORD.md` | Formal **Day 1 / Day 2 sign-off** (evidence + optional follow-ups). |
+| `docs/RENDER_DEPLOY.md` | **Render** operator checklist (secrets, smoke, where to paste the public URL). |
 | `docs/WEEK_EXECUTION_OVERVIEW.md` | Week map and phase gates. |
 | `docs/PROGRESS.md` (this file) | **What’s done / next / blocked** in plain language. |
 | `docs/ARCHITECTURE.md` | System flow and links to **per-module** detail. |
