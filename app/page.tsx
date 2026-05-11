@@ -1,19 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CANONICAL_GOVERNMENT_WARNING } from "@/lib/canonical-warning";
 import { VERIFY_FORM_FIELDS } from "@/lib/schemas";
 
-const DEFAULT_APPLICATION = `{
-  "productClass": "distilled_spirits",
-  "isImport": false,
-  "brandName": "Example Distillery",
-  "classType": "Straight Bourbon Whiskey",
-  "alcoholContent": "45% ALC/VOL",
-  "netContents": "750 mL",
-  "governmentWarning": "(government warning text from application)",
-  "nameAddress": "",
-  "countryOfOrigin": ""
-}`;
+const DEFAULT_APPLICATION = JSON.stringify(
+  {
+    productClass: "distilled_spirits",
+    isImport: false,
+    brandName: "Stone's Throw Distilling Co",
+    classType: "Straight Bourbon Whiskey",
+    alcoholContent: "45% ALC/VOL",
+    netContents: "750 mL",
+    governmentWarning: CANONICAL_GOVERNMENT_WARNING,
+    nameAddress: "",
+    countryOfOrigin: "",
+  },
+  null,
+  2,
+);
 
 export default function HomePage() {
   const [applicationJson, setApplicationJson] = useState(DEFAULT_APPLICATION);
@@ -66,14 +71,15 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-12">
       <header className="space-y-2 border-b border-stone-800 pb-8">
         <p className="text-xs font-medium uppercase tracking-widest text-amber-500/90">
-          Phase 0 prototype
+          Phase 1 · Primary extraction path
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-stone-50">
           Label verification
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-stone-400">
-          Upload a label image and paste application JSON. The API returns a
-          typed stub response until extraction and validation are implemented.
+          Upload a label image and paste application JSON. The API runs image
+          quality checks, OpenAI vision extraction, and deterministic field
+          validation (fallback OCR lands in Phase 2).
         </p>
       </header>
 
@@ -111,7 +117,7 @@ export default function HomePage() {
           disabled={!canSubmit}
           className="rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-stone-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {loading ? "Running…" : "Verify (stub)"}
+          {loading ? "Running…" : "Verify label"}
         </button>
       </form>
 

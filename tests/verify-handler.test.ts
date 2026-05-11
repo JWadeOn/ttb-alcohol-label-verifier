@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { VERIFY_FORM_FIELDS } from "@/lib/schemas";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type ApplicationJson,
+  VERIFY_FORM_FIELDS,
+  VerifySuccessResponseSchema,
+} from "@/lib/schemas";
+import { buildStubVerifyResponse } from "@/lib/stub-response";
 import { handleVerifyPost } from "@/lib/verify-handler";
 
 function multipartRequest(image: Blob, applicationJson: string): Request {
@@ -13,6 +18,14 @@ function multipartRequest(image: Blob, applicationJson: string): Request {
 }
 
 describe("handleVerifyPost", () => {
+  beforeEach(() => {
+    vi.stubEnv("OPENAI_API_KEY", "sk-test-key-stub");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("rejects non-multipart requests", async () => {
     const req = new Request("http://test.local/api/verify", {
       method: "POST",
@@ -32,7 +45,34 @@ describe("handleVerifyPost", () => {
     expect(json.code).toBe("INVALID_APPLICATION_JSON");
   });
 
-  it("returns stub success for valid multipart payload", async () => {
+  it("returns 503 when OPENAI_API_KEY is missing", async () => {
+    vi.unstubAllEnvs();
+
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const application = JSON.stringify({
+      brandName: "Example Distillery",
+    });
+
+    const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
+    const res = await handleVerifyPost(req);
+    expect(res.status).toBe(503);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("OPENAI_NOT_CONFIGURED");
+  });
+
+  it("delegates to verify pipeline and returns typed success", async () => {
+    const mockPipeline = vi.fn(
+      async (params: {
+        requestId: string;
+        imageBytes: Buffer;
+        application: ApplicationJson;
+        openAiApiKey: string;
+      }) =>
+        VerifySuccessResponseSchema.parse(
+          buildStubVerifyResponse(params.requestId, params.application),
+        ),
+    );
+
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const application = JSON.stringify({
       productClass: "distilled_spirits",
@@ -47,7 +87,11 @@ describe("handleVerifyPost", () => {
     });
 
     const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
-    const res = await handleVerifyPost(req);
+    const res = await handleVerifyPost(req, {
+      runVerifyPipeline: mockPipeline,
+    });
+
+    expect(mockPipeline).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(200);
 
     const json = (await res.json()) as {

@@ -1,0 +1,124 @@
+import OpenAI from "openai";
+import { z } from "zod";
+import type { ExtractionProvider } from "@/lib/extraction/provider";
+import {
+  emptyExtractedField,
+  type ExtractionResult,
+  type ExtractedField,
+} from "@/lib/extraction/types";
+import type { FieldId } from "@/lib/schemas";
+
+const FieldSchema = z
+  .object({
+    value: z.string().nullable().optional(),
+    confidence: z.number().min(0).max(1).optional(),
+    reason: z.string().optional(),
+  })
+  .transform(
+    (o): ExtractedField => ({
+      value: o.value ?? null,
+      confidence: o.confidence ?? 0,
+      reason: o.reason,
+    }),
+  );
+
+const LlmExtractionSchema = z
+  .object({
+    brandName: FieldSchema.optional(),
+    classType: FieldSchema.optional(),
+    alcoholContent: FieldSchema.optional(),
+    netContents: FieldSchema.optional(),
+    governmentWarning: FieldSchema.optional(),
+    nameAddress: FieldSchema.optional(),
+    countryOfOrigin: FieldSchema.optional(),
+  })
+  .passthrough();
+
+const FIELD_IDS: FieldId[] = [
+  "brandName",
+  "classType",
+  "alcoholContent",
+  "netContents",
+  "governmentWarning",
+  "nameAddress",
+  "countryOfOrigin",
+];
+
+function normalizeLlmFields(parsed: z.infer<typeof LlmExtractionSchema>): Record<
+  FieldId,
+  ExtractedField
+> {
+  const base = emptyExtractedField();
+  const out = {} as Record<FieldId, ExtractedField>;
+  for (const id of FIELD_IDS) {
+    out[id] = parsed[id] ?? { ...base };
+  }
+  return out;
+}
+
+const SYSTEM_PROMPT = `You extract printed text from US alcohol beverage labels for TTB-style compliance checks.
+Return ONLY valid JSON matching the requested shape. Use null for a field value when the text is not visible or unreadable.
+For each field include confidence between 0 and 1 (honest: foil, glare, curves, script fonts → lower confidence).
+Never invent brand names or government warning wording; transcribe what you see.
+Fields: brandName, classType, alcoholContent, netContents, governmentWarning, nameAddress, countryOfOrigin.`;
+
+const USER_PROMPT = `Read this label image and extract these JSON fields with { "value": string|null, "confidence": number, "reason"?: string } each:
+brandName, classType, alcoholContent, netContents, governmentWarning, nameAddress, countryOfOrigin.
+Use null value when absent or illegible. governmentWarning must be the full warning paragraph as printed (including the GOVERNMENT WARNING heading line if present).`;
+
+export function createOpenAIProvider(apiKey: string): ExtractionProvider {
+  const client = new OpenAI({ apiKey });
+
+  return {
+    async extract(imageBytes: Buffer, signal?: AbortSignal): Promise<ExtractionResult> {
+      const started = Date.now();
+      const b64 = imageBytes.toString("base64");
+      const dataUrl = `data:image/jpeg;base64,${b64}`;
+
+      const completion = await client.chat.completions.create(
+        {
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          max_tokens: 1600,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: USER_PROMPT },
+                {
+                  type: "image_url",
+                  image_url: { url: dataUrl },
+                },
+              ],
+            },
+          ],
+        },
+        { signal },
+      );
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("OpenAI returned empty content");
+      }
+
+      let rawJson: unknown;
+      try {
+        rawJson = JSON.parse(content);
+      } catch {
+        throw new Error("OpenAI returned non-JSON content");
+      }
+
+      const parsed = LlmExtractionSchema.safeParse(rawJson);
+      if (!parsed.success) {
+        throw new Error(`OpenAI JSON failed validation: ${parsed.error.message}`);
+      }
+
+      return {
+        provider: "openai",
+        durationMs: Date.now() - started,
+        fields: normalizeLlmFields(parsed.data),
+      };
+    },
+  };
+}

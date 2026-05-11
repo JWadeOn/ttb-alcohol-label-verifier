@@ -97,22 +97,29 @@ This prototype is decision support, not legal automation.
 - API keys are environment variables only (never committed)
 - Public prototype deployment is acceptable for this exercise; production path would move to Azure OpenAI private endpoints
 
-## Local development (Phase 0)
+## Local development (Phase 1)
 
 After cloning:
 
 ```bash
 npm install
+```
+
+Set **`OPENAI_API_KEY`** (for example in `.env.local` at the project root). Next.js loads that file automatically in dev.
+
+```bash
 npm run dev
 ```
 
-Then open the app URL printed by Next.js (default **http://localhost:3000**). Upload any JPEG/PNG and submit — **`POST /api/verify`** returns a typed stub until Phase 1 wiring.
+Then open the app URL printed by Next.js (default **http://localhost:3000**). Upload a label image and application JSON — **`POST /api/verify`** runs **image quality → OpenAI vision extraction (`gpt-4o-mini`) → deterministic validation**. If the primary path errors after retries, an **`unavailable`** fallback placeholder is returned until Phase 2 wires Tesseract.
 
 ```bash
-npm run test    # Vitest (schemas + verify handler smoke)
+npm run test    # Vitest (validator, failover, image-quality, handler wiring)
 npm run lint    # ESLint (Next core-web-vitals + TS)
 npm run build   # Production build
 ```
+
+Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**.
 
 ## Deployment Decision
 

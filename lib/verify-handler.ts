@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import {
   ApplicationJsonSchema,
   VERIFY_FORM_FIELDS,
-  VerifySuccessResponseSchema,
 } from "@/lib/schemas";
-import { buildStubVerifyResponse } from "@/lib/stub-response";
+import {
+  runVerifyPipeline,
+  VerifyFailedError,
+} from "@/lib/verify-pipeline";
 
 function jsonError(
   requestId: string,
@@ -19,7 +21,14 @@ function jsonError(
   return NextResponse.json(body, { status });
 }
 
-export async function handleVerifyPost(req: Request): Promise<Response> {
+export type VerifyHandlerDeps = {
+  runVerifyPipeline: typeof runVerifyPipeline;
+};
+
+export async function handleVerifyPost(
+  req: Request,
+  deps: VerifyHandlerDeps = { runVerifyPipeline },
+): Promise<Response> {
   const requestId = crypto.randomUUID();
 
   try {
@@ -87,19 +96,38 @@ export async function handleVerifyPost(req: Request): Promise<Response> {
       );
     }
 
-    const body = buildStubVerifyResponse(requestId, appResult.data);
-    const checked = VerifySuccessResponseSchema.safeParse(body);
-    if (!checked.success) {
-      console.error("Stub response failed schema self-check", checked.error);
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!apiKey) {
+      return jsonError(
+        requestId,
+        503,
+        "OPENAI_NOT_CONFIGURED",
+        "OPENAI_API_KEY environment variable is not set.",
+      );
+    }
+
+    const imageBytes = Buffer.from(await image.arrayBuffer());
+
+    try {
+      const body = await deps.runVerifyPipeline({
+        requestId,
+        imageBytes,
+        application: appResult.data,
+        openAiApiKey: apiKey,
+      });
+      return NextResponse.json(body);
+    } catch (e) {
+      if (e instanceof VerifyFailedError) {
+        return jsonError(requestId, e.httpStatus, e.code, e.message);
+      }
+      console.error(e);
       return jsonError(
         requestId,
         500,
         "INTERNAL_ERROR",
-        "Response validation failed.",
+        "Unexpected server error.",
       );
     }
-
-    return NextResponse.json(checked.data);
   } catch (err) {
     console.error(err);
     return jsonError(
