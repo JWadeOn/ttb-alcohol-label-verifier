@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+
+# build output (rebuilt in image)
+.next
+out
+
+# local env (secrets injected at runtime)
+.env
+.env.*
+!.env.example
+
+# not required for production bundle
+.git
+.gitignore
+.cursor
+coverage
+tests
+docs
+fixtures
+evals
+scripts
+vitest.config.ts
+**/*.test.ts
+**/*.test.tsx

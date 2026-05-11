@@ -15,6 +15,8 @@
 | **Fallback OCR** | Not implemented; placeholder provider. See [`docs/modules/extraction.md`](./modules/extraction.md). |
 | **UI** | Single client page → `POST /api/verify`. Layout and spot-check UX: [`docs/modules/app-page.md`](./modules/app-page.md). |
 | **Persistence** | None; in-memory per request. |
+| **Container** | `Dockerfile` (Next **standalone**); `npm run docker:build`. OCR packages not in image until Phase 2. |
+| **Fixtures / eval** | `fixtures/manifest.json` + `npm run fixtures:generate`; `npm run eval:primary-latency` (see README). |
 
 ---
 

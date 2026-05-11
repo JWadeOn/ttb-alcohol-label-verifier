@@ -18,14 +18,16 @@ Phase 1 **core path** is in place (image quality → OpenAI extraction → deter
 - **UI/UX** — light theme, workbench (label + application), formatted vs JSON application editor, results with label + field comparison + raw JSON (`fd759d6`).
 - **Docs** — `docs/ARCHITECTURE.md`, `docs/modules/*`, README / AGENTS pointers; dev script and `.next` troubleshooting in README.
 - **Sample asset** — `fixtures/labels/liquor_label_happy_path.png` for manual runs (`9a4c108`).
+- **Day 1 completion (remaining checklist)** — `Dockerfile` + `.dockerignore` + `next.config` **`output: "standalone"`**; **`fixtures/`** manifest, default application JSON, nine deterministic `seed-texture-*.png` generators; **`evals/run-primary-latency.mjs`** + `npm run eval:primary-latency`; **`docs/POC1_FALLBACK.md`** thresholds + measurement contract; Vitest **`fixtures-manifest`** coverage.
 
 ---
 
 ## Next (ordered)
 
-1. Run **Day 3** items: evals / latency notes, **Render** deploy + public URL smoke, README sync with real URL and results.
-2. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
-3. Optional: Day 3 **UX polish** block (manual-review / provider / image-quality messaging) if anything still feels unclear in a fresh walkthrough.
+1. **Render:** push image, configure secrets, capture public URL; paste smoke results into README / here.
+2. Run **Day 3** items: fuller eval pass on `liquor_label_happy_path` + notes, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`).
+3. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
+4. Optional: Day 3 **UX polish** block (manual-review / provider / image-quality messaging) if anything still feels unclear in a fresh walkthrough.
 
 ---
 

@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "fixtures:generate": "node scripts/generate-fixture-pngs.mjs",
+    "eval:primary-latency": "node evals/run-primary-latency.mjs",
+    "docker:build": "docker build -t ttb-label-verifier:local ."
   },
   "dependencies": {
     "next": "^15.3.2",

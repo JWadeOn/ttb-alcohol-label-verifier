@@ -18,6 +18,7 @@ Each file below is the **living description** of one code unit: responsibilities
 | `lib/canonical-warning.ts` | [canonical-warning.md](./canonical-warning.md) |
 | `lib/stub-response.ts` | [stub-response.md](./stub-response.md) |
 | `next.config.ts` | [next-config.md](./next-config.md) |
+| `Dockerfile`, `.dockerignore` | [dockerfile.md](./dockerfile.md) |
 
 **System overview (flow, snapshot, maintenance):** [`../ARCHITECTURE.md`](../ARCHITECTURE.md)
 
@@ -33,5 +34,6 @@ Each file below is the **living description** of one code unit: responsibilities
 | `tests/verify-handler.test.ts` | Multipart parsing, env 503, pipeline delegation with stub. |
 | `tests/application-schema.test.ts` | `ApplicationJsonSchema` acceptance/rejection. |
 | `tests/stub-response.test.ts` | Stub builder + schema validity. |
+| `tests/fixtures-manifest.test.ts` | `fixtures/manifest.json` paths exist; default application JSON matches schema. |
 
 `tests/fixtures/example-verify-response.json` is a sample Phase 0 JSON shape (not imported by tests; reference only unless wired later).

@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "description": "Synthetic label fixtures for smoke tests and optional primary-path latency eval. See fixtures/README.md and docs/POC1_FALLBACK.md.",
+  "fixtures": [
+    {
+      "id": "happy-path-synthetic-label",
+      "relativePath": "labels/liquor_label_happy_path.png",
+      "description": "Fictitious bottle-style label for manual happy-path checks.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-01",
+      "relativePath": "labels/seed-texture-01.png",
+      "description": "Deterministic noise PNG; passes image-quality gate; default single-call latency eval.",
+      "includeInPrimaryLatencyEval": true
+    },
+    {
+      "id": "seed-texture-02",
+      "relativePath": "labels/seed-texture-02.png",
+      "description": "Deterministic noise PNG; passes image-quality gate.",
+      "includeInPrimaryLatencyEval": true
+    },
+    {
+      "id": "seed-texture-03",
+      "relativePath": "labels/seed-texture-03.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-04",
+      "relativePath": "labels/seed-texture-04.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-05",
+      "relativePath": "labels/seed-texture-05.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-06",
+      "relativePath": "labels/seed-texture-06.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-07",
+      "relativePath": "labels/seed-texture-07.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-08",
+      "relativePath": "labels/seed-texture-08.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "seed-texture-09",
+      "relativePath": "labels/seed-texture-09.png",
+      "description": "Deterministic noise PNG.",
+      "includeInPrimaryLatencyEval": false
+    }
+  ]
+}

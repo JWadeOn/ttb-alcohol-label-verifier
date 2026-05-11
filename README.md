@@ -134,6 +134,15 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 
 3. Default **`npm run dev`** uses the **Webpack** dev server (most stable here). To try **Turbopack** instead: `npm run dev:turbo` — if it misbehaves, fall back to `npm run dev`.
 
+### Fixtures and eval scaffold (Day 1)
+
+- **`fixtures/manifest.json`** — catalog of label PNGs under `fixtures/labels/` (synthetic reference + deterministic noise seeds).
+- **Regenerate noise PNGs** (optional, after editing `scripts/generate-fixture-pngs.mjs`): `npm run fixtures:generate`
+- **Primary-path latency eval** (calls OpenAI; requires running app + key): start `npm run dev` in another terminal, then  
+  `OPENAI_API_KEY=... npm run eval:primary-latency`  
+  (override base URL with `BASE_URL=http://127.0.0.1:3000`). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold).
+- **Docker production image:** `npm run docker:build` then run as in `docs/modules/dockerfile.md`. POC-1 OCR thresholds and measurement contract are documented in **`docs/POC1_FALLBACK.md`** (OCR path still deferred in code).
+
 ## Deployment Decision
 
 - Default deployment target: **Render** using the project Dockerfile.
@@ -157,4 +166,5 @@ Regulatory references used for framing are documented in project docs and should
 - `docs/PRD.md`
 - `docs/PRESEARCH.md`
 - `docs/IMPLEMENTATION_PLAN.md` — technical contracts, phases, evals, and PRD traceability for implementation
+- `docs/POC1_FALLBACK.md` — OCR fallback go/no-go thresholds and measurement contract (OCR still deferred in code)
 
