@@ -1,0 +1,69 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000001",
+  "imageQuality": { "ok": true },
+  "extraction": {
+    "provider": "stub",
+    "durationMs": 0,
+    "fields": {}
+  },
+  "validation": {
+    "fields": [
+      {
+        "fieldId": "brandName",
+        "status": "manual_review",
+        "message": "Phase 0 stub — extraction and comparison are not implemented yet.",
+        "extractedValue": null,
+        "applicationValue": "Example Distillery",
+        "evidence": null
+      },
+      {
+        "fieldId": "classType",
+        "status": "manual_review",
+        "message": "Phase 0 stub — extraction and comparison are not implemented yet.",
+        "extractedValue": null,
+        "applicationValue": "Straight Bourbon Whiskey",
+        "evidence": null
+      },
+      {
+        "fieldId": "alcoholContent",
+        "status": "manual_review",
+        "message": "Phase 0 stub — extraction and comparison are not implemented yet.",
+        "extractedValue": null,
+        "applicationValue": "45% ALC/VOL",
+        "evidence": null
+      },
+      {
+        "fieldId": "netContents",
+        "status": "manual_review",
+        "message": "Phase 0 stub — extraction and comparison are not implemented yet.",
+        "extractedValue": null,
+        "applicationValue": "750 mL",
+        "evidence": null
+      },
+      {
+        "fieldId": "governmentWarning",
+        "status": "manual_review",
+        "message": "Phase 0 stub — extraction and comparison are not implemented yet.",
+        "extractedValue": null,
+        "applicationValue": "(government warning text from application)",
+        "evidence": null
+      },
+      {
+        "fieldId": "nameAddress",
+        "status": "manual_review",
+        "message": "Phase 0 stub — extraction and comparison are not implemented yet.",
+        "extractedValue": null,
+        "applicationValue": null,
+        "evidence": null
+      },
+      {
+        "fieldId": "countryOfOrigin",
+        "status": "not_applicable",
+        "message": "Application marks non-import; country of origin is not applicable.",
+        "extractedValue": null,
+        "applicationValue": null,
+        "evidence": null
+      }
+    ]
+  }
+}
