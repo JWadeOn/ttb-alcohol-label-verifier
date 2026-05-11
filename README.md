@@ -148,6 +148,17 @@ If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.
 
 3. Default **`npm run dev`** uses the **Webpack** dev server (most stable here). To try **Turbopack** instead: `npm run dev:turbo` — if it misbehaves, fall back to `npm run dev`.
 
+### Next.js dev: `Could not find the module … in the React Client Manifest`
+
+If the terminal shows errors mentioning **`ViewportBoundary`**, **`MetadataBoundary`**, **`global-error.js`**, or **`segment-explorer-node`** / **SegmentViewNode** right after **Fast Refresh** or a large edit, that is usually a **stale dev cache** or a **transient RSC bundler glitch** in Next 15’s dev overlay — not your app routes.
+
+1. Stop **all** `next dev` processes.
+2. **`rm -rf .next`** then **`npm run dev`** again (same as the ENOENT fix above).
+3. If it still happens: **`rm -rf node_modules/.cache`** (if present), then restart dev; last resort **`rm -rf node_modules && npm ci`**.
+4. To confirm the app itself: **`npm run build && npm run start`** — production mode does not use the same dev-only overlay path.
+
+The log may still end with **`GET / 200`** after a full reload; treat repeated manifest errors as a signal to clear **`.next`** before chasing application code.
+
 ### Fixtures and eval scaffold (Day 1)
 
 - **`fixtures/manifest.json`** — catalog of label PNGs under `fixtures/labels/` (synthetic reference + deterministic noise seeds).

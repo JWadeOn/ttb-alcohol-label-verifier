@@ -20,3 +20,7 @@ Next.js configuration for this app:
 ## Related tests
 
 None (build-time concern); verify with `npm run build`.
+
+## Troubleshooting (dev)
+
+If **`next dev`** logs **React Client Manifest** / **`ViewportBoundary`** / **`segment-explorer-node`** errors after HMR, clear **`.next`** and restart (see **`README.md`** → Dev server issues). **`npm run build`** is the sanity check that the app compiles outside dev overlay quirks.
