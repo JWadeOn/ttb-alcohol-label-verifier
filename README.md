@@ -121,6 +121,19 @@ npm run build   # Production build
 
 Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**.
 
+### Dev server issues (500 / ENOENT under `.next`)
+
+If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.*`**, or flaky **500**s right after HMR:
+
+1. Stop **all** `next dev` processes (only one instance should own the project directory).
+2. Delete the cache and restart:
+
+   ```bash
+   rm -rf .next && npm run dev
+   ```
+
+3. Default **`npm run dev`** uses the **Webpack** dev server (most stable here). To try **Turbopack** instead: `npm run dev:turbo` — if it misbehaves, fall back to `npm run dev`.
+
 ## Deployment Decision
 
 - Default deployment target: **Render** using the project Dockerfile.
@@ -138,6 +151,8 @@ Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_C
 
 Regulatory references used for framing are documented in project docs and should be treated as source material for prototype checks, not as exhaustive legal implementation.
 
+- `docs/ARCHITECTURE.md` — **living** system overview (data flow, phase snapshot, links to module docs)
+- `docs/modules/README.md` — index of **per-module** living docs (`docs/modules/*.md`: responsibilities, decisions, tests for each unit)
 - `docs/PRD.md`
 - `docs/PRESEARCH.md`
 - `docs/IMPLEMENTATION_PLAN.md` — technical contracts, phases, evals, and PRD traceability for implementation

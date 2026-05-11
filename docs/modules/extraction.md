@@ -1,0 +1,31 @@
+# Module: `lib/extraction/*` (vision extraction)
+
+## Responsibility
+
+Pluggable **extraction** from label image bytes → structured per-field values with confidence, plus **failover orchestration** when the primary provider is slow or errors.
+
+| File | Role |
+|------|------|
+| `types.ts` | `ExtractedField`, `ExtractionResult`, `emptyExtractedField` / `emptyExtractionFields`. |
+| `provider.ts` | `ExtractionProvider` interface; **`extractWithFailover`** (soft timeout starts fallback in parallel, hard timeout aborts primary). |
+| `openai-provider.ts` | **`createOpenAIProvider`**: OpenAI chat completions with vision (`gpt-4o-mini`), `response_format: json_object`, Zod parse of returned fields. |
+| `unavailable-fallback-provider.ts` | **`createUnavailableFallbackProvider`**: Phase 1 placeholder — returns empty fields with a fixed `reason` (Phase 2: Tesseract or other OCR here). |
+
+## Decisions
+
+- **Failover without real OCR** — proves timeout and response assembly before investing in Tesseract; README and fallback `reason` set expectations.
+- **JSON-only** model output reduces parsing brittleness; still validated with Zod before use.
+- **Primary obeys `AbortSignal`** from failover’s hard timeout so in-flight work can be cancelled.
+
+## Dependencies
+
+- `openai` SDK (OpenAI provider).
+- `@/lib/schemas` (`FieldId`).
+
+## Related tests
+
+- `tests/extract-failover.test.ts`
+
+## Maintenance
+
+When Tesseract (or another) replaces `unavailable-fallback-provider`, update this doc and `docs/ARCHITECTURE.md` snapshot.
