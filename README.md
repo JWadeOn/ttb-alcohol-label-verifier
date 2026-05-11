@@ -121,6 +121,20 @@ npm run build   # Production build
 
 Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**.
 
+**Temporary extraction timeouts (local perf):** primary vision calls use a **3.0s / 3.5s** soft/hard abort by default. If OpenAI is slow and you see `provider: "unavailable"` after **`Request was aborted`**, set in `.env` / `.env.local` (then restart dev):
+
+- `VERIFY_EXTRACT_SOFT_TIMEOUT_MS` (e.g. `8000`)
+- `VERIFY_EXTRACT_HARD_TIMEOUT_MS` (e.g. `20000`)
+
+The dev server logs **`[verify-pipeline] pipeline completed`** (`pipelineMs`, active timeouts) and **`[verify] request completed`** (`totalMs` from handler start through success).
+
+### OpenAI credits (what costs money)
+
+- **Each successful verify** that reaches extraction triggers **one** `gpt-4o-mini` vision completion (input tokens scale with image/detail; prompts add fixed overhead).
+- **Image quality runs first** — unusable images can be rejected with **422** before any OpenAI call (see `lib/image-quality.ts`).
+- **`npm run eval:primary-latency`** sends **one POST per flagged fixture** when `OPENAI_API_KEY` is set — run intentionally, not in a tight loop.
+- **UI-only / no-spend dev:** set **`OPENAI_DISABLED=true`** in `.env` / `.env.local` (keep or omit the key). Verify returns **503** with code **`OPENAI_DISABLED`** and does **not** read the image into a buffer or call OpenAI. Remove the flag when you want real extractions again.
+
 ### Dev server issues (500 / ENOENT under `.next`)
 
 If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.*`**, or flaky **500**s right after HMR:

@@ -5,7 +5,7 @@
 Orchestrate the verify **business flow** (no `Request` / Next types):
 
 1. `assessImageQuality(imageBytes)` — reject early if not ok (`VerifyFailedError` **422** / `IMAGE_QUALITY_REJECTED`).
-2. Build primary OpenAI provider + `unavailable` fallback; `extractWithFailover` on **processed** buffer from step 1.
+2. Build primary OpenAI provider + `unavailable` fallback; `extractWithFailover` on **processed** buffer from step 1 (soft/hard timeouts default **3000 / 3500 ms**; override with **`VERIFY_EXTRACT_SOFT_TIMEOUT_MS`** / **`VERIFY_EXTRACT_HARD_TIMEOUT_MS`** for temporary local perf tuning).
 3. On extraction throw → **502** / `EXTRACTION_FAILED`.
 4. `validateLabelFields(extraction, application)`.
 5. Assemble `VerifySuccessResponse`, `VerifySuccessResponseSchema.safeParse`; schema failure → **500** / `INTERNAL_ERROR`.
@@ -15,6 +15,8 @@ Orchestrate the verify **business flow** (no `Request` / Next types):
 - Lives in **`lib/`** (not the API route) for unit testing without Next mocks; matches AGENTS.md “deep modules, thin routes.”
 - **Image quality before LLM** — saves cost and gives clearer rejection than a failed model call on unusable images.
 - Final **Zod parse** of the assembled success body catches internal drift before returning to the client.
+- **`[verify-pipeline]` logs** — after extraction: `info` when primary succeeded (`provider`, `durationMs`, processed byte length); `warn` when result is the placeholder fallback, pointing at `[extractWithFailover]` for the primary error; `error` if extraction throws before any result.
+- **Timing** — on successful assembly, logs **`pipelineMs`** (image quality → extraction → validation) plus active soft/hard timeout values. **`[verify] request completed`** in `verify-handler.ts` logs **`totalMs`** from handler entry through successful pipeline return (includes multipart parse and image buffer read).
 
 ## Dependencies
 

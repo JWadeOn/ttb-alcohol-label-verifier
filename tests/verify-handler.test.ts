@@ -60,6 +60,23 @@ describe("handleVerifyPost", () => {
     expect(json.code).toBe("OPENAI_NOT_CONFIGURED");
   });
 
+  it("returns 503 when OPENAI_DISABLED without calling pipeline", async () => {
+    vi.stubEnv("OPENAI_DISABLED", "true");
+    const mockPipeline = vi.fn();
+
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const application = JSON.stringify({
+      brandName: "Example Distillery",
+    });
+
+    const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
+    const res = await handleVerifyPost(req, { runVerifyPipeline: mockPipeline });
+    expect(mockPipeline).not.toHaveBeenCalled();
+    expect(res.status).toBe(503);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("OPENAI_DISABLED");
+  });
+
   it("delegates to verify pipeline and returns typed success", async () => {
     const mockPipeline = vi.fn(
       async (params: {

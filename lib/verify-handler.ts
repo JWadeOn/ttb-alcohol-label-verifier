@@ -25,11 +25,18 @@ export type VerifyHandlerDeps = {
   runVerifyPipeline: typeof runVerifyPipeline;
 };
 
+/** Dev / cost control: set `OPENAI_DISABLED=true` (or `1` / `yes`) to block paid completions while keeping a key in `.env`. */
+function isOpenAiDisabledByEnv(): boolean {
+  const v = process.env.OPENAI_DISABLED?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 export async function handleVerifyPost(
   req: Request,
   deps: VerifyHandlerDeps = { runVerifyPipeline },
 ): Promise<Response> {
   const requestId = crypto.randomUUID();
+  const verifyWallStarted = Date.now();
 
   try {
     const contentType = req.headers.get("content-type") ?? "";
@@ -98,11 +105,27 @@ export async function handleVerifyPost(
 
     const apiKey = process.env.OPENAI_API_KEY?.trim();
     if (!apiKey) {
+      console.warn("[verify] OPENAI_API_KEY missing or blank; refusing pipeline", {
+        requestId,
+        hint: "Set OPENAI_API_KEY for the Next.js server process (e.g. .env / .env.local) and restart dev.",
+      });
       return jsonError(
         requestId,
         503,
         "OPENAI_NOT_CONFIGURED",
         "OPENAI_API_KEY environment variable is not set.",
+      );
+    }
+
+    if (isOpenAiDisabledByEnv()) {
+      console.warn("[verify] OPENAI_DISABLED set; skipping pipeline to avoid API usage", {
+        requestId,
+      });
+      return jsonError(
+        requestId,
+        503,
+        "OPENAI_DISABLED",
+        "OpenAI calls are disabled (OPENAI_DISABLED). Remove or unset to run extraction.",
       );
     }
 
@@ -114,6 +137,11 @@ export async function handleVerifyPost(
         imageBytes,
         application: appResult.data,
         openAiApiKey: apiKey,
+      });
+      console.info("[verify] request completed", {
+        requestId,
+        totalMs: Date.now() - verifyWallStarted,
+        extractionProvider: body.extraction.provider,
       });
       return NextResponse.json(body);
     } catch (e) {

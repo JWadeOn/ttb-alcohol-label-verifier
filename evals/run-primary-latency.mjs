@@ -4,6 +4,7 @@
  *
  * Requires a running server (npm run dev or npm start) and OPENAI_API_KEY.
  * Without OPENAI_API_KEY: prints skip and exits 0 (CI-friendly scaffold).
+ * If the server has OPENAI_DISABLED=true, responses will be 503 / OPENAI_DISABLED (no model spend).
  *
  * Usage:
  *   OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-primary-latency.mjs
