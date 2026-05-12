@@ -2,6 +2,8 @@
 
 Each file below is the **living description** of one code unit: responsibilities, decisions, interfaces, and related tests. Update the matching doc when that code changes.
 
+**Evaluator — requirements vs real TTB law / where checks live:** [`../REQUIREMENTS_SOURCE_OF_TRUTH.md`](../REQUIREMENTS_SOURCE_OF_TRUTH.md)
+
 | Code path | Document |
 |-----------|----------|
 | `app/page.tsx` | [app-page.md](./app-page.md) |
@@ -9,6 +11,7 @@ Each file below is the **living description** of one code unit: responsibilities
 | `app/layout.tsx`, `app/globals.css` | [app-layout.md](./app-layout.md) |
 | `app/api/verify/route.ts` | [api-verify-route.md](./api-verify-route.md) |
 | `lib/schemas.ts` | [schemas.md](./schemas.md) |
+| `lib/verify-ui-steps.ts` | [verify-ui-steps.md](./verify-ui-steps.md) |
 | `lib/verify-handler.ts` | [verify-handler.md](./verify-handler.md) |
 | `lib/verify-pipeline.ts` | [verify-pipeline.md](./verify-pipeline.md) |
 | `lib/image-quality.ts` | [image-quality.md](./image-quality.md) |

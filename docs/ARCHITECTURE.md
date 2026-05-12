@@ -2,7 +2,7 @@
 
 **Purpose:** High-level **system** view: how pieces connect, current phase snapshot, and where to find detail. **Per-module** behavior, decisions, and contracts live in **`docs/modules/`** — update the relevant file there when you change that code (see [`docs/modules/README.md`](./modules/README.md) index).
 
-**Companion docs:** Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Day 1 **sign-off:** [`docs/DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). Day 2 **sign-off:** [`docs/DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md). **Live prototype (Railway):** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app). **Render deploy runbook (alternate host):** [`docs/RENDER_DEPLOY.md`](./RENDER_DEPLOY.md). **Eval artifacts:** [`docs/evals/README.md`](./evals/README.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
+**Companion docs:** **Requirements vs code (evaluators):** [`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`](./REQUIREMENTS_SOURCE_OF_TRUTH.md). Short status (done / next / blockers): [`docs/PROGRESS.md`](./PROGRESS.md). Day 1 **sign-off:** [`docs/DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). Day 2 **sign-off:** [`docs/DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md). **Live prototype (Railway):** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app). **Render deploy runbook (alternate host):** [`docs/RENDER_DEPLOY.md`](./RENDER_DEPLOY.md). **Eval artifacts:** [`docs/evals/README.md`](./evals/README.md). Product scope and phases: `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -14,6 +14,7 @@
 | **Pipeline** | Phase 1: image quality → OpenAI vision (`gpt-4o-mini`) → deterministic validation. Details: [`docs/modules/verify-pipeline.md`](./modules/verify-pipeline.md). |
 | **Fallback OCR** | Not implemented; placeholder provider. See [`docs/modules/extraction.md`](./modules/extraction.md). |
 | **UI** | Single client page → `POST /api/verify`. Layout and spot-check UX: [`docs/modules/app-page.md`](./modules/app-page.md). |
+| **Requirements traceability** | Not CFR/COLA — see [`REQUIREMENTS_SOURCE_OF_TRUTH.md`](./REQUIREMENTS_SOURCE_OF_TRUTH.md); deterministic checks in [`validator.md`](./modules/validator.md) (`lib/validator.ts`). |
 | **Persistence** | None; in-memory per request. |
 | **Container** | `Dockerfile` (Next **standalone**); `npm run docker:build`. OCR packages not in image until Phase 2. |
 | **Fixtures / eval** | `fixtures/manifest.json` + `npm run fixtures:generate`; `npm run eval:primary-latency` (see README). |

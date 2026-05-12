@@ -3,6 +3,7 @@ import {
   ApplicationJsonSchema,
   VERIFY_FORM_FIELDS,
 } from "@/lib/schemas";
+import { buildStubVerifyResponse } from "@/lib/stub-response";
 import {
   runVerifyPipeline,
   VerifyFailedError,
@@ -28,6 +29,16 @@ export type VerifyHandlerDeps = {
 /** Dev / cost control: set `OPENAI_DISABLED=true` (or `1` / `yes`) to block paid completions while keeping a key in `.env`. */
 function isOpenAiDisabledByEnv(): boolean {
   const v = process.env.OPENAI_DISABLED?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
+/**
+ * Local / CI only: `VERIFY_DEV_STUB=true` returns HTTP 200 with `buildStubVerifyResponse` (no OpenAI, no pipeline).
+ * Ignored when `NODE_ENV === "production"` so it cannot be enabled on deployed builds by mistake.
+ */
+function isVerifyDevStubEnabled(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  const v = process.env.VERIFY_DEV_STUB?.trim().toLowerCase();
   return v === "1" || v === "true" || v === "yes";
 }
 
@@ -101,6 +112,15 @@ export async function handleVerifyPost(
         "Application JSON failed validation.",
         appResult.error.flatten(),
       );
+    }
+
+    if (isVerifyDevStubEnabled()) {
+      const body = buildStubVerifyResponse(requestId, appResult.data);
+      console.info("[verify] VERIFY_DEV_STUB: returning typed stub (no OpenAI, no pipeline)", {
+        requestId,
+        totalMs: Date.now() - verifyWallStarted,
+      });
+      return NextResponse.json(body);
     }
 
     const apiKey = process.env.OPENAI_API_KEY?.trim();

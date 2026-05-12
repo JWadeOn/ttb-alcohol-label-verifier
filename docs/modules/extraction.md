@@ -1,5 +1,7 @@
 # Module: `lib/extraction/*` (vision extraction)
 
+**Evaluator — where “requirements” are *not*:** Extraction only supplies text + confidence for **`lib/validator.ts`**. It does not encode 27 CFR. See **[`../REQUIREMENTS_SOURCE_OF_TRUTH.md`](../REQUIREMENTS_SOURCE_OF_TRUTH.md)**.
+
 ## Responsibility
 
 Pluggable **extraction** from label image bytes → structured per-field values with confidence, plus **failover orchestration** when the primary provider is slow or errors.

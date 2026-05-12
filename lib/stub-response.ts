@@ -1,4 +1,6 @@
+import { emptyExtractionFields } from "@/lib/extraction/types";
 import type { ApplicationJson, FieldId, VerifySuccessResponse } from "@/lib/schemas";
+import { MANUAL_REVIEW_LOW_CONFIDENCE_MESSAGE } from "@/lib/validator";
 
 const FIELD_IDS: FieldId[] = [
   "brandName",
@@ -55,8 +57,7 @@ export function buildStubVerifyResponse(
     return {
       fieldId,
       status: "manual_review" as const,
-      message:
-        "Phase 0 stub — extraction and comparison are not implemented yet.",
+      message: MANUAL_REVIEW_LOW_CONFIDENCE_MESSAGE,
       extractedValue: null,
       applicationValue: applicationValueForField(fieldId, application),
       evidence: null,
@@ -69,7 +70,9 @@ export function buildStubVerifyResponse(
     extraction: {
       provider: "stub",
       durationMs: 0,
-      fields: {},
+      fields: emptyExtractionFields(
+        "Fallback OCR not configured yet — Phase 2 wires Tesseract here.",
+      ),
     },
     validation: { fields },
   };

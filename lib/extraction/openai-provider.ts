@@ -8,6 +8,8 @@ import {
 } from "@/lib/extraction/types";
 import type { FieldId } from "@/lib/schemas";
 
+/** Primary vision extraction — defines *what is read from the image*, not TTB legal rules. See `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`. */
+
 const FieldSchema = z
   .object({
     value: z.string().nullable().optional(),

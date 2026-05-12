@@ -26,6 +26,7 @@
 | Variable | Notes |
 |----------|------|
 | `OPENAI_DISABLED` | `true` / `1` / `yes` — blocks OpenAI (503 `OPENAI_DISABLED`); use only for cost-safe staging. |
+| `VERIFY_DEV_STUB` | No effect on Render — **`NODE_ENV=production`** disables the dev stub path in code. |
 | `VERIFY_EXTRACT_SOFT_TIMEOUT_MS`, `VERIFY_EXTRACT_HARD_TIMEOUT_MS` | Production budgets; see [`README.md`](../README.md). |
 
 Redeploy or restart after changing env.

@@ -57,6 +57,8 @@ After core checks are stable, implementation expands by beverage vertical in thi
 
 This prototype is decision support, not legal automation.
 
+**Evaluator:** For a single trace of **what is (and is not) “real” regulatory source of truth**, where checks run, and how PRD maps to code, read **[`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`](docs/REQUIREMENTS_SOURCE_OF_TRUTH.md)** first.
+
 - It does not claim full 27 CFR rule coverage.
 - It prioritizes common cross-beverage checks first.
 - It rolls out vertical coverage in this order: distilled spirits, then wine, then beer.
@@ -121,7 +123,7 @@ npm run lint    # ESLint (Next core-web-vitals + TS)
 npm run build   # Production build
 ```
 
-Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**.
+Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**, unless **`VERIFY_DEV_STUB=true`** (non-production) returns a stub **200** (see **OpenAI credits** below).
 
 **Temporary extraction timeouts (local perf):** primary vision calls use a **3.0s / 3.5s** soft/hard abort by default. If OpenAI is slow and you see `provider: "unavailable"` after **`Request was aborted`**, set in `.env` / `.env.local` (then restart dev):
 
@@ -135,11 +137,12 @@ The dev server logs **`[verify-pipeline] pipeline completed`** (`pipelineMs`, ac
 - **Each successful verify** that reaches extraction triggers **one** `gpt-4o-mini` vision completion (input tokens scale with image/detail; prompts add fixed overhead).
 - **Image quality runs first** — unusable images can be rejected with **422** before any OpenAI call (see `lib/image-quality.ts`).
 - **`npm run eval:primary-latency`** sends **one POST per flagged fixture** when `OPENAI_API_KEY` is set — run intentionally, not in a tight loop.
-- **UI-only / no-spend dev:** set **`OPENAI_DISABLED=true`** in `.env` / `.env.local` (keep or omit the key). Verify returns **503** with code **`OPENAI_DISABLED`** and does **not** read the image into a buffer or call OpenAI. Remove the flag when you want real extractions again.
+- **Results UI / design without credits (local):** set **`VERIFY_DEV_STUB=true`** in `.env` / `.env.local` and restart dev. **`POST /api/verify`** returns **200** with the same **`stub`** success shape as tests (`buildStubVerifyResponse`) — no **`OPENAI_API_KEY`** required, no image buffer read, no OpenAI. **Ignored when `NODE_ENV=production`** (so it never runs on Railway/Docker prod by accident). Remove the flag when you want real extractions again.
+- **Hard block (503, no success body):** set **`OPENAI_DISABLED=true`** (keep or omit the key). Verify returns **503** / **`OPENAI_DISABLED`** and does **not** read the image into a buffer or call OpenAI. Use when you want the API to refuse rather than return a stub success.
 
 ### Dev server issues (500 / ENOENT under `.next`)
 
-If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.*`**, or flaky **500**s right after HMR:
+If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.*`**, **`.next/server/vendor-chunks/next.js`**, or flaky **500**s right after HMR:
 
 1. Stop **all** `next dev` processes (only one instance should own the project directory).
 2. Delete the cache and restart:
@@ -211,6 +214,7 @@ Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (Web Service 
 
 Regulatory references used for framing are documented in project docs and should be treated as source material for prototype checks, not as exhaustive legal implementation.
 
+- **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`** — **Evaluator start here:** what is (and is not) regulatory source of truth; field → code → PRD trace; where checks run.
 - `docs/PROGRESS.md` — **living** short status: done recently, next steps, blockers (update as you ship)
 - `docs/ARCHITECTURE.md` — **living** system overview (data flow, phase snapshot, links to module docs)
 - `docs/modules/README.md` — index of **per-module** living docs (`docs/modules/*.md`: responsibilities, decisions, tests for each unit)

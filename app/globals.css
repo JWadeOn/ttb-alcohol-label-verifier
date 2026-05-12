@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+/**
+ * TTB-adjacent primary palette (USWDS-style federal blue ~ #005ea2).
+ * Utilities: bg-ttb-600, text-ttb-700, border-ttb-200, etc.
+ */
+@theme {
+  --color-ttb-50: #eef6fb;
+  --color-ttb-100: #d9eaf5;
+  --color-ttb-200: #b3d4eb;
+  --color-ttb-300: #7eb3d6;
+  --color-ttb-400: #3d87b5;
+  --color-ttb-500: #1f6fa3;
+  --color-ttb-600: #005ea2;
+  --color-ttb-700: #004880;
+  --color-ttb-800: #0c3d5c;
+  --color-ttb-900: #0a2840;
+}

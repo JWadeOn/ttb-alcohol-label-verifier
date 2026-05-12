@@ -1,15 +1,33 @@
+/**
+ * Deterministic label-vs-application comparison for the prototype.
+ *
+ * **Source of truth:** Match logic and exported thresholds in this file — not TTB/COLA/27 CFR.
+ * Evaluator traceability: `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`.
+ */
 import type { ExtractionResult, ExtractedField } from "@/lib/extraction/types";
 import { levenshteinDistance } from "@/lib/levenshtein-distance";
 import type { ApplicationJson, FieldId, FieldValidationRow } from "@/lib/schemas";
 
-const CONFIDENCE_MANUAL_REVIEW = 0.65;
-const BRAND_SIMILARITY = 0.88;
-const CLASS_SIMILARITY = 0.82;
-const NAME_SIMILARITY = 0.78;
-const ORIGIN_SIMILARITY = 0.82;
-const ABV_TOLERANCE = 0.25;
-const VOLUME_TOLERANCE_RATIO = 0.03;
-const VOLUME_TOLERANCE_ML = 5;
+/** Shared copy for dev stub responses and low-confidence validator rows. */
+export const MANUAL_REVIEW_LOW_CONFIDENCE_MESSAGE =
+  "Extraction confidence is below the automatic comparison threshold; human review recommended.";
+
+/** Below this extraction confidence → `manual_review` (no automatic pass/fail). */
+export const CONFIDENCE_MANUAL_REVIEW = 0.65;
+/** Normalized fuzzy similarity for brand name pass. */
+export const BRAND_SIMILARITY = 0.88;
+/** Normalized fuzzy similarity for class/type pass. */
+export const CLASS_SIMILARITY = 0.82;
+/** Normalized fuzzy similarity for name/address pass. */
+export const NAME_SIMILARITY = 0.78;
+/** Normalized fuzzy similarity for country of origin (imports) pass. */
+export const ORIGIN_SIMILARITY = 0.82;
+/** Alcohol strength: max difference in percentage points (ABV) for pass. */
+export const ABV_TOLERANCE = 0.25;
+/** Net contents: relative tolerance (fraction of larger volume). */
+export const VOLUME_TOLERANCE_RATIO = 0.03;
+/** Net contents: absolute floor tolerance in ml (used with ratio). */
+export const VOLUME_TOLERANCE_ML = 5;
 
 function normalizeAlphanumericKey(s: string): string {
   return s
@@ -87,8 +105,7 @@ function lowConfidenceRow(
   return {
     fieldId,
     status: "manual_review",
-    message:
-      "Extraction confidence is below the automatic comparison threshold; human review recommended.",
+    message: MANUAL_REVIEW_LOW_CONFIDENCE_MESSAGE,
     extractedValue: extracted.value,
     applicationValue,
     evidence: extracted.reason ?? null,
