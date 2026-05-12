@@ -12,7 +12,7 @@ Phase 1 **core path** is shipped; **Day 1** and **Day 2** are formally closed �
 
 **Live prototype:** **Railway** — [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app) (see `README.md`). **Render** remains a documented alternate ([`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)).
 
-**Next emphasis:** **Day 3** remaining items (eval depth / fallback / stabilization). Production primary-latency snapshot (see [`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json)): **HTTP 200** with **`extraction.provider: openai`** on happy-path + seed fixtures after **8s / 20s** default extract budgets and expanded eval set (2026-05-12). **`IMPLEMENTATION_PLAN.md` §16** acceptance when intentionally signed off.
+**Next emphasis:** **Day 3** remaining items (eval depth / fallback / stabilization). Production primary-latency timeline: **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** (latest JSON: [`primary-latency-production-2026-05-12.json`](./evals/primary-latency-production-2026-05-12.json)) — **HTTP 200** with **`openai`** on three fixtures after **8s / 20s** default extract budgets and expanded eval set. **`IMPLEMENTATION_PLAN.md` §16** acceptance when intentionally signed off.
 
 **Shipped on `main` (Results / human review, 2026-05-12):** results-first layout — **Edit inputs** / **Run again** in the **Results** header; compact **Approve** / **Reject** / **Clear** disposition in the footer (browser-only, not persisted); outcome summary trimmed to headline + roll-up line with **Expand for more information** `<details>` for the long guidance; module notes in **`docs/modules/app-page.md`** (see commits **`34ac8ac`**, **`fcdc897`**).
 
@@ -62,7 +62,7 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 |-------|--------|-------------------|
 | **Outcomes (summary)** | **Partial** | **Stable public URL** (Railway) + README; committed **production eval artifact** with real HTTP outcomes; **primary-path latency with OpenAI on production** unblocked on Railway with key set; **Results / human-review UX** materially improved on `main` (disposition + layout + expandable guidance); eval / fallback / final sign-off still open. |
 | 0:00–0:30 Health check | **Partial** | Local health strong; “lock Day 3 must-complete” not recorded here beyond **Next** list. |
-| 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures; production snapshot **[`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json)** — **200** + **`openai`** on three fixtures (~3.5–6.5s). Deeper correctness / matrix still Day 3. |
+| 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures; production run log **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** — **200** + **`openai`** on three fixtures (~3.5–6.5s) in latest snapshot. Deeper correctness / matrix still Day 3. |
 | 2:00–3:30 Fallback go/no-go (Tesseract metrics) | **Not started** | **No** in-app Tesseract path yet; **`docs/POC1_FALLBACK.md`** records policy/thresholds only. True go/no-go **waits Phase 2 OCR** (or an explicit pivot doc). |
 | 3:30–5:00 Deploy (Railway / Render) | **Partial** | **Railway:** URL + **`OPENAI_API_KEY`** + production eval **200** / **`openai`** on primary-latency fixtures (see **`docs/evals/`**). **Render:** runbook **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** still valid if you switch hosts. |
 | 5:00–6:00 UX / error polish | **Partial** | **Shipped:** Results human-review flow (approve/reject disposition), header vs footer actions, compact outcome card + **Expand for more information** guidance (`app/page.tsx`). **Still open:** edge-error copy, image-quality messaging, broader checklist polish. |
@@ -74,7 +74,8 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 ## Done recently
 
 - **Results / human-review UI (`main`, 2026-05-12)** — **`34ac8ac`**: Results header **Edit inputs** / **Run again**; footer **Approve** / **Reject** / **Clear** (client-only); denser outcome summary; **`fcdc897`**: long guidance moved into **Expand for more information** `<details>`; **`docs/modules/app-page.md`** and **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`** updated alongside **`34ac8ac`**.
-- **Extraction defaults + production eval (`main`, 2026-05-12)** — default soft/hard extract timeouts **8000 / 20000** ms (`lib/verify-pipeline.ts`, `lib/extraction/provider.ts` fallbacks); **`liquor_label_happy_path.png`** in **`includeInPrimaryLatencyEval`**; production **`eval:primary-latency`** snapshot updated (**`openai`** on three fixtures). README / **`.env.example`** / **`docs/evals/README.md`** aligned.
+- **Eval run timeline (2026-05-12)** — **`docs/evals/PRIMARY_LATENCY_RUNS.md`** append-only table; **`primary-latency-production-2026-05-12.json`** added; **`2026-05-11`** snapshot restored as historical baseline; **`docs/evals/README.md`**, **PROGRESS**, **IMPLEMENTATION_PLAN**, **README** cross-links updated.
+- **Extraction defaults + production eval (`main`, 2026-05-12)** — default soft/hard extract timeouts **8000 / 20000** ms (`lib/verify-pipeline.ts`, `lib/extraction/provider.ts` fallbacks); **`liquor_label_happy_path.png`** in **`includeInPrimaryLatencyEval`**; production **`eval:primary-latency`** (**`openai`** on three fixtures). README / **`.env.example`** / **`docs/evals/README.md`** aligned (`265885e`).
 - **Day 1 runbook formally closed** — **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + documented OCR blocker; governance index).
 - **Day 2 runbook formally closed** — **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** (Phase 1 core engine sign-off; optional follow-ups listed). **Render runbook:** [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md).
 - **Phase 1 pipeline** — verify API, extraction with timeout failover to `unavailable` placeholder, validator, tests (`741ce0d`).
@@ -90,11 +91,10 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 
 ## Next (ordered)
 
-1. **Production primary on `openai` (done 2026-05-12):** default **`VERIFY_EXTRACT_*`** widened to **8000 / 20000** ms; **`liquor_label_happy_path.png`** in primary-latency eval; committed **[`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json)**. Re-run after deploy or model changes if you need a fresh snapshot (unset **`OPENAI_DISABLED`** locally if set).
-2. Run **Day 3** items: fuller eval / correctness notes on **`liquor_label_happy_path`**, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`).
-3. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
-4. Optional: remaining Day 3 **UX polish** (edge errors, image-quality / provider surfacing, client error copy) and **optional Day 2 follow-ups** in [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md) — core **Results** review layout and disposition landed on `main` (2026-05-12).
-5. **Render (optional):** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** if you want a second host; Dockerfile is shared.
+1. Run **Day 3** items: fuller eval / correctness notes on **`liquor_label_happy_path`**, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`). Append new production primary-latency rows to **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** when you capture snapshots.
+2. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
+3. Optional: remaining Day 3 **UX polish** (edge errors, image-quality / provider surfacing, client error copy) and **optional Day 2 follow-ups** in [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md) — core **Results** review layout and disposition landed on `main` (2026-05-12).
+4. **Render (optional):** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** if you want a second host; Dockerfile is shared.
 
 ---
 
@@ -112,7 +112,8 @@ None recorded in-repo. Add a dated bullet here when something external (keys, pl
 | `docs/DAY1–3_EXECUTION_CHECKLIST.md` | **How** to execute a day (timeboxed runbooks). Day 2 ↔ Phase 1 core engine (`WEEK_EXECUTION_OVERVIEW.md`). |
 | `docs/DAY1_COMPLETION_RECORD.md` / `docs/DAY2_COMPLETION_RECORD.md` | Formal **Day 1 / Day 2 sign-off** (evidence + optional follow-ups). |
 | `docs/RENDER_DEPLOY.md` | **Render** operator checklist (secrets, smoke, where to paste the public URL). |
-| `docs/evals/README.md` | Index of **committed eval artifacts** (e.g. production primary-latency snapshot). |
+| `docs/evals/README.md` | Index of **committed eval artifacts**. |
+| `docs/evals/PRIMARY_LATENCY_RUNS.md` | **Timeline** of production **`eval:primary-latency`** runs (append-only table + dated JSON files). |
 | `docs/WEEK_EXECUTION_OVERVIEW.md` | Week map and phase gates. |
 | `docs/PROGRESS.md` (this file) | **What’s done / next / blocked** in plain language. |
 | `docs/ARCHITECTURE.md` | System flow and links to **per-module** detail. |

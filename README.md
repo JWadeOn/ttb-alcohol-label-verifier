@@ -195,7 +195,7 @@ The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while 
 - Service root: connect the GitHub repo and use **Dockerfile** build (root `Dockerfile`).
 - Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`**. With the key set, responses are **200**; primary-latency eval fixtures expect **`extraction.provider: openai`** when budgets allow (default **8000 / 20000** ms soft/hard in app code — override with **`VERIFY_EXTRACT_*`** on the host if needed).
 - **Public URL:** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
-- **Production eval snapshot (primary-path latency harness):** [`docs/evals/primary-latency-production-2026-05-11.json`](docs/evals/primary-latency-production-2026-05-11.json) — index: [`docs/evals/README.md`](docs/evals/README.md). Re-run (unset **`OPENAI_DISABLED`** in the shell if your `.env` sets it):  
+- **Production eval snapshots (primary-path latency harness):** timeline [`docs/evals/PRIMARY_LATENCY_RUNS.md`](docs/evals/PRIMARY_LATENCY_RUNS.md); index [`docs/evals/README.md`](docs/evals/README.md). Re-run (unset **`OPENAI_DISABLED`** in the shell if your `.env` sets it):  
   `BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency`  
   and commit an updated JSON when you want a fresh snapshot.
 

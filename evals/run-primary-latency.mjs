@@ -5,6 +5,9 @@
  * Requires a running server and OPENAI_API_KEY on the **client** (this script).
  * Without OPENAI_API_KEY: prints skip and exits 0 (CI-friendly scaffold).
  *
+ * Committed production snapshots: save stdout to a **new dated** file under
+ * `docs/evals/` and append a row to `docs/evals/PRIMARY_LATENCY_RUNS.md` (see that doc).
+ *
  * Usage (single pass — default):
  *   OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-primary-latency.mjs
  *
