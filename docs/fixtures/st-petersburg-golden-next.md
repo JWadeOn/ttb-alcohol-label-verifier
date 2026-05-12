@@ -15,6 +15,7 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Whiskey glare (brand) | `st_petersburg_whiskey_glare_brand` | `…_glare_brand.png` |
 | Whiskey glare (warning, milder) | `st_petersburg_whiskey_glare_warning_02` | `…_glare_warning_02.png` |
 | Whiskey glare (warning, harsh) | `st_petersburg_whiskey_glare_warning_harsh` | `…_glare_warning_harsh.png` |
+| Whiskey angle (~28° yaw) | `st_petersburg_whiskey_angle_28` | `st_petersburg_whiskey_angle_28.png` |
 | Vodka baseline (front-on) | `st_petersburg_vodka_baseline` | `st_petersburg_vodka_baseline.png` |
 | Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
 | Whiskey blur | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
@@ -110,6 +111,8 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 | **Intent** | Fill the gap between **front-on baselines** and **vodka 45°** skew; stress planar perspective without unreadable distortion. |
 
 **Prompt:** Same St. Petersburg **bourbon whiskey** label as baselines; bottle rotated **~28°** from camera (yaw), still one continuous label plane in view. Library or neutral bar background; **all** lines of the government warning still in frame and mostly readable. Avoid extreme foreshortening.
+
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`).
 
 ---
 

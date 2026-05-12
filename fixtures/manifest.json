@@ -45,6 +45,12 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "st_petersburg_whiskey_angle_28",
+      "relativePath": "labels/st_petersburg_whiskey_angle_28.png",
+      "description": "Real-photo bourbon whiskey bottle with ~28° yaw from camera; cream label in perspective on marble surface, library-style background; bridges front-on baselines and stronger skew (e.g. vodka 45°).",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "st_petersburg_vodka_baseline",
       "relativePath": "labels/st_petersburg_vodka_baseline.png",
       "description": "Real-photo front-on baseline for the St. Petersburg Spirits vodka bottle (frosted glass, cream label, 40% alc./vol. / 750 mL legible); pairs with st_petersburg_vodka_angle_45 for perspective stress.",
