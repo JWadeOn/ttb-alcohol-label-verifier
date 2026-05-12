@@ -101,12 +101,12 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 
 ---
 
-### 2. Whiskey moderate angle (~25–35°)
+### 2. Whiskey moderate angle (~28° yaw)
 
 | Field | Value |
 |--------|--------|
-| **Suggested id** | `st_petersburg_whiskey_angle_30` |
-| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_angle_30.png` |
+| **Suggested id** | `st_petersburg_whiskey_angle_28` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_angle_28.png` |
 | **Intent** | Fill the gap between **front-on baselines** and **vodka 45°** skew; stress planar perspective without unreadable distortion. |
 
 **Prompt:** Same St. Petersburg **bourbon whiskey** label as baselines; bottle rotated **~28°** from camera (yaw), still one continuous label plane in view. Library or neutral bar background; **all** lines of the government warning still in frame and mostly readable. Avoid extreme foreshortening.
@@ -175,5 +175,5 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 
 ## Naming convention
 
-- **Track A (primary cream/light line):** `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_30`, `blur_strong`, etc.).
+- **Track A (primary cream/light line):** `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_28`, `blur_strong`, etc.).
 - **Track B (alternate label stock):** `st_petersburg_<product>_label_<stock>_<stress>.png`, e.g. `st_petersburg_whiskey_label_dark_baseline.png`, `st_petersburg_whiskey_label_kraft_baseline.png`.
