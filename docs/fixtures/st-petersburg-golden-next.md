@@ -20,6 +20,7 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
 | Whiskey blur (moderate, label softness) | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
 | Whiskey blur (strong DOF / bokeh) | `st_petersburg_whiskey_blur_strong` | `st_petersburg_whiskey_blur_strong.png` |
+| Whiskey low light + grain | `st_petersburg_whiskey_low_light_grain` | `st_petersburg_whiskey_low_light_grain.png` |
 | Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
 | Whiskey crop (warning off-frame) | `st_petersburg_whiskey_crop_missing_warning` | `st_petersburg_whiskey_crop_missing_warning.png` |
 
@@ -158,6 +159,8 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 
 **Prompt:** Same whiskey product; **1–2 EV under** normal exposure OR single practical lamp; visible **sensor/film grain** on label. No motion smear. Government warning still in frame; text not blown out.
 
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`).
+
 ---
 
 ### 6. Vodka glare on brand
@@ -184,5 +187,5 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 
 ## Naming convention
 
-- **Track A (primary cream/light line):** `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_28`, `blur_strong`, etc.).
+- **Track A (primary cream/light line):** `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_28`, `blur_strong`, `low_light_grain`, etc.).
 - **Track B (alternate label stock):** `st_petersburg_<product>_label_<stock>_<stress>.png`, e.g. `st_petersburg_whiskey_label_dark_baseline.png`, `st_petersburg_whiskey_label_kraft_baseline.png`.
