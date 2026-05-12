@@ -34,7 +34,7 @@ Goal: **results first** — see pass / manual review / fail counts and a **compa
 
 | Region | Purpose |
 |--------|---------|
-| **At a glance** | **Headline** plus an **info** control (`title` / `aria-label`) bundling former lead + next-step copy, not-applicable explanation when relevant, and either the shared engine message or the per-field-detail hint. Under that, one **bold workload line** (`outcomeWorkloadSummaryLine`). No nested outcome-counts panel or long paragraphs in the card. |
+| **At a glance** | **Headline**, one **bold workload line**, then a **Expand for more information** `<details>` stub with structured paragraphs (lead, next step, optional not-applicable text, shared engine message or per-field hint). |
 | **Field outcomes table** | One row per `validation.fields` row: **Field**, **Status**, truncated **From label** / **From application** (`title` tooltips for full text). |
 | **Prototype scope & thresholds** | Two `<details>` blocks **below** the field table: **Prototype scope (not a TTB checklist)** (seven fixed comparisons, PRD P0 vs P1, not COLA/reg law), and **Coded match thresholds** (numeric constants from exported symbols in `lib/validator.ts`). |
 | **Label image** | `<details>` (collapsed by default): same preview image used for the run. |

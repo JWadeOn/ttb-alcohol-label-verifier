@@ -330,33 +330,42 @@ function outcomeCardNextStepLine(d: ResultsDigest): string {
   }
 }
 
-/** Long guidance for the results summary info control (native tooltip + screen readers). */
-function buildResultsSummaryGuidanceTooltip(d: ResultsDigest): string {
-  const chunks: string[] = [
-    `${outcomeCardLeadLine(d)} ${outcomeCardNextStepLine(d)}`.replace(/\s+/g, " ").trim(),
-  ];
-  if (d.notApplicableTooltip) {
-    chunks.push(d.notApplicableTooltip);
-  }
-  if (d.uniqueMessage) {
-    chunks.push(`Same engine message on every row: ${d.uniqueMessage}`);
-  } else {
-    chunks.push(
-      "Validator messages differ by field — expand Full comparison by field below for each row’s explanation and extraction confidence.",
-    );
-  }
-  return chunks.join(" ");
+function ResultsSummaryMoreInfo({ d }: { d: ResultsDigest }) {
+  return (
+    <details className="mt-2 rounded-lg border border-stone-300/60 bg-white/50 px-2.5 py-1.5 text-left shadow-sm open:bg-white/75 [&>summary::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none text-xs font-semibold text-ttb-800 underline decoration-ttb-600/40 underline-offset-2 outline-none hover:text-ttb-950 focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1">
+        Expand for more information
+      </summary>
+      <div
+        className="mt-2 space-y-2 border-t border-stone-200/70 pt-2 text-xs leading-relaxed text-stone-700"
+        role="region"
+        aria-label="Additional outcome guidance"
+      >
+        <p>{outcomeCardLeadLine(d)}</p>
+        <p>{outcomeCardNextStepLine(d)}</p>
+        {d.notApplicableTooltip ? <p>{d.notApplicableTooltip}</p> : null}
+        {d.uniqueMessage ? (
+          <p>
+            <span className="font-medium text-stone-800">Same note on every row: </span>
+            {d.uniqueMessage}
+          </p>
+        ) : (
+          <p>
+            Validator messages differ by field — expand{" "}
+            <strong className="font-medium text-stone-800">Full comparison by field</strong> below for each row’s
+            explanation and extraction confidence.
+          </p>
+        )}
+      </div>
+    </details>
+  );
 }
 
-function InfoIconButton({ description, compact }: { description: string; compact?: boolean }) {
+function InfoIconButton({ description }: { description: string }) {
   return (
     <button
       type="button"
-      className={
-        compact
-          ? "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-200/80 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1"
-          : "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-200/90 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1"
-      }
+      className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-200/80 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1"
       title={description}
       aria-label={description}
     >
@@ -364,7 +373,7 @@ function InfoIconButton({ description, compact }: { description: string; compact
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="currentColor"
-        className={compact ? "h-3.5 w-3.5" : "h-4 w-4"}
+        className="h-3.5 w-3.5"
         aria-hidden
       >
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
@@ -802,15 +811,13 @@ export default function HomePage() {
                                   : "border-stone-200 bg-white"
                           }`}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="min-w-0 text-base font-semibold leading-snug tracking-tight text-stone-900 sm:text-lg">
-                              {overallResultsHeadline(resultsDigest)}
-                            </h3>
-                            <InfoIconButton description={buildResultsSummaryGuidanceTooltip(resultsDigest)} />
-                          </div>
+                          <h3 className="text-base font-semibold leading-snug tracking-tight text-stone-900 sm:text-lg">
+                            {overallResultsHeadline(resultsDigest)}
+                          </h3>
                           <p className="mt-2 text-sm font-semibold leading-snug text-stone-900">
                             {outcomeWorkloadSummaryLine(resultsDigest)}
                           </p>
+                          <ResultsSummaryMoreInfo d={resultsDigest} />
                         </div>
 
                         <div>
@@ -863,10 +870,7 @@ export default function HomePage() {
                           </div>
                           <p className="mt-1.5 flex flex-wrap items-center gap-x-1 text-[11px] text-stone-500">
                             <span>Hover cells for full text.</span>
-                            <InfoIconButton
-                              compact
-                              description="Open Full comparison by field below for coded rules, model confidence, and validator messages per row."
-                            />
+                            <InfoIconButton description="Open Full comparison by field below for coded rules, model confidence, and validator messages per row." />
                           </p>
                         </div>
 
