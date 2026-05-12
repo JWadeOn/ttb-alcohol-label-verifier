@@ -181,6 +181,9 @@ The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while 
 - **Latency benchmark** (same harness, per-fixture **min / max / mean / P95** over multiple POSTs):  
   `npm run eval:primary-latency:bench`  
   (defaults: **5** iterations per fixture, **400 ms** cooldown between requests — tune with **`EVAL_ITERATIONS`**, **`EVAL_COOLDOWN_MS`**, optional **`EVAL_WARMUP=1`** one throwaway request per fixture before timing). Set **`BASE_URL`** and **`OPENAI_API_KEY`** as for the single-pass eval.
+- **Fixture verify eval** (full **`POST /api/verify`** for chosen manifest ids; good for stress PNGs + logging):  
+  `EVAL_OUT=docs/evals/fixture-verify-example.json OPENAI_DISABLED= OPENAI_API_KEY=... BASE_URL=... npm run eval:fixture-verify`  
+  Optional **`EVAL_FIXTURE_IDS=id1,id2`** (defaults to **`difficult-synthetic-label-photo`**). See **`evals/run-fixture-verify.mjs`**. Set **`EVAL_EXIT_ON_HTTP_ERROR=false`** if you want exit code **0** when the server returns **4xx** (e.g. image-quality reject) but still want the JSON log.
 - **Eval policy (cost + drift):** any script that calls a **live** app with **OpenAI** (local or Railway) is **manual-only** — run when *you* choose (e.g. from your machine). **Do not** schedule nightly/cron jobs or CI workflows that hit production or spend keys automatically; keep **`npm run test`** as the always-on gate with deterministic tests (includes **`tests/golden-default-application.test.ts`** vs **`fixtures/default-application.json`**).
 - **Docker production image:** `npm run docker:build` then run as in `docs/modules/dockerfile.md`. POC-1 OCR thresholds and measurement contract are documented in **`docs/POC1_FALLBACK.md`** (OCR path still deferred in code).
 

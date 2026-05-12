@@ -14,6 +14,7 @@
     "fixtures:generate": "node scripts/generate-fixture-pngs.mjs",
     "eval:primary-latency": "node evals/run-primary-latency.mjs",
     "eval:primary-latency:bench": "EVAL_ITERATIONS=5 EVAL_COOLDOWN_MS=400 node evals/run-primary-latency.mjs",
+    "eval:fixture-verify": "node evals/run-fixture-verify.mjs",
     "docker:build": "docker build -t ttb-label-verifier:local ."
   },
   "dependencies": {

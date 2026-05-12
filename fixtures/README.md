@@ -9,3 +9,5 @@ Regenerate noise fixtures after changing the generator:
 ```bash
 npm run fixtures:generate
 ```
+
+**Programmatic verify (stress / regression):** `npm run eval:fixture-verify` with **`OPENAI_API_KEY`**, **`BASE_URL`**, and optional **`EVAL_FIXTURE_IDS`** (comma-separated manifest `id` values; defaults to **`difficult-synthetic-label-photo`**). Set **`EVAL_OUT=docs/evals/…json`** to log a copy. See **`evals/run-fixture-verify.mjs`**.
