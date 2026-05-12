@@ -110,6 +110,7 @@ None recorded in-repo. Add a dated bullet here when something external (keys, pl
 |-----|------|
 | `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md` | **Evaluator:** PRD vs code vs regulatory reality; where checks run; traceability table. |
 | `docs/CORE_REQUIREMENTS_SCORECARD.md` | Take-home rubric mapping: **what we need / have / gap** with evidence links. |
+| `docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md` | **Canonical merged plan:** scope, as-built pipeline, phases, eval strategy, backlog, acceptance. |
 | `docs/DAY1–3_EXECUTION_CHECKLIST.md` | **How** to execute a day (timeboxed runbooks). Day 2 ↔ Phase 1 core engine (`WEEK_EXECUTION_OVERVIEW.md`). |
 | `docs/DAY1_COMPLETION_RECORD.md` / `docs/DAY2_COMPLETION_RECORD.md` | Formal **Day 1 / Day 2 sign-off** (evidence + optional follow-ups). |
 | `docs/RENDER_DEPLOY.md` | **Render** operator checklist (secrets, smoke, where to paste the public URL). |

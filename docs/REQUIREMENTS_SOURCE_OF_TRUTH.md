@@ -73,6 +73,7 @@ When comparison behavior changes:
 
 ## See also
 
+- [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) — canonical merged implementation plan (scope, phases, evals, backlog, acceptance).
 - [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) — pipeline diagram and module index  
 - [`docs/modules/validator.md`](./modules/validator.md) — validator responsibilities  
 - [`docs/modules/extraction.md`](./modules/extraction.md) — providers and failover  

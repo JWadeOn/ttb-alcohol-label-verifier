@@ -2,6 +2,8 @@
 
 Evaluator-facing snapshot of **correctness** and **completeness** for the AI-powered TTB alcohol label verifier prototype.
 
+**Canonical full plan:** [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) — this scorecard is the rubric-aligned slice; the comprehensive plan merges execution, phases, and backlog.
+
 This maps directly to the take-home rubric and stakeholder interview expectations (speed, usable UX, routine field matching, strict warning handling, image adversity).
 
 **Last updated:** 2026-05-12

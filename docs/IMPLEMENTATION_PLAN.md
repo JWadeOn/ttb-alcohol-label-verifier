@@ -3,6 +3,8 @@
 **Project:** TTB Alcohol Label Verification Take-Home  
 **Purpose:** Build-facing source of truth: contracts, phases, workstreams, evals, and acceptance criteria. Product intent remains in `docs/PRD.md`; research rationale in `docs/PRESEARCH.md`.
 
+**Canonical umbrella (start here):** [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) — single merged plan: as-built summary, phase status, eval strategy, remaining work, acceptance.
+
 **Related:** `docs/DAY1_EXECUTION_CHECKLIST.md`, `docs/DAY2_EXECUTION_CHECKLIST.md`, `docs/DAY3_EXECUTION_CHECKLIST.md`, `docs/WEEK_EXECUTION_OVERVIEW.md`, `AGENTS.md`, `docs/SOFTWARE_DESIGN_PRINCIPLES.md`, `docs/REPOSITORY_HYGIENE.md`.
 
 ---
@@ -38,6 +40,8 @@
 
 - **Soft timeout:** 3.0s — start fallback **in parallel** with primary.
 - **Hard timeout:** 3.5s — cancel primary, return fallback result if available.
+
+**As-shipped note (2026-05-12):** runtime defaults in `lib/verify-pipeline.ts` / `lib/extraction/provider.ts` are **8000 ms / 20000 ms** so typical OpenAI vision completes on deployed hosts; override with `VERIFY_EXTRACT_*`. Treat the 3.0s / 3.5s bullets above as the **original PRD budget narrative**, not the live default. Authoritative merge: [`COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) §3.2.
 
 ---
 
@@ -158,7 +162,7 @@ export async function extractWithFailover(
 | F-2 | Extraction schema + OpenAI + fallback regex fields |
 | F-3 | `openai-provider.ts`: vision + structured JSON + low-confidence instructions |
 | F-4 | `tesseract-provider.ts` + regex; Tesseract-first + POC-1 pivot policy |
-| F-5 | `extractWithFailover`: 3.0s soft / 3.5s hard, parallel fallback |
+| F-5 | `extractWithFailover`: parallel soft/hard timeouts (**shipped defaults 8000 ms / 20000 ms** in `verify-pipeline`; original PRD narrative 3.0s / 3.5s — see §2.3 note) |
 | F-6 | `validator.ts` per-field compare |
 | F-7 | Brand normalization + Levenshtein in `validator.ts` |
 | F-8 | Strict warning match in `validator.ts` |
