@@ -175,6 +175,7 @@ The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while 
 
 - **`fixtures/manifest.json`** — catalog of label PNGs under `fixtures/labels/` (synthetic reference + deterministic noise seeds).
 - **Regenerate noise PNGs** (optional, after editing `scripts/generate-fixture-pngs.mjs`): `npm run fixtures:generate`
+- **Regenerate edge-case label PNGs** (optional, glare / moderate blur / tilt from `liquor_label_happy_path.png`): `npm run fixtures:edge-labels`
 - **Primary-path latency eval** (calls OpenAI; requires running app + key): start `npm run dev` in another terminal, then  
   `OPENAI_API_KEY=... npm run eval:primary-latency`  
   (override base URL with `BASE_URL=http://127.0.0.1:3000` or your **Railway** URL). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold). If **`OPENAI_DISABLED=true`** is in your `.env`, prefix the command with **`OPENAI_DISABLED=`** so the server accepts extraction. A **production** snapshot lives under **`docs/evals/`** (see Railway section above).

@@ -74,6 +74,7 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 ## Done recently
 
 - **Results / human-review UI (`main`, 2026-05-12)** — **`34ac8ac`**: Results header **Edit inputs** / **Run again**; footer **Approve** / **Reject** / **Clear** (client-only); denser outcome summary; **`fcdc897`**: long guidance moved into **Expand for more information** `<details>`; **`docs/modules/app-page.md`** and **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`** updated alongside **`34ac8ac`**.
+- **Fixture correctness scoring (2026-05-12)** — `evals/run-fixture-verify.mjs` now supports expectations-driven scoring (`EVAL_EXPECTATIONS`, default `docs/evals/fixture-correctness-expectations.json`) with per-check and threshold pass/fail output. Added `docs/evals/CORRECTNESS_THRESHOLDS.md`, initial scored artifact `docs/evals/fixture-correctness-2026-05-12.json`, expanded matrix `docs/evals/fixture-correctness-expanded-2026-05-12.json`, and non-seed edge matrix `docs/evals/fixture-correctness-non-seed-edge-2026-05-12.json` (Railway base; adds glare/blur/tilt fixtures from `npm run fixtures:edge-labels`).
 - **Eval run timeline (2026-05-12)** — **`docs/evals/PRIMARY_LATENCY_RUNS.md`** append-only table; **`primary-latency-production-2026-05-12.json`** added; **`2026-05-11`** snapshot restored as historical baseline; **`docs/evals/README.md`**, **PROGRESS**, **IMPLEMENTATION_PLAN**, **README** cross-links updated.
 - **Extraction defaults + production eval (`main`, 2026-05-12)** — default soft/hard extract timeouts **8000 / 20000** ms (`lib/verify-pipeline.ts`, `lib/extraction/provider.ts` fallbacks); **`liquor_label_happy_path.png`** in **`includeInPrimaryLatencyEval`**; production **`eval:primary-latency`** (**`openai`** on three fixtures). README / **`.env.example`** / **`docs/evals/README.md`** aligned (`265885e`).
 - **Day 1 runbook formally closed** — **[`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md)** (POC-1 primary sample + documented OCR blocker; governance index).
@@ -91,7 +92,7 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 
 ## Next (ordered)
 
-1. Run **Day 3** items: fuller eval / correctness notes on **`liquor_label_happy_path`**, **fallback go/no-go** when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`). Append new production primary-latency rows to **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** when you capture snapshots.
+1. Run **Day 3** items: widen correctness taxonomy with more real-world photo fixtures (beyond synthetic edge derivatives) and complete fallback go/no-go when Tesseract exists (`docs/DAY3_EXECUTION_CHECKLIST.md`). Append new production primary-latency rows to **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** when you capture snapshots.
 2. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
 3. Optional: remaining Day 3 **UX polish** (edge errors, image-quality / provider surfacing, client error copy) and **optional Day 2 follow-ups** in [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md) — core **Results** review layout and disposition landed on `main` (2026-05-12).
 4. **Render (optional):** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** if you want a second host; Dockerfile is shared.

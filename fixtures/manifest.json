@@ -15,6 +15,24 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "edge-synthetic-glare-label",
+      "relativePath": "labels/edge-synthetic-glare.png",
+      "description": "Happy-path label with synthetic screen-style glare overlay; correctness eval (non-seed edge). Regenerate via npm run fixtures:edge-labels.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "edge-synthetic-blur-label",
+      "relativePath": "labels/edge-synthetic-moderate-blur.png",
+      "description": "Happy-path label with moderate blur; tuned to stay above image-quality Laplacian gate. Regenerate via npm run fixtures:edge-labels.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "edge-synthetic-angle-label",
+      "relativePath": "labels/edge-synthetic-tilt.png",
+      "description": "Happy-path label rotated ~22° on white (simulated camera tilt). Regenerate via npm run fixtures:edge-labels.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "seed-texture-01",
       "relativePath": "labels/seed-texture-01.png",
       "description": "Deterministic noise PNG; passes image-quality gate; default single-call latency eval.",

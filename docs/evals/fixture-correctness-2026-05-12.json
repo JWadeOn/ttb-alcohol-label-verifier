@@ -1,0 +1,248 @@
+{
+  "eval": "fixture-verify",
+  "generatedAt": "2026-05-12T19:33:05.185Z",
+  "base": "https://ttb-alcohol-label-verifier-production.up.railway.app",
+  "fixtureIds": [
+    "happy-path-synthetic-label",
+    "difficult-synthetic-label-photo"
+  ],
+  "expectationsPath": "docs/evals/fixture-correctness-expectations.json",
+  "results": [
+    {
+      "id": "happy-path-synthetic-label",
+      "relativePath": "labels/liquor_label_happy_path.png",
+      "httpStatus": 200,
+      "durationMs": 5085,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 4115,
+      "validationSummary": {
+        "pass": 5,
+        "fail": 0,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "pass",
+        "classType": "pass",
+        "alcoholContent": "pass",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "difficult-synthetic-label-photo",
+      "relativePath": "labels/liquor_label_difficult.png",
+      "httpStatus": 200,
+      "durationMs": 12456,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 4131,
+      "validationSummary": {
+        "pass": 4,
+        "fail": 1,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "pass",
+        "classType": "pass",
+        "alcoholContent": "pass",
+        "netContents": "pass",
+        "governmentWarning": "fail",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    }
+  ],
+  "correctness": {
+    "fixtureScores": [
+      {
+        "id": "happy-path-synthetic-label",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 12000
+            },
+            "actual": 5085
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:nameAddress",
+            "pass": true,
+            "expected": [
+              "manual_review",
+              "pass"
+            ],
+            "actual": "manual_review"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.85,
+        "pass": true
+      },
+      {
+        "id": "difficult-synthetic-label-photo",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 12456
+          },
+          {
+            "name": "manualReviewCount",
+            "pass": false,
+            "expected": {
+              "minManualReviewCount": 2
+            },
+            "actual": 1
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "manual_review",
+              "fail",
+              "pass"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8333333333333334,
+        "minScore": 0.5,
+        "pass": true
+      }
+    ],
+    "totals": {
+      "totalChecks": 16,
+      "passedChecks": 15,
+      "overallScore": 0.9375,
+      "scoredFixtures": 2,
+      "fixturesPassed": 2,
+      "fixturePassRate": 1
+    },
+    "thresholdChecks": [
+      {
+        "name": "minOverallScore",
+        "pass": true,
+        "expected": 0.7,
+        "actual": 0.9375
+      },
+      {
+        "name": "minFixturePassRate",
+        "pass": true,
+        "expected": 0.5,
+        "actual": 1
+      },
+      {
+        "name": "requiredFixtureIdsPresent",
+        "pass": true,
+        "expected": [
+          "happy-path-synthetic-label",
+          "difficult-synthetic-label-photo"
+        ],
+        "actual": [
+          "happy-path-synthetic-label",
+          "difficult-synthetic-label-photo"
+        ],
+        "missing": []
+      }
+    ],
+    "thresholdsPass": true
+  }
+}

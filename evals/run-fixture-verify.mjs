@@ -12,6 +12,8 @@
  *
  * EVAL_FIXTURE_IDS: comma-separated manifest `id` values (required unless using default).
  * Default when unset: `difficult-synthetic-label-photo` (single stress fixture).
+ * EVAL_EXPECTATIONS: optional JSON path for fixture correctness scoring
+ *   (default: docs/evals/fixture-correctness-expectations.json).
  *
  * EVAL_OUT: optional path (repo-relative or absolute); writes the same JSON object as stdout.
  * EVAL_EXIT_ON_HTTP_ERROR: if `0`/`false`/`no`, exit 0 even when any response has HTTP >= 400
@@ -94,6 +96,202 @@ function parseFixtureIds(raw) {
     .filter(Boolean);
 }
 
+/**
+ * @param {unknown} body
+ * @returns {Record<string, string> | null}
+ */
+function fieldStatusMap(body) {
+  const rows = body?.validation?.fields;
+  if (!Array.isArray(rows)) return null;
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const row of rows) {
+    if (typeof row?.fieldId === "string" && typeof row?.status === "string") {
+      out[row.fieldId] = row.status;
+    }
+  }
+  return out;
+}
+
+/**
+ * @param {unknown} expectations
+ * @returns {{
+ *   thresholds: {
+ *     minOverallScore?: number;
+ *     minFixturePassRate?: number;
+ *     requiredFixtureIds?: string[];
+ *   };
+ *   fixtures: Record<string, {
+ *     expectedFieldStatuses?: Record<string, string[]>;
+ *     allowedExtractionProviders?: string[];
+ *     requireImageQualityOk?: boolean;
+ *     minManualReviewCount?: number;
+ *     maxDurationMs?: number;
+ *     minScore?: number;
+ *   }>;
+ * } | null}
+ */
+function normalizeExpectations(expectations) {
+  if (!expectations || typeof expectations !== "object") return null;
+  const fixtures = expectations.fixtures;
+  if (!fixtures || typeof fixtures !== "object") return null;
+  return {
+    thresholds:
+      expectations.thresholds && typeof expectations.thresholds === "object"
+        ? expectations.thresholds
+        : {},
+    fixtures,
+  };
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} results
+ * @param {ReturnType<typeof normalizeExpectations>} expectations
+ */
+function scoreResults(results, expectations) {
+  if (!expectations) return null;
+
+  /** @type {Array<Record<string, unknown>>} */
+  const fixtureScores = [];
+  let totalChecks = 0;
+  let passedChecks = 0;
+  let fixturesPassed = 0;
+
+  for (const row of results) {
+    const id = typeof row.id === "string" ? row.id : null;
+    if (!id) continue;
+    const rule = expectations.fixtures[id];
+    if (!rule || typeof rule !== "object") {
+      fixtureScores.push({
+        id,
+        scored: false,
+        reason: "No expectation rule found for fixture.",
+      });
+      continue;
+    }
+
+    /** @type {Array<Record<string, unknown>>} */
+    const checks = [];
+    const pushCheck = (name, pass, expected, actual) =>
+      checks.push({ name, pass, expected, actual });
+
+    if (Array.isArray(rule.allowedExtractionProviders) && rule.allowedExtractionProviders.length > 0) {
+      pushCheck(
+        "allowedExtractionProvider",
+        rule.allowedExtractionProviders.includes(row.extractionProvider),
+        rule.allowedExtractionProviders,
+        row.extractionProvider ?? null,
+      );
+    }
+
+    if (rule.requireImageQualityOk === true) {
+      pushCheck("imageQualityOk", row.imageQualityOk === true, true, row.imageQualityOk ?? null);
+    }
+
+    if (typeof rule.maxDurationMs === "number") {
+      pushCheck(
+        "durationMs",
+        typeof row.durationMs === "number" && row.durationMs <= rule.maxDurationMs,
+        { maxDurationMs: rule.maxDurationMs },
+        row.durationMs ?? null,
+      );
+    }
+
+    if (typeof rule.minManualReviewCount === "number") {
+      const manualReviewCount = row.validationSummary?.manual_review ?? null;
+      pushCheck(
+        "manualReviewCount",
+        typeof manualReviewCount === "number" && manualReviewCount >= rule.minManualReviewCount,
+        { minManualReviewCount: rule.minManualReviewCount },
+        manualReviewCount,
+      );
+    }
+
+    if (rule.expectedFieldStatuses && typeof rule.expectedFieldStatuses === "object") {
+      for (const [fieldId, allowed] of Object.entries(rule.expectedFieldStatuses)) {
+        const actual = row.fieldStatuses?.[fieldId] ?? null;
+        const allowList = Array.isArray(allowed) ? allowed : [];
+        pushCheck(
+          `fieldStatus:${fieldId}`,
+          actual !== null && allowList.includes(actual),
+          allowList,
+          actual,
+        );
+      }
+    }
+
+    const fixtureTotal = checks.length;
+    const fixturePassed = checks.filter((c) => c.pass === true).length;
+    const score = fixtureTotal > 0 ? fixturePassed / fixtureTotal : null;
+    const minScore = typeof rule.minScore === "number" ? rule.minScore : 1;
+    const pass = score !== null && score >= minScore;
+    if (pass) fixturesPassed += 1;
+    totalChecks += fixtureTotal;
+    passedChecks += fixturePassed;
+
+    fixtureScores.push({
+      id,
+      scored: true,
+      checks,
+      score,
+      minScore,
+      pass,
+    });
+  }
+
+  const scoredFixtures = fixtureScores.filter((x) => x.scored === true);
+  const scoredCount = scoredFixtures.length;
+  const overallScore = totalChecks > 0 ? passedChecks / totalChecks : null;
+  const fixturePassRate = scoredCount > 0 ? fixturesPassed / scoredCount : null;
+  const requiredFixtureIds = Array.isArray(expectations.thresholds.requiredFixtureIds)
+    ? expectations.thresholds.requiredFixtureIds
+    : [];
+  const missingRequiredFixtureIds = requiredFixtureIds.filter(
+    (id) => !results.some((row) => row.id === id),
+  );
+
+  const thresholdChecks = [];
+  if (typeof expectations.thresholds.minOverallScore === "number" && overallScore !== null) {
+    thresholdChecks.push({
+      name: "minOverallScore",
+      pass: overallScore >= expectations.thresholds.minOverallScore,
+      expected: expectations.thresholds.minOverallScore,
+      actual: overallScore,
+    });
+  }
+  if (typeof expectations.thresholds.minFixturePassRate === "number" && fixturePassRate !== null) {
+    thresholdChecks.push({
+      name: "minFixturePassRate",
+      pass: fixturePassRate >= expectations.thresholds.minFixturePassRate,
+      expected: expectations.thresholds.minFixturePassRate,
+      actual: fixturePassRate,
+    });
+  }
+  if (requiredFixtureIds.length > 0) {
+    thresholdChecks.push({
+      name: "requiredFixtureIdsPresent",
+      pass: missingRequiredFixtureIds.length === 0,
+      expected: requiredFixtureIds,
+      actual: requiredFixtureIds.filter((id) => !missingRequiredFixtureIds.includes(id)),
+      missing: missingRequiredFixtureIds,
+    });
+  }
+
+  return {
+    fixtureScores,
+    totals: {
+      totalChecks,
+      passedChecks,
+      overallScore,
+      scoredFixtures: scoredCount,
+      fixturesPassed,
+      fixturePassRate,
+    },
+    thresholdChecks,
+    thresholdsPass: thresholdChecks.every((x) => x.pass === true),
+  };
+}
+
 async function main() {
   const key = process.env.OPENAI_API_KEY?.trim();
   if (!key) {
@@ -109,10 +307,22 @@ async function main() {
   const base = (process.env.BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
   const exitOnHttpError = !falsyEnv("EVAL_EXIT_ON_HTTP_ERROR");
   const outPathRaw = process.env.EVAL_OUT?.trim();
+  const expectationsPathRaw =
+    process.env.EVAL_EXPECTATIONS?.trim() || "docs/evals/fixture-correctness-expectations.json";
 
   const manifest = JSON.parse(await readFile(path.join(root, "fixtures", "manifest.json"), "utf8"));
   const application = await readFile(path.join(root, "fixtures", "default-application.json"), "utf8");
   const ids = parseFixtureIds(process.env.EVAL_FIXTURE_IDS);
+  const expectationsPath = path.isAbsolute(expectationsPathRaw)
+    ? expectationsPathRaw
+    : path.join(root, expectationsPathRaw);
+  let expectations = null;
+  try {
+    const raw = await readFile(expectationsPath, "utf8");
+    expectations = normalizeExpectations(JSON.parse(raw));
+  } catch {
+    expectations = null;
+  }
 
   const byId = new Map(manifest.fixtures.map((f) => [f.id, f]));
   const missing = ids.filter((id) => !byId.has(id));
@@ -159,6 +369,7 @@ async function main() {
       extractionProvider: body?.extraction?.provider ?? null,
       extractionDurationMs: body?.extraction?.durationMs ?? null,
       validationSummary: summarizeValidation(body),
+      fieldStatuses: fieldStatusMap(body),
       code: body?.code ?? null,
       message: typeof body?.message === "string" ? body.message : undefined,
     };
@@ -170,12 +381,16 @@ async function main() {
     results.push(row);
   }
 
+  const correctness = scoreResults(results, expectations);
   const payload = {
     eval: "fixture-verify",
     generatedAt: new Date().toISOString(),
     base,
     fixtureIds: ids,
+    expectationsPath:
+      expectations !== null ? path.relative(root, expectationsPath) : null,
     results,
+    correctness,
   };
 
   const text = JSON.stringify(payload, null, 2);

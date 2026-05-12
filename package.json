@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "fixtures:generate": "node scripts/generate-fixture-pngs.mjs",
+    "fixtures:edge-labels": "node scripts/generate-edge-label-fixtures.mjs",
     "eval:primary-latency": "node evals/run-primary-latency.mjs",
     "eval:primary-latency:bench": "EVAL_ITERATIONS=5 EVAL_COOLDOWN_MS=400 node evals/run-primary-latency.mjs",
     "eval:fixture-verify": "node evals/run-fixture-verify.mjs",
