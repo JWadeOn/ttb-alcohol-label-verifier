@@ -161,7 +161,7 @@ export async function extractWithFailover(
 | ID | Implementation behavior |
 |----|-------------------------|
 | F-1 | UI + `app/api/verify` multipart handler |
-| F-2 | Extraction schema + OpenAI + fallback regex fields |
+| F-2 | Extraction schema + OpenAI primary + **`unavailable`** placeholder fallback (Phase 2: regex/OCR on fallback text) |
 | F-3 | `openai-provider.ts`: vision + structured JSON + low-confidence instructions |
 | F-4 | **Deferred (Phase 2):** `tesseract-provider.ts` + regex; policy + thresholds in [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md); formal prototype defer logged 2026-05-12 |
 | F-5 | `extractWithFailover`: parallel soft/hard timeouts (**shipped defaults 8000 ms / 20000 ms** in `verify-pipeline`; original PRD narrative 3.0s / 3.5s — see §2.3 note) |
@@ -171,11 +171,11 @@ export async function extractWithFailover(
 | F-9 | UI results table + provider + evidence |
 | F-10 | Instrumented tests + deployed validation against §7 budget |
 | F-11 | `lib/image-quality.ts` pre-check |
-| F-12 | Render deploy + public URL |
+| F-12 | **Railway** primary public URL + **`docs/RENDER_DEPLOY.md`** alternate (same Dockerfile); eval timeline under `docs/evals/` |
 | F-13 | README + repo |
-| F-14 | Batch UI + loop or batch route |
+| F-14 | **Out of scope (prototype deliverable):** single-label workbench only — no batch UI or batch `POST` route (see [`COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) scope lock). |
 | F-15 | Surface `confidence` in UI |
-| F-16 | Env + UI toggle → orchestrator |
+| F-16 | **Deferred (Phase 2):** env/UI force-local-OCR routing — same defer as F-4; not wired (`force_fallback` / `USE_LOCAL_OCR` documented in §3.1) |
 | F-17 | Schema + LLM field + validator + manual_review path |
 | F-18 | `isImport` conditional + validator `not_applicable` |
 
@@ -314,6 +314,14 @@ flowchart TD
 | Fallback structured fields (POC-1) | ≥80% on fixtures; P95 latency within budget |
 | E2E P95 | &lt; 5s primary and failover paths per PRD §7 |
 
+### 10.6 Shipped eval evidence (prototype)
+
+Authoritative operator docs and committed outputs (manual runs; not CI-gated live model calls):
+
+- **Latency:** [`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md) + dated `docs/evals/primary-latency-production-*.json`; harness: `npm run eval:primary-latency` / `eval:primary-latency:bench`.
+- **Fixture correctness + thresholds:** [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md), [`docs/evals/fixture-correctness-expectations.json`](./evals/fixture-correctness-expectations.json), scored artifacts `docs/evals/fixture-correctness-*.json`; harness: `npm run eval:fixture-verify` (`evals/run-fixture-verify.mjs`).
+- **§10.5 table:** PRD-style targets remain design guidance; **measured** acceptance for this deliverable is the thresholds file + passing `correctness.thresholdsPass` on the signed fixture set above.
+
 ---
 
 ## 11. TDD policy (phase gates)
@@ -391,15 +399,21 @@ ttb-alcohol-label-verifier/
 
 ## 16. Acceptance checklist (this deliverable)
 
-- [ ] Engineer can implement without reopening PRD for ambiguity on contracts and statuses.
-- [ ] Every PRD F-* maps to code ownership (§5).
-- [ ] Eval methods and thresholds are explicit (§10).
-- [ ] Manual-review paths documented per field (§4).
-- [ ] Deployment and fallback policies consistent with README, **`docs/POC1_FALLBACK.md`**, and research framing (Phase 1: placeholder fallback; Tesseract deferred with logged criteria).
+Sign-off records **prototype** completeness: contracts + mapping + eval discipline + docs alignment. Optional UX polish remains in [`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md) and does not reopen this checklist unless contracts change.
+
+- [x] Engineer can implement without reopening PRD for ambiguity on contracts and statuses. **Evidence:** §3 HTTP/multipart + `ApplicationJsonSchema` / response enums in `lib/schemas.ts`; intentionally unwired items called out in §3.1 (`force_fallback` / `USE_LOCAL_OCR`).
+- [x] Every PRD F-* maps to code ownership (§5). **Evidence:** §5 table + `docs/modules/*`; **F-4 / F-16** deferred (Phase 2, [`POC1_FALLBACK.md`](./POC1_FALLBACK.md)); **F-14** out of scope for single-label prototype (§5 row).
+- [x] Eval methods and thresholds are explicit (§10). **Evidence:** §10.6 links; committed JSON under `docs/evals/`; CI `npm run test` for deterministic core.
+- [x] Manual-review paths documented per field (§4). **Evidence:** [`REQUIREMENTS_SOURCE_OF_TRUTH.md`](./REQUIREMENTS_SOURCE_OF_TRUTH.md) + validator/UI behavior.
+- [x] Deployment and fallback policies consistent with README, **`docs/POC1_FALLBACK.md`**, and research framing (Phase 1: placeholder fallback; Tesseract deferred with logged criteria).
 
 ### Day 3 notes (2026-05-11)
 
 - **Public URL + docs:** `README.md`, `docs/PROGRESS.md`, `docs/ARCHITECTURE.md`, `docs/DAY3_EXECUTION_CHECKLIST.md` updated for **Railway** deploy; **Render** runbook retained.
 - **Fallback policy (2026-05-12):** Tesseract / local OCR **deferred**; **`docs/POC1_FALLBACK.md`** records formal no-go for this deliverable + unchanged POC-1 thresholds for Phase 2. README + §2.2–§2.3 aligned to **8000 / 20000** ms and **`unavailable`** placeholder path.
+
+### §16 sign-off (2026-05-12)
+
+All items above **checked** with evidence in-repo. Optional follow-ups: Day 3 UX polish, broader real-photo fixtures, Phase 2 OCR — tracked in **`docs/PROGRESS.md`** / Day 3 checklist, not blockers for this sign-off.
 
 *End of implementation plan.*

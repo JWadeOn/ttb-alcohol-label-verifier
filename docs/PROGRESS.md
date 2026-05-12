@@ -12,7 +12,7 @@ Phase 1 **core path** is shipped; **Day 1** and **Day 2** are formally closed �
 
 **Live prototype:** **Railway** — [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app) (see `README.md`). **Render** remains a documented alternate ([`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)).
 
-**Next emphasis:** **Day 3** remaining items (eval depth / fallback / stabilization). Production primary-latency timeline: **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** (latest JSON: [`primary-latency-production-2026-05-12.json`](./evals/primary-latency-production-2026-05-12.json)) — **HTTP 200** with **`openai`** on three fixtures after **8s / 20s** default extract budgets and expanded eval set. **`IMPLEMENTATION_PLAN.md` §16** acceptance when intentionally signed off.
+**Next emphasis:** optional **Day 3 UX polish** ([`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md)); broader **real-photo** fixtures if evaluators want more extraction proof. **`docs/IMPLEMENTATION_PLAN.md` §16** acceptance **signed off 2026-05-12** (all items checked with evidence). Production primary-latency timeline: **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)**; scored correctness: **`docs/evals/CORRECTNESS_THRESHOLDS.md`**, `fixture-correctness-*.json`.
 
 **Shipped on `main` (Results / human review, 2026-05-12):** results-first layout — **Edit inputs** / **Run again** in the **Results** header; compact **Approve** / **Reject** / **Clear** disposition in the footer (browser-only, not persisted); outcome summary trimmed to headline + roll-up line with **Expand for more information** `<details>` for the long guidance; module notes in **`docs/modules/app-page.md`** (see commits **`34ac8ac`**, **`fcdc897`**).
 
@@ -60,7 +60,7 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 
 | Block | Status | Evidence / notes |
 |-------|--------|-------------------|
-| **Outcomes (summary)** | **Partial** | **Stable public URL** (Railway) + README; committed **production eval + scored fixture-correctness** artifacts under **`docs/evals/`**; **primary-path latency with OpenAI on production** unblocked on Railway with key set; **Results / human-review UX** materially improved on `main`; **fallback:** formal **defer** logged (**`docs/POC1_FALLBACK.md`**); final §16 sign-off + UX polish still open. |
+| **Outcomes (summary)** | **Partial** | **§16 acceptance signed (2026-05-12)** — [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 + §10.6 evidence; **Railway** + eval/correctness artifacts under **`docs/evals/`**; **fallback** formally **deferred** (`POC1_FALLBACK`); **F-14** **out of scope**. Remaining: optional UX polish + broader real-photo fixtures (not blockers for sign-off). |
 | 0:00–0:30 Health check | **Partial** | Local health strong; “lock Day 3 must-complete” not recorded here beyond **Next** list. |
 | 0:30–2:00 Evals + open questions | **Partial** | Harness + fixtures + **scored** `eval:fixture-verify` + thresholds doc; production run log **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** — **200** + **`openai`** on three fixtures in latest snapshot. Further real-photo taxonomy = optional depth. |
 | 2:00–3:30 Fallback go/no-go (Tesseract metrics) | **Closed (defer)** | **No** in-app Tesseract path. **Formal defer** + unchanged POC-1 thresholds: **[`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md)** (2026-05-12); shipped **`unavailable`** placeholder; Phase 2 implements measurable OCR if needed. |
@@ -74,7 +74,8 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 ## Done recently
 
 - **Results / human-review UI (`main`, 2026-05-12)** — **`34ac8ac`**: Results header **Edit inputs** / **Run again**; footer **Approve** / **Reject** / **Clear** (client-only); denser outcome summary; **`fcdc897`**: long guidance moved into **Expand for more information** `<details>`; **`docs/modules/app-page.md`** and **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`** updated alongside **`34ac8ac`**.
-- **Fallback policy formalized (2026-05-12)** — **`docs/POC1_FALLBACK.md`**: explicit **defer** of Tesseract/local OCR for this deliverable + reopen criteria; **`README.md`**, **`docs/IMPLEMENTATION_PLAN.md`** (§2.2–§2.3, F-4, §3.1, §15–§16), **`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`** (§7.3, §9–§10, §12), **`docs/modules/extraction.md`** updated for consistency.
+- **§16 acceptance sign-off (2026-05-12)** — [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 all items **[x]** with evidence bullets + §**10.6** shipped eval links; **F-14** marked **out of prototype scope** in §5; **F-16** aligned with Phase 2 defer. [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) §9–§10 + changelog; [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md) updated.
+- **Fallback policy formalized (2026-05-12)** — **`docs/POC1_FALLBACK.md`**: explicit **defer** of Tesseract/local OCR + reopen criteria; **`README.md`**, **`docs/IMPLEMENTATION_PLAN.md`** (§2.2–§2.3, F-4, §3.1, §15), **`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`** (§7.3, §12), **`docs/modules/extraction.md`** aligned.
 - **Fixture correctness scoring (2026-05-12)** — `evals/run-fixture-verify.mjs` now supports expectations-driven scoring (`EVAL_EXPECTATIONS`, default `docs/evals/fixture-correctness-expectations.json`) with per-check and threshold pass/fail output. Added `docs/evals/CORRECTNESS_THRESHOLDS.md`, initial scored artifact `docs/evals/fixture-correctness-2026-05-12.json`, expanded matrix `docs/evals/fixture-correctness-expanded-2026-05-12.json`, and non-seed edge matrix `docs/evals/fixture-correctness-non-seed-edge-2026-05-12.json` (Railway base; adds glare/blur/tilt fixtures from `npm run fixtures:edge-labels`).
 - **Eval run timeline (2026-05-12)** — **`docs/evals/PRIMARY_LATENCY_RUNS.md`** append-only table; **`primary-latency-production-2026-05-12.json`** added; **`2026-05-11`** snapshot restored as historical baseline; **`docs/evals/README.md`**, **PROGRESS**, **IMPLEMENTATION_PLAN**, **README** cross-links updated.
 - **Extraction defaults + production eval (`main`, 2026-05-12)** — default soft/hard extract timeouts **8000 / 20000** ms (`lib/verify-pipeline.ts`, `lib/extraction/provider.ts` fallbacks); **`liquor_label_happy_path.png`** in **`includeInPrimaryLatencyEval`**; production **`eval:primary-latency`** (**`openai`** on three fixtures). README / **`.env.example`** / **`docs/evals/README.md`** aligned (`265885e`).
@@ -93,10 +94,10 @@ Formal sign-off: **[`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md)** 
 
 ## Next (ordered)
 
-1. Run **Day 3** items: widen correctness taxonomy with more real-world photo fixtures (beyond synthetic edge derivatives); **OCR fallback** is **deferred** — Phase 2 implements + measures per **`docs/POC1_FALLBACK.md`**. Append new production primary-latency rows to **[`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md)** when you capture snapshots.
-2. **`docs/IMPLEMENTATION_PLAN.md` §16** — check off acceptance lines when the deliverable is intentionally signed off.
-3. Optional: remaining Day 3 **UX polish** (edge errors, image-quality / provider surfacing, client error copy) and **optional Day 2 follow-ups** in [`DAY2_COMPLETION_RECORD.md`](./DAY2_COMPLETION_RECORD.md) — core **Results** review layout and disposition landed on `main` (2026-05-12).
-4. **Render (optional):** follow **[`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md)** if you want a second host; Dockerfile is shared.
+1. Optional **Day 3 UX polish** (edge errors, image-quality / provider copy) — [`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md).  
+2. Optional **real-photo fixture** expansion for extraction credibility (beyond synthetic edge derivatives).  
+3. **`git push`** when you want `origin/main` caught up to local commits.  
+4. **Render (optional):** [`RENDER_DEPLOY.md`](./RENDER_DEPLOY.md) second host.
 
 ---
 
