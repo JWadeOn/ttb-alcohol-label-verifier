@@ -1,6 +1,6 @@
 # St. Petersburg golden set — next captures
 
-Use this list when adding **real-photo** fixtures under `fixtures/labels/`. After each capture, copy the PNG to the suggested filename, add or update the row in `fixtures/manifest.json`, mirror `docs/evals/fixture-correctness-expectations.json`, and run `npm test`.
+Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Track A** extends the existing cream/light-label matrix (camera and lighting stress). **Track B** is a separate golden line for **alternate label stock colors** (contrast and segmentation)—see [Golden track B](#golden-track-b-alternate-label-stock-contrast). After each capture, copy the PNG to the suggested filename, add the row in `fixtures/manifest.json`, mirror `docs/evals/fixture-correctness-expectations.json`, and run `npm test`.
 
 ## Image-quality gate (blur)
 
@@ -19,9 +19,72 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. Afte
 | Whiskey blur | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
 | Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
 
+*Track B (alternate label stock) ids are defined in [Golden track B](#golden-track-b-alternate-label-stock-contrast); they are **not** in the manifest until each PNG exists.*
+
 ---
 
-## Priority 1 — highest leverage gaps
+## Golden track B: alternate label stock (contrast)
+
+**Goal:** Same fictional **St. Petersburg Spirits** hierarchy (brand, class, ABV, net contents, government warning), but **different label substrate and ink** than the cream/light primary line. This isolates **contrast, glare on dark stock, and segmentation** from the Track A camera matrix.
+
+**Rules**
+
+- Treat each stock color as a **deliberate SKU variant**, not a random swap on existing cream-label shots.
+- Use ids that include **`label_<stock>`** so manifests and eval logs stay self-explanatory (`label_dark`, `label_kraft`, etc.).
+- Expectations stay **tolerant** until you add application JSON (or overrides) that matches each variant’s extracted strings.
+- Wire each PNG when the file exists (empty manifest slots break `tests/fixtures-manifest.test.ts`).
+
+### B1 — Dark / charcoal label (whiskey), front-on
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_label_dark_baseline` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_label_dark_baseline.png` |
+| **Intent** | Baseline for Track B: **matte black or charcoal** label face, **light** (white or warm silver) typography; full bottle, sharp focus, standard TTB-style warning block readable. |
+
+**Prompt:** Professional product photo, straight-on: St. Petersburg Spirits **bourbon whiskey**, 750 mL, 43% alc./vol. (86 proof). **Label face is dark charcoal or matte black** with **high-contrast light type** (no illegible microtype). Same information architecture as the cream-label bottles: brand arched at top, class line, ABV and net contents, dense government warning at bottom. Cork or wood stopper; neutral or library bar background; **no** heavy label glare for this baseline frame.
+
+### B2 — Dark label + controlled glare
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_label_dark_glare` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_label_dark_glare.png` |
+| **Intent** | Specular streak or hotspot on **dark stock** (often harder than cream): brand or mid-label wash, warning may partially bloom. |
+
+**Prompt:** Same **dark-label** St. Petersburg bourbon bottle and layout as B1. Add a **single strong specular highlight** across part of the label (glass curvature OK). Government warning may be partially washed but still partly visible. Avoid changing label color between B1 and B2—only lighting.
+
+### B3 — Kraft / warm paper (whiskey), front-on
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_label_kraft_baseline` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_label_kraft_baseline.png` |
+| **Intent** | **Warm brown kraft-style** stock with dark brown or black ink; stresses uneven fiber, lower effective contrast than bright white-on-black. |
+
+**Prompt:** Straight-on hero: same St. Petersburg bourbon whiskey facts and layout, **uncoated kraft- or parchment-brown label** (visible paper texture), **dark ink** for all text. Sharp focus; soft background; government warning fully in frame and readable at capture resolution.
+
+### B4 — Vodka on dark stock (optional)
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_vodka_label_dark_baseline` |
+| **Suggested file** | `fixtures/labels/st_petersburg_vodka_label_dark_baseline.png` |
+| **Intent** | Track B for **vodka** SKU: same idea as B1 but vodka class line and vodka-appropriate net contents/proof if you use them on the art. |
+
+**Prompt:** Front-on St. Petersburg Spirits **vodka**, 750 mL; **dark label** with light type; legible government warning; matches brand lockup style of other St. Petersburg bottles but clearly **vodka** product copy.
+
+### Eval bundle suggestion
+
+After wiring, run `eval:fixture-verify` with `EVAL_FIXTURE_IDS` listing all Track B ids together to produce a small contrast-matrix artifact under `docs/evals/`.
+
+---
+
+## Golden track A: primary line (cream / light label)
+
+The following priorities extend the **existing** cream/light St. Petersburg bottles with new camera and lighting stresses only (same label stock as current shipped PNGs).
+
+---
 
 ### 1. Vodka baseline (front-on)
 
@@ -109,4 +172,5 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. Afte
 
 ## Naming convention
 
-- `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_30`, `blur_strong`, etc.).
+- **Track A (primary cream/light line):** `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_30`, `blur_strong`, etc.).
+- **Track B (alternate label stock):** `st_petersburg_<product>_label_<stock>_<stress>.png`, e.g. `st_petersburg_whiskey_label_dark_baseline.png`, `st_petersburg_whiskey_label_kraft_baseline.png`.
