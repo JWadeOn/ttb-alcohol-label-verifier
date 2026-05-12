@@ -15,6 +15,7 @@ Client-only page: file upload, application data editor, `POST /api/verify` via `
 
 - Builds `FormData` using `VERIFY_FORM_FIELDS` from `lib/schemas.ts` (`image` file, `application` JSON string).
 - Parses responses with `VerifySuccessResponseSchema` / `VerifyErrorResponseSchema` for structured UI; keeps raw JSON string for a collapsible `<details>` block.
+- **Error UX:** API failures use `verifyErrorUserHeadline` (`lib/verify-error-messages.ts`) for a plain-language headline; **Code** / **Message** from the JSON body stay visible; **HTTP status** shown as a secondary line. **Run metadata** explains **`unavailable`** extraction (placeholder + manual review) vs **`openai`**, and adds reshoot hints when image quality fails (defensive; pipeline usually rejects before success).
 - **Image preview:** `URL.createObjectURL` for the selected file; revoked in `useEffect` cleanup when the file changes or unmounts.
 - **Native `<img>`** for blob previews (not `next/image`): `blob:` + `next/image` has triggered broken dev runtimes in this stack; plain `img` is correct for local object URLs.
 

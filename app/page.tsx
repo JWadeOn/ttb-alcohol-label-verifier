@@ -25,6 +25,7 @@ import {
   VOLUME_TOLERANCE_ML,
   VOLUME_TOLERANCE_RATIO,
 } from "@/lib/validator";
+import { verifyErrorUserHeadline } from "@/lib/verify-error-messages";
 
 const DEFAULT_APPLICATION = JSON.stringify(
   {
@@ -496,7 +497,11 @@ export default function HomePage() {
       } catch {
         const msg = `Non-JSON response (${res.status}): ${text.slice(0, 500)}`;
         outcomeErrorText = msg;
-        setErrorText(msg);
+        setErrorText(
+          res.status >= 200 && res.status < 300
+            ? msg
+            : "The server returned an unexpected response (not JSON). Check that you are on the app URL and try again.",
+        );
         setHttpStatus(res.status);
         return;
       }
@@ -512,7 +517,9 @@ export default function HomePage() {
         } else {
           const msg = "Response JSON did not match the expected success schema.";
           outcomeErrorText = msg;
-          setErrorText(msg);
+          setErrorText(
+            "The server response could not be shown in the comparison UI. Use Raw API JSON below if you need details.",
+          );
         }
       } else {
         const errParsed = VerifyErrorResponseSchema.safeParse(parsed);
@@ -522,11 +529,17 @@ export default function HomePage() {
         }
         const msg = `HTTP ${res.status}`;
         outcomeErrorText = msg;
-        setErrorText(msg);
+        setErrorText(
+          verifyErrorUserHeadline(res.status, errParsed.success ? errParsed.data : null, msg),
+        );
       }
     } catch (err) {
       outcomeErrorText = err instanceof Error ? err.message : String(err);
-      setErrorText(outcomeErrorText);
+      setErrorText(
+        err instanceof TypeError && err.message.includes("fetch")
+          ? "Could not reach the server. Check your network and that the app is running."
+          : outcomeErrorText,
+      );
     } finally {
       setLoading(false);
       setRunGeneration((n) => n + 1);
@@ -781,6 +794,9 @@ export default function HomePage() {
                 {errorText ? (
                   <section className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
                     <p className="font-medium">{errorText}</p>
+                    {httpStatus !== null ? (
+                      <p className="mt-1 text-xs text-red-800/85">HTTP {httpStatus}</p>
+                    ) : null}
                     {errorPayload ? (
                       <dl className="mt-2 grid gap-1 text-xs">
                         <div>
@@ -1164,6 +1180,16 @@ export default function HomePage() {
                                   {" "}
                                   · {successPayload.extraction.durationMs} ms
                                 </span>
+                                {successPayload.extraction.provider === "unavailable" ? (
+                                  <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                    Primary vision did not return usable results in time. Extracted values are
+                                    placeholders—treat every field as needing human review.
+                                  </span>
+                                ) : successPayload.extraction.provider === "openai" ? (
+                                  <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                    Vision model completed for this run.
+                                  </span>
+                                ) : null}
                               </dd>
                             </div>
                             <div className="sm:col-span-2">
@@ -1172,11 +1198,23 @@ export default function HomePage() {
                               </dt>
                               <dd className="text-stone-800">
                                 {successPayload.imageQuality.ok ? (
-                                  <span className="text-emerald-800">Passed</span>
+                                  <>
+                                    <span className="text-emerald-800">Passed</span>
+                                    <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                      Image is clear enough for the reader to run. If results look wrong, try a
+                                      straighter photo with less glare.
+                                    </span>
+                                  </>
                                 ) : (
-                                  <span className="text-red-800">
-                                    {successPayload.imageQuality.reason ?? "Not ok"}
-                                  </span>
+                                  <>
+                                    <span className="text-red-800">
+                                      {successPayload.imageQuality.reason ?? "Not ok"}
+                                    </span>
+                                    <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                      Upload a new photo: brighter light, hold steady, fill the frame with the label,
+                                      and avoid heavy blur or tiny text.
+                                    </span>
+                                  </>
                                 )}
                               </dd>
                             </div>
