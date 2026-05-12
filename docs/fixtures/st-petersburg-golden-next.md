@@ -15,6 +15,7 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Whiskey glare (brand) | `st_petersburg_whiskey_glare_brand` | `…_glare_brand.png` |
 | Whiskey glare (warning, milder) | `st_petersburg_whiskey_glare_warning_02` | `…_glare_warning_02.png` |
 | Whiskey glare (warning, harsh) | `st_petersburg_whiskey_glare_warning_harsh` | `…_glare_warning_harsh.png` |
+| Vodka baseline (front-on) | `st_petersburg_vodka_baseline` | `st_petersburg_vodka_baseline.png` |
 | Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
 | Whiskey blur | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
 | Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
@@ -95,6 +96,8 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 | **Intent** | Pair with `st_petersburg_vodka_angle_45`: same bottle/line, **straight-on**, sharp label, no skew. |
 
 **Prompt (photo / gen):** Professional product photo, straight-on eye level: St. Petersburg Spirits **vodka** bottle (750 mL line), same label family as the existing 45° vodka asset. Cream or white label, sharp typography, standard government warning legible. Soft blurred background; **no** strong perspective; **no** heavy glare. Centered, full bottle in frame.
+
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`).
 
 ---
 

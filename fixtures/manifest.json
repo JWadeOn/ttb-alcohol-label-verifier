@@ -45,6 +45,12 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "st_petersburg_vodka_baseline",
+      "relativePath": "labels/st_petersburg_vodka_baseline.png",
+      "description": "Real-photo front-on baseline for the St. Petersburg Spirits vodka bottle (frosted glass, cream label, 40% alc./vol. / 750 mL legible); pairs with st_petersburg_vodka_angle_45 for perspective stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "st_petersburg_vodka_angle_45",
       "relativePath": "labels/st_petersburg_vodka_angle_45.png",
       "description": "Real-photo 45-degree angle variant (vodka label) with strong perspective skew and rotated text lines; intended to stress extraction under non-front-on capture.",
