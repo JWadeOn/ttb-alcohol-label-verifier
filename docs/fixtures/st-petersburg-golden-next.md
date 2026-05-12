@@ -18,7 +18,8 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Whiskey angle (~28° yaw) | `st_petersburg_whiskey_angle_28` | `st_petersburg_whiskey_angle_28.png` |
 | Vodka baseline (front-on) | `st_petersburg_vodka_baseline` | `st_petersburg_vodka_baseline.png` |
 | Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
-| Whiskey blur | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
+| Whiskey blur (moderate, label softness) | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
+| Whiskey blur (strong DOF / bokeh) | `st_petersburg_whiskey_blur_strong` | `st_petersburg_whiskey_blur_strong.png` |
 | Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
 | Whiskey crop (warning off-frame) | `st_petersburg_whiskey_crop_missing_warning` | `st_petersburg_whiskey_crop_missing_warning.png` |
 
@@ -142,6 +143,8 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 | **Intent** | Step harder than `_blur_moderate`; verify Laplacian still passes or adjust expectations / `requireImageQualityOk`. |
 
 **Prompt:** Same scene and bottle as moderate blur, but **one more stop** of defocus or motion blur on the **label plane only** if possible—bottle silhouette still recognizable. If preview fails the in-app “image too soft” path, back off until it passes.
+
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`). Capture is **strong background bokeh** with **sharp label** (gate-safe); differs from `_blur_moderate` which softens the label plane.
 
 ---
 
