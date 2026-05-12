@@ -218,6 +218,7 @@ Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (Web Service 
 Regulatory references used for framing are documented in project docs and should be treated as source material for prototype checks, not as exhaustive legal implementation.
 
 - **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`** — **Evaluator start here:** what is (and is not) regulatory source of truth; field → code → PRD trace; where checks run.
+- **`docs/CORE_REQUIREMENTS_SCORECARD.md`** — take-home rubric scorecard: current coverage, evidence links, and explicit gaps.
 - `docs/PROGRESS.md` — **living** short status: done recently, next steps, blockers (update as you ship)
 - `docs/ARCHITECTURE.md` — **living** system overview (data flow, phase snapshot, links to module docs)
 - `docs/modules/README.md` — index of **per-module** living docs (`docs/modules/*.md`: responsibilities, decisions, tests for each unit)
