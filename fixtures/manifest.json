@@ -9,6 +9,12 @@
       "includeInPrimaryLatencyEval": true
     },
     {
+      "id": "difficult-synthetic-label-photo",
+      "relativePath": "labels/liquor_label_difficult.png",
+      "description": "Stress-case photo label (glare, curvature, dense government warning, intentional character anomalies). Use for manual runs and ad-hoc POST checks; not in primary-latency eval by default.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "seed-texture-01",
       "relativePath": "labels/seed-texture-01.png",
       "description": "Deterministic noise PNG; passes image-quality gate; default single-call latency eval.",
