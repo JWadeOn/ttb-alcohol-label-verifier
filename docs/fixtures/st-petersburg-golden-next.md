@@ -1,0 +1,112 @@
+# St. Petersburg golden set — next captures
+
+Use this list when adding **real-photo** fixtures under `fixtures/labels/`. After each capture, copy the PNG to the suggested filename, add or update the row in `fixtures/manifest.json`, mirror `docs/evals/fixture-correctness-expectations.json`, and run `npm test`.
+
+## Image-quality gate (blur)
+
+`lib/image-quality.ts` rejects inputs when Laplacian variance is **below ~12** (heavy blur / flat signal). For any **blur** shot, keep enough edge energy that the label is still plausibly readable; if a stress frame must be darker or softer, we can set `requireImageQualityOk: false` for that fixture id only after you confirm the pipeline accepts it.
+
+## Current inventory (reference)
+
+| Stress mode | Manifest id | File |
+|-------------|-------------|------|
+| Whiskey anchor | `st_petersburg_whiskey_baseline` | `st_petersburg_whiskey_baseline.png` |
+| Whiskey clean variants | `…_baseline_02` … `_05` | `st_petersburg_whiskey_baseline_0*.png` |
+| Whiskey glare (brand) | `st_petersburg_whiskey_glare_brand` | `…_glare_brand.png` |
+| Whiskey glare (warning, milder) | `st_petersburg_whiskey_glare_warning_02` | `…_glare_warning_02.png` |
+| Whiskey glare (warning, harsh) | `st_petersburg_whiskey_glare_warning_harsh` | `…_glare_warning_harsh.png` |
+| Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
+| Whiskey blur | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
+| Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
+
+---
+
+## Priority 1 — highest leverage gaps
+
+### 1. Vodka baseline (front-on)
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_vodka_baseline` |
+| **Suggested file** | `fixtures/labels/st_petersburg_vodka_baseline.png` |
+| **Intent** | Pair with `st_petersburg_vodka_angle_45`: same bottle/line, **straight-on**, sharp label, no skew. |
+
+**Prompt (photo / gen):** Professional product photo, straight-on eye level: St. Petersburg Spirits **vodka** bottle (750 mL line), same label family as the existing 45° vodka asset. Cream or white label, sharp typography, standard government warning legible. Soft blurred background; **no** strong perspective; **no** heavy glare. Centered, full bottle in frame.
+
+---
+
+### 2. Whiskey moderate angle (~25–35°)
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_angle_30` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_angle_30.png` |
+| **Intent** | Fill the gap between **front-on baselines** and **vodka 45°** skew; stress planar perspective without unreadable distortion. |
+
+**Prompt:** Same St. Petersburg **bourbon whiskey** label as baselines; bottle rotated **~28°** from camera (yaw), still one continuous label plane in view. Library or neutral bar background; **all** lines of the government warning still in frame and mostly readable. Avoid extreme foreshortening.
+
+---
+
+### 3. Partial crop / missing lower label
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_crop_missing_warning` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_crop_missing_warning.png` |
+| **Intent** | Forces **missing-field** behavior: brand + class + ABV may be present; **warning block cropped out** or only 1–2 lines visible. |
+
+**Prompt:** Tighter crop on the same whiskey bottle: frame from **mid-label up** so **government warning is absent or clipped** at the bottom edge. Brand and “bourbon whiskey” and 43% / 750 mL still clearly in frame. Intentional composition, not accidental thumb cover.
+
+---
+
+## Priority 2 — strong but optional
+
+### 4. Whiskey heavier blur (still gate-safe)
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_blur_strong` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_blur_strong.png` |
+| **Intent** | Step harder than `_blur_moderate`; verify Laplacian still passes or adjust expectations / `requireImageQualityOk`. |
+
+**Prompt:** Same scene and bottle as moderate blur, but **one more stop** of defocus or motion blur on the **label plane only** if possible—bottle silhouette still recognizable. If preview fails the in-app “image too soft” path, back off until it passes.
+
+---
+
+### 5. Low / mixed exposure (readable noise)
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_whiskey_low_light_grain` |
+| **Suggested file** | `fixtures/labels/st_petersburg_whiskey_low_light_grain.png` |
+| **Intent** | Underexposed bar look + visible noise; label still decipherable with effort. |
+
+**Prompt:** Same whiskey product; **1–2 EV under** normal exposure OR single practical lamp; visible **sensor/film grain** on label. No motion smear. Government warning still in frame; text not blown out.
+
+---
+
+### 6. Vodka glare on brand
+
+| Field | Value |
+|--------|--------|
+| **Suggested id** | `st_petersburg_vodka_glare_brand` |
+| **Suggested file** | `fixtures/labels/st_petersburg_vodka_glare_brand.png` |
+| **Intent** | Mirror whiskey `glare_brand` on the **vodka** SKU for cross-product glare behavior. |
+
+**Prompt:** Front-on or slight angle vodka bottle; **bright specular** on upper label washing **brand line** while mid-label and warning remain **more** legible than brand (inverse emphasis vs harsh warning shots).
+
+---
+
+## Wiring checklist (per new PNG)
+
+1. Save as `fixtures/labels/<filename>.png`.
+2. Append fixture object to `fixtures/manifest.json`.
+3. Add matching block under `fixtures` in `docs/evals/fixture-correctness-expectations.json` (reuse tolerances from the closest existing St. Petersburg row; tighten later when a St Petersburg-shaped application JSON exists).
+4. One-line mention in `fixtures/README.md` if the file is part of the default story.
+5. `npm test` and `npm run lint`.
+
+---
+
+## Naming convention
+
+- `st_petersburg_<product>_<stress>[_variant].png` where `product` is `whiskey` or `vodka`, and `stress` is short (`baseline`, `glare_brand`, `angle_30`, `blur_strong`, etc.).
