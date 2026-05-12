@@ -19,6 +19,9 @@ function multipartRequest(image: Blob, applicationJson: string): Request {
 
 describe("handleVerifyPost", () => {
   beforeEach(() => {
+    // Host `.env` may set VERIFY_DEV_STUB / OPENAI_DISABLED; stub so branches stay deterministic.
+    vi.stubEnv("VERIFY_DEV_STUB", "");
+    vi.stubEnv("OPENAI_DISABLED", "");
     vi.stubEnv("OPENAI_API_KEY", "sk-test-key-stub");
   });
 
@@ -47,6 +50,8 @@ describe("handleVerifyPost", () => {
 
   it("returns 503 when OPENAI_API_KEY is missing", async () => {
     vi.unstubAllEnvs();
+    vi.stubEnv("VERIFY_DEV_STUB", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
 
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const application = JSON.stringify({
