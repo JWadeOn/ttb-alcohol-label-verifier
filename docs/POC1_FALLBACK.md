@@ -1,5 +1,15 @@
 # POC-1: Fallback OCR go/no-go (status and thresholds)
 
+## Prototype decision (formal defer — 2026-05-12)
+
+**Outcome:** **No Tesseract (or other real OCR) provider is wired in this prototype deliverable.** When the primary OpenAI vision path errors or exceeds failover budgets, the pipeline returns the **`unavailable` placeholder** extraction (`lib/extraction/unavailable-fallback-provider.ts`) behind `extractWithFailover` — honest, typed, validator-safe — not local OCR text.
+
+**Rationale:** Ship a stable primary path + measurement (`docs/evals/`) first. Adding Tesseract implies base-image packages, new dependencies, regex field parsing, worker/thread tuning, and a second eval harness; that is **Phase 2** scope, not a silent README promise for the current build.
+
+**Reopen / implement next** when a builder is ready to own Phase 2: add an `ExtractionProvider` that reads label bytes, run the **measurement contract** below on **≥10** fixtures in-container, and only then promote “local OCR fallback” language in the product README to match code.
+
+**Evidence today:** primary-path and scored fixture runs under **`docs/evals/`** (e.g. `PRIMARY_LATENCY_RUNS.md`, `fixture-correctness-expectations.json`).
+
 ## Current implementation status (Day 1 closeout)
 
 - **Tesseract (or other OCR) fallback is not wired** in the application yet. The extraction layer uses an **`unavailable`** placeholder after primary timeout/failure (`docs/modules/extraction.md`).
@@ -39,3 +49,4 @@ This document records **locked thresholds from research** so POC-1 can be execut
 |------|---------|
 | 2026-05-11 | OCR POC **not run** in code (no Tesseract). Thresholds **recorded**; primary latency **scaffold** added for evidence collection. |
 | 2026-05-11 | **Day 1 closed:** primary-path **first data point** (single dev request, ~6.0s extraction, `openai` provider) + **documented blocker** for OCR metrics → [`DAY1_COMPLETION_RECORD.md`](./DAY1_COMPLETION_RECORD.md). |
+| 2026-05-12 | **Formal defer:** prototype ships **placeholder-only** fallback; Tesseract go/no-go **not executed** in code. Thresholds and measurement contract **unchanged** for Phase 2. README + `IMPLEMENTATION_PLAN.md` aligned to shipped behavior. |

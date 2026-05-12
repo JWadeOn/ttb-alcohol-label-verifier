@@ -29,7 +29,8 @@
 
 ### 2.2 Fallback OCR
 
-- **Default:** Tesseract.js + regex on concatenated OCR text for structured fields only.
+- **Shipped (Phase 1 prototype):** no Tesseract (or other OCR) in process or container image. On primary failure/timeout the **`unavailable` placeholder provider** runs (`lib/extraction/unavailable-fallback-provider.ts`). **Formal defer and reopen criteria:** [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md) (2026-05-12).
+- **Planned default (Phase 2 / PRD):** Tesseract.js + regex on concatenated OCR text for structured fields only.
 - **Go/no-go (POC-1):** keep Tesseract only if:
   - image/build acceptable on chosen tier,
   - Tesseract inference **P95 ≤ ~1.5s** after hard-timeout window on **≥10** fixture labels,
@@ -38,10 +39,11 @@
 
 ### 2.3 Failover timing
 
-- **Soft timeout:** 3.0s — start fallback **in parallel** with primary.
-- **Hard timeout:** 3.5s — cancel primary, return fallback result if available.
+- **Shipped defaults (authoritative):** **soft 8000 ms** / **hard 20000 ms** — `lib/verify-pipeline.ts` + `lib/extraction/provider.ts` (override with `VERIFY_EXTRACT_SOFT_TIMEOUT_MS`, `VERIFY_EXTRACT_HARD_TIMEOUT_MS`; see `README.md` / `.env.example`).
+- **Behavior:** soft timeout starts the fallback provider **in parallel** with primary; hard timeout **aborts** primary and returns fallback when primary has not completed.
+- **Original PRD narrative (historical only):** 3.0s soft / 3.5s hard — not the live deployed default; do not tune production from these numbers alone.
 
-**As-shipped note (2026-05-12):** runtime defaults in `lib/verify-pipeline.ts` / `lib/extraction/provider.ts` are **8000 ms / 20000 ms** so typical OpenAI vision completes on deployed hosts; override with `VERIFY_EXTRACT_*`. Treat the 3.0s / 3.5s bullets above as the **original PRD budget narrative**, not the live default. Authoritative merge: [`COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) §3.2.
+**As-shipped note (2026-05-12):** authoritative merge lives in [`COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) §3.2.
 
 ---
 
@@ -58,7 +60,7 @@
 
 **Optional headers / form fields (P1):**
 
-- `force_fallback` or env `USE_LOCAL_OCR=1` — route through local OCR provider only (eval/demo).
+- `force_fallback` or env `USE_LOCAL_OCR=1` — **not wired** in this codebase (no local-OCR route yet); reserved for a future provider behind the same interface. Scope lock: [`COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md).
 
 **Application JSON (minimum contract):**
 
@@ -161,7 +163,7 @@ export async function extractWithFailover(
 | F-1 | UI + `app/api/verify` multipart handler |
 | F-2 | Extraction schema + OpenAI + fallback regex fields |
 | F-3 | `openai-provider.ts`: vision + structured JSON + low-confidence instructions |
-| F-4 | `tesseract-provider.ts` + regex; Tesseract-first + POC-1 pivot policy |
+| F-4 | **Deferred (Phase 2):** `tesseract-provider.ts` + regex; policy + thresholds in [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md); formal prototype defer logged 2026-05-12 |
 | F-5 | `extractWithFailover`: parallel soft/hard timeouts (**shipped defaults 8000 ms / 20000 ms** in `verify-pipeline`; original PRD narrative 3.0s / 3.5s — see §2.3 note) |
 | F-6 | `validator.ts` per-field compare |
 | F-7 | Brand normalization + Levenshtein in `validator.ts` |
@@ -370,7 +372,8 @@ ttb-alcohol-label-verifier/
 │   ├── extraction/
 │   │   ├── provider.ts
 │   │   ├── openai-provider.ts
-│   │   └── tesseract-provider.ts
+│   │   ├── unavailable-fallback-provider.ts   # shipped Phase 1 placeholder
+│   │   └── tesseract-provider.ts              # Phase 2 (deferred — not in repo)
 │   ├── validator.ts
 │   ├── image-quality.ts
 │   └── schemas.ts
@@ -392,11 +395,11 @@ ttb-alcohol-label-verifier/
 - [ ] Every PRD F-* maps to code ownership (§5).
 - [ ] Eval methods and thresholds are explicit (§10).
 - [ ] Manual-review paths documented per field (§4).
-- [ ] Deployment and fallback policies consistent with README and PRESEARCH.
+- [ ] Deployment and fallback policies consistent with README, **`docs/POC1_FALLBACK.md`**, and research framing (Phase 1: placeholder fallback; Tesseract deferred with logged criteria).
 
 ### Day 3 notes (2026-05-11)
 
 - **Public URL + docs:** `README.md`, `docs/PROGRESS.md`, `docs/ARCHITECTURE.md`, `docs/DAY3_EXECUTION_CHECKLIST.md` updated for **Railway** deploy; **Render** runbook retained.
-- **Production eval artifacts:** [`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md) (timeline); e.g. [`primary-latency-production-2026-05-12.json`](./evals/primary-latency-production-2026-05-12.json) — **200** + ~3.5–6.5s round trips; **`openai`** on three fixtures; default **`VERIFY_EXTRACT_*`** **8000 / 20000** ms in app code.
+- **Fallback policy (2026-05-12):** Tesseract / local OCR **deferred**; **`docs/POC1_FALLBACK.md`** records formal no-go for this deliverable + unchanged POC-1 thresholds for Phase 2. README + §2.2–§2.3 aligned to **8000 / 20000** ms and **`unavailable`** placeholder path.
 
 *End of implementation plan.*

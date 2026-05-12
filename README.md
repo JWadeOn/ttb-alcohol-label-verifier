@@ -68,22 +68,15 @@ This prototype is decision support, not legal automation.
 ## Technical Approach
 
 - **Primary extraction:** Vision LLM (`gpt-4o-mini`) with structured JSON output.
-- **Fallback extraction:** Local OCR path (`tesseract.js`) for resilience and network-restricted environments.
-- **Failover orchestration:** Soft timeout starts fallback in parallel; hard timeout cancels primary and returns fallback.
+- **Fallback extraction (shipped):** When the primary path fails or times out, the pipeline uses an **`unavailable` placeholder** provider (typed empty fields + reasons) so responses stay schema-valid and route to **`manual_review`** in the validator — not local OCR. See **`docs/POC1_FALLBACK.md`** for the formal **Tesseract defer** and unchanged POC-1 go/no-go numbers for Phase 2.
+- **Failover orchestration:** Soft timeout starts fallback **in parallel** with primary; hard timeout **aborts** primary and returns fallback (`lib/extraction/provider.ts`).
 - **Validation engine:** Deterministic regex + normalized fuzzy comparison, with per-field evidence in results.
 - **Image quality gate:** Rejects unreadable images with a clear resubmission message.
 
-## Fallback OCR Decision Policy
+## Fallback OCR (research vs shipped)
 
-- Default fallback is **Tesseract-first** to keep the prototype Node-native and simple.
-- A go/no-go POC runs early in implementation.
-- Keep Tesseract only if both are true:
-  - fallback OCR latency stays within target budget on fixtures,
-  - structured-field fallback extraction (warning/ABV/net contents) meets minimum coverage threshold.
-- If thresholds are missed, pivot behind the same provider interface:
-  1. worker-thread and Node-native OCR tuning,
-  2. ONNX-based OCR path,
-  3. PaddleOCR sidecar/service as a final fallback option.
+- **What ships in this repo:** placeholder-only fallback after primary failure; **no** Tesseract in the Docker image or Node dependency graph.
+- **What PRD / research still define:** Tesseract-first as the **default Phase 2** candidate if a POC-1 measurement run clears latency and structured-field coverage thresholds (`docs/POC1_FALLBACK.md`). If thresholds fail, pivot options remain worker-thread tuning, ONNX, or PaddleOCR behind the same `ExtractionProvider` interface.
 
 ## UX Principles
 

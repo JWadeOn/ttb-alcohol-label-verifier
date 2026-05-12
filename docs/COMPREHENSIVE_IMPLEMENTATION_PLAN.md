@@ -68,13 +68,13 @@ Aligned with [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §1 and [
 |--------|------------------|--------|
 | **Shipped defaults** (`lib/verify-pipeline.ts`, `lib/extraction/provider.ts`) | **8000 / 20000** | Chosen so typical `gpt-4o-mini` vision completes on Railway without falling through to `unavailable` on common fixtures. |
 | **Environment override** | `VERIFY_EXTRACT_SOFT_TIMEOUT_MS`, `VERIFY_EXTRACT_HARD_TIMEOUT_MS` | See [`README.md`](../README.md), [`.env.example`](../.env.example). |
-| **Older narrative** in `IMPLEMENTATION_PLAN.md` §2.3 / F-5 | 3000 / 3500 | **Superseded for shipped prototype** unless you intentionally tighten budgets; update that doc if drift causes confusion. |
+| **Older narrative** in `IMPLEMENTATION_PLAN.md` §2.3 / F-5 | 3000 / 3500 | **Historical PRD only** — §2.3 now lists **8000 / 20000** as authoritative (2026-05-12 doc sync). |
 
 ### 3.3 Fallback OCR
 
 - **Implemented:** timeout orchestration + **`unavailable`** placeholder provider (Phase 1 honesty path).  
-- **Not implemented:** Tesseract provider, POC-1 measured go/no-go on real OCR latency/accuracy.  
-- **Policy / thresholds:** [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md).
+- **Not implemented:** Tesseract provider; POC-1 **go/no-go not run** on real OCR (no OCR in container).  
+- **Policy / thresholds / prototype defer:** [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md) (formal **defer** for this deliverable, 2026-05-12).
 
 ### 3.4 Deployment
 
@@ -91,8 +91,8 @@ Aligned with [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §1 and [
 |-------|-------------|----------------------------|----------|
 | **Phase 0** | Thin vertical, contracts, baseline tests | **Done** | Day 1 completion record, handler + schema tests |
 | **Phase 1** | OpenAI extraction + validator + failover shell | **Done** | `lib/extraction/*`, `lib/validator.ts`, `lib/verify-pipeline.ts`, Day 2 completion record |
-| **Phase 2** | Tesseract fallback + full failover productization | **Partial** | Failover **framework** + `unavailable` fallback; **no** Tesseract provider in app |
-| **Phase 3** | Evals, deploy, docs, reviewer-ready | **Partial** | Railway deploy + latency eval timeline + fixture-verify script; correctness matrix + Day 3 stabilization still open |
+| **Phase 2** | Tesseract fallback + full failover productization | **Deferred (prototype)** | Failover **framework** + **`unavailable`** placeholder; Tesseract **not** in app — formal decision + reopen criteria: **[`POC1_FALLBACK.md`](./POC1_FALLBACK.md)** (2026-05-12). |
+| **Phase 3** | Evals, deploy, docs, reviewer-ready | **Partial** | Railway deploy + latency timeline + **scored** `eval:fixture-verify` + `docs/evals/CORRECTNESS_THRESHOLDS.md`; Day 3 UX polish + **`IMPLEMENTATION_PLAN.md` §16** sign-off still open. |
 
 ---
 
@@ -103,7 +103,7 @@ Full table: [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §5. Snaps
 | ID | Topic | Status |
 |----|--------|--------|
 | F-1–F-3, F-6–F-13 | Core path: API, extraction, validator, image quality, UI, deploy, README | **Done** (within prototype scope) |
-| F-4, F-16 | Tesseract fallback + env toggle to force local OCR | **Not done** (policy only) |
+| F-4, F-16 | Tesseract fallback + env toggle to force local OCR | **Deferred** (policy + thresholds in [`POC1_FALLBACK.md`](./POC1_FALLBACK.md); not wired) |
 | F-5 | Soft/hard failover | **Done** (values: see §3.2) |
 | F-14 | Batch UI / batch route | **Not done** |
 | F-15 | Confidence surfaced prominently | **Partial** (fields carry confidence; polish optional) |
@@ -149,9 +149,8 @@ From [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §8:
 
 From [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §10 and [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md):
 
-- Expand **categorized image set** (happy, glare, blur, angle, typography, missing data).  
-- Add **expected outcomes** (or tolerances) per fixture and score extraction+validation in eval output.  
-- Record **acceptance thresholds** (latency P95, field-level targets, manual-review expectations) in `docs/evals/` and link here.
+- **In progress (2026-05-12):** scored **`eval:fixture-verify`** + `docs/evals/fixture-correctness-expectations.json` + [`CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) + committed artifacts (happy, difficult, seeds, synthetic glare/blur/tilt).  
+- **Still open:** expand **categorized image set** further (typography stress, missing data, more real photos), and keep **latency P95** bench rows current as deploy/model changes.
 
 ---
 
@@ -175,10 +174,10 @@ This is the **implementation backlog** to reach “reviewer-complete” for the 
 1. **Correctness evidence** — fixture taxonomy + expected outputs + eval scoring (extends `eval:fixture-verify` or sibling script); commit artifacts under `docs/evals/`.  
 2. **Explicit thresholds doc** — codify §10 targets into a single `docs/evals/` thresholds file and measure against them.  
 3. **Day 3 UX polish** — image-quality reject copy, provider/`manual_review` clarity, client error shapes ([`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md) §5:00–6:00).  
-4. **Fallback decision** — implement Tesseract path **or** publish explicit defer/pivot with metrics placeholder ([`POC1_FALLBACK.md`](./POC1_FALLBACK.md)).  
+4. **Fallback decision** — **Done (2026-05-12):** Tesseract / local OCR **deferred** for this deliverable; formal outcome + reopen criteria in [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md); README + `IMPLEMENTATION_PLAN.md` aligned to **`unavailable`** placeholder path.
 5. **Batch uploads** — implement thin batch flow **or** document out-of-scope for this deliverable.  
 6. **Acceptance sign-off** — complete checklist §10 below and tick [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 in git when evidence exists.  
-7. **Doc drift cleanup** — align `IMPLEMENTATION_PLAN.md` §2.3/F-5 timeout narrative with §3.2 here (or revert code; pick one source of truth).
+7. **Doc drift cleanup** — **Done (2026-05-12) for §2.3/F-5:** `IMPLEMENTATION_PLAN.md` §2.3 now lists **8000 / 20000** ms as authoritative; historical 3.0s / 3.5s retained as PRD narrative only.
 
 ---
 
@@ -188,10 +187,10 @@ Mirror of [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 with **
 
 - [ ] **Contracts unambiguous** — engineer can implement from `IMPLEMENTATION_PLAN` §3 + `lib/schemas.ts` without reopening PRD for status enums.  
 - [x] **F-* ownership mapped** — §5 table + module docs (remaining: mark F-4/F-14 explicitly deferred or implement).  
-- [ ] **Eval methods + thresholds explicit and measured** — §7.3 gap; latency timeline exists; correctness matrix pending.  
+- [ ] **Eval methods + thresholds explicit and measured** — latency timeline + fixture correctness artifacts exist under `docs/evals/`; tighten §16 wording when you formally sign off.  
 - [x] **Manual-review paths** — validator + UI; per-field in [`REQUIREMENTS_SOURCE_OF_TRUTH.md`](./REQUIREMENTS_SOURCE_OF_TRUTH.md).  
 - [x] **Deployment** — Railway live URL + README; Render runbook alternate.  
-- [ ] **Fallback policy consistent** — README/POC1 vs **code**: either implement OCR or document “placeholder only until Phase 2” as final (already mostly true; formalize in §16 sign-off).
+- [x] **Fallback policy consistent** — Phase 1 ships **`unavailable`** placeholder only; Tesseract **deferred** with logged criteria in [`POC1_FALLBACK.md`](./POC1_FALLBACK.md); README + `IMPLEMENTATION_PLAN.md` §2.2–§2.3 aligned (2026-05-12).
 
 ---
 
@@ -207,6 +206,7 @@ Mirror of [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 with **
 
 | Date | Change |
 |------|--------|
+| 2026-05-12 | **Fallback formal defer** logged in `POC1_FALLBACK.md`; `IMPLEMENTATION_PLAN.md` §2.2–§2.3/F-4/README aligned; remaining work §9 items 4 + 7 closed for this decision. |
 | 2026-05-12 | Initial **Comprehensive Implementation Plan** — consolidates IMPLEMENTATION_PLAN, ARCHITECTURE, week/day execution, evals, scorecard, and as-built timeouts/deploy. |
 
 ---

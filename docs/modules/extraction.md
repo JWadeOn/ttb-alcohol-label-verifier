@@ -16,7 +16,7 @@ Pluggable **extraction** from label image bytes → structured per-field values 
 ## Decisions
 
 - **Server logging** — `extractWithFailover` logs a structured warning when the primary provider throws (includes optional `requestId`, `primaryAborted`, timeout budgets). Never logs API keys or image bytes.
-- **Failover without real OCR** — proves timeout and response assembly before investing in Tesseract; README and fallback `reason` set expectations.
+- **Failover without real OCR** — proves timeout and response assembly before investing in Tesseract; README and fallback `reason` set expectations. **Prototype decision (2026-05-12):** Tesseract deferred; formal defer + POC-1 thresholds for Phase 2 in [`docs/POC1_FALLBACK.md`](../POC1_FALLBACK.md).
 - **JSON-only** model output reduces parsing brittleness; still validated with Zod before use.
 - **Primary obeys `AbortSignal`** from failover’s hard timeout so in-flight work can be cancelled.
 
