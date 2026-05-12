@@ -18,6 +18,7 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Whiskey angle (~28° yaw) | `st_petersburg_whiskey_angle_28` | `st_petersburg_whiskey_angle_28.png` |
 | Vodka baseline (front-on) | `st_petersburg_vodka_baseline` | `st_petersburg_vodka_baseline.png` |
 | Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
+| Vodka glare (brand) | `st_petersburg_vodka_glare_brand` | `st_petersburg_vodka_glare_brand.png` |
 | Whiskey blur (moderate, label softness) | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
 | Whiskey blur (strong DOF / bokeh) | `st_petersburg_whiskey_blur_strong` | `st_petersburg_whiskey_blur_strong.png` |
 | Whiskey low light + grain | `st_petersburg_whiskey_low_light_grain` | `st_petersburg_whiskey_low_light_grain.png` |
@@ -172,6 +173,8 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 | **Intent** | Mirror whiskey `glare_brand` on the **vodka** SKU for cross-product glare behavior. |
 
 **Prompt:** Front-on or slight angle vodka bottle; **bright specular** on upper label washing **brand line** while mid-label and warning remain **more** legible than brand (inverse emphasis vs harsh warning shots).
+
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`).
 
 ---
 

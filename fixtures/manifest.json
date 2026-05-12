@@ -63,6 +63,12 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "st_petersburg_vodka_glare_brand",
+      "relativePath": "labels/st_petersburg_vodka_glare_brand.png",
+      "description": "Real-photo vodka bottle with bright vertical specular on the label washing brand and upper lines (SPIRITS / SINGLE BARREL); mid-label proof and government warning relatively more legible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "st_petersburg_whiskey_blur_moderate",
       "relativePath": "labels/st_petersburg_whiskey_blur_moderate.png",
       "description": "Real-photo moderate-blur variant from the St. Petersburg anchor; bottle remains centered and mostly legible but detail sharpness is reduced.",
