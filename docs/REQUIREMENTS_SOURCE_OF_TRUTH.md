@@ -56,6 +56,7 @@ If **`FIELD_REQUIREMENTS`** in **`app/page.tsx`** disagrees with **`validator.ts
 - **COLA** or TTB internal APIs  
 - **Per-commodity** (wine/beer) rule matrices beyond PRD’s staged plan  
 - **Legal sign-off** or “compliant / non-compliant” as a regulatory determination  
+- **Persistence of human Approve / Reject** — the Results footer disposition is **browser-only** UI state for the prototype (`app/page.tsx`); it is **not** written to disk or any API.
 
 ---
 

@@ -21,9 +21,9 @@ Client-only page: file upload, application data editor, `POST /api/verify` via `
 ## Workbench & workflow (home card)
 
 - **Page chrome (above the card):** A single header row (**`sm`+**): **Phase 1** + **Label verification** (left), compact **`WorkflowProcessTabs`** (**Edit** · **Verify** · **`Results`**, tooltips carry the short descriptions), **How this works** (right). Narrow viewports stack the same blocks. **`WorkflowProcessTabs`** is a **~28px-tall** segmented control (no subtitle lines in the strip). **How this works** opens an **absolute-positioned** panel (`z-50`) under the control so it **does not push** the workbench down; the header uses **`relative z-20`** so the panel stacks above the form (`z-10`).
-- **Row 1 (context strip, inside card):** Omitted on **Edit**. On **Verify**, server-status copy. On **Results**, **Outcome & field review** plus HTTP status when known.
+- **Row 1 (context strip, inside card):** Omitted on **Edit**. On **Verify**, server-status copy. On **Results**, **Outcome & field review**, HTTP status when known, and **Edit inputs** + **Run again** (submit) on the right so the scrollable body stays focused on review.
 - **Row 2 (scrollable body):** **Edit** — two-column workbench (label preview + `ApplicationEditor`). **Verify** — `VerifyRunStepsPanel` (**horizontal** step strip: Request · Image · Extract · Compare, with a single caption for the active or terminal message) fed by **`buildVerifyUiStepsLoading`** then **`buildVerifyUiStepsFromResponse`**; **failed runs keep the user on Verify** so checklist errors stay here. **Results** — error banner (if any) + field comparison / raw JSON only (**no** duplicate pipeline summary).
-- **Row 3 (footer):** **Edit** — primary **Run verification**. **Verify** (after run) — **View results**; during idle pre-run — hint to use Edit. **Results** — **Edit inputs** + **Run again** (submit).
+- **Row 3 (footer):** **Edit** — primary **Run verification**. **Verify** (after run) — **View results**; during idle pre-run — hint to use Edit. **Results** — compact **Approve** / **Reject** when the success payload parses (otherwise no footer row; use header **Edit inputs** / **Run again**).
 - **Card height:** **Edit / Verify** use **`h-[min(88svh,680px)]`** (**`sm`:** **`min(90svh,720px)`**) so the workbench uses more of the viewport; **Results** keeps **`max-h-[min(92svh,900px)]`**. Inner padding is tighter (`p-2`, reduced gaps) to help **Edit** fit in one screen without scrolling when possible.
 
 The native file input is **visually hidden** (`sr-only`) inside **Label preview**; **Choose label image** (empty state) and **Replace** use the same ref. When a file is selected, the heading reads **Label preview for `'filename'`** (truncated with `title` for full path) on one line with **Replace** on the right. The preview image is **top-aligned** (`object-top`, `items-start`) so the frame does not center it with empty space above.
@@ -34,12 +34,13 @@ Goal: **results first** — see pass / manual review / fail counts and a **compa
 
 | Region | Purpose |
 |--------|---------|
-| **At a glance** | **Headline**, then a prominent **Outcome counts** panel (bordered) with the **Across *N* fields: …** roll-up in larger semibold type, optional **What “not applicable” means** link inside that panel, then **plain-language lead**, **Next** line, then **What the engine reported** or **Per-field detail**. |
-| **Prototype scope & thresholds** | Two `<details>` blocks: **Prototype scope (not a TTB checklist)** (seven fixed comparisons, PRD P0 vs P1, not COLA/reg law), and **Coded match thresholds** (numeric constants from exported symbols in `lib/validator.ts`). |
+| **At a glance** | **Headline** plus an **info** control (`title` / `aria-label`) bundling former lead + next-step copy, not-applicable explanation when relevant, and either the shared engine message or the per-field-detail hint. Under that, one **bold workload line** (`outcomeWorkloadSummaryLine`). No nested outcome-counts panel or long paragraphs in the card. |
 | **Field outcomes table** | One row per `validation.fields` row: **Field**, **Status**, truncated **From label** / **From application** (`title` tooltips for full text). |
+| **Prototype scope & thresholds** | Two `<details>` blocks **below** the field table: **Prototype scope (not a TTB checklist)** (seven fixed comparisons, PRD P0 vs P1, not COLA/reg law), and **Coded match thresholds** (numeric constants from exported symbols in `lib/validator.ts`). |
 | **Label image** | `<details>` (collapsed by default): same preview image used for the run. |
 | **Full comparison by field** | `<details>` (collapsed): short intro (three columns + **not TTB policy**), legend, then **one card per field** with a clear header row, **larger vertical gap** between fields, and per-field outcome line labeled **Outcome for this field** when messages differ. Third column title **How this field is checked** (coded rule from `lib/validator.ts` / `FIELD_REQUIREMENTS` in `app/page.tsx`). |
 | **Run metadata** | `<details>` (collapsed): request id, extraction provider + duration, image quality. |
+| **Results footer** | On successful parse only: compact **Approve** / **Reject** (+ **Clear**), short “not saved” line when set. **Edit inputs** / **Run again** stay in the **Results** header. |
 | **Raw API JSON** | `<details>` for debugging or copy/paste. |
 
 ## Dependencies

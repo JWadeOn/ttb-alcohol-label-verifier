@@ -330,6 +330,49 @@ function outcomeCardNextStepLine(d: ResultsDigest): string {
   }
 }
 
+/** Long guidance for the results summary info control (native tooltip + screen readers). */
+function buildResultsSummaryGuidanceTooltip(d: ResultsDigest): string {
+  const chunks: string[] = [
+    `${outcomeCardLeadLine(d)} ${outcomeCardNextStepLine(d)}`.replace(/\s+/g, " ").trim(),
+  ];
+  if (d.notApplicableTooltip) {
+    chunks.push(d.notApplicableTooltip);
+  }
+  if (d.uniqueMessage) {
+    chunks.push(`Same engine message on every row: ${d.uniqueMessage}`);
+  } else {
+    chunks.push(
+      "Validator messages differ by field — expand Full comparison by field below for each row’s explanation and extraction confidence.",
+    );
+  }
+  return chunks.join(" ");
+}
+
+function InfoIconButton({ description, compact }: { description: string; compact?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={
+        compact
+          ? "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-200/80 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1"
+          : "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-200/90 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1"
+      }
+      title={description}
+      aria-label={description}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={compact ? "h-3.5 w-3.5" : "h-4 w-4"}
+        aria-hidden
+      >
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+      </svg>
+    </button>
+  );
+}
+
 function truncateFieldCell(value: string | null, maxLen: number): string {
   if (value == null) return "—";
   const t = String(value).trim();
@@ -355,6 +398,8 @@ export default function HomePage() {
   const [workflowPhase, setWorkflowPhase] = useState<WorkflowPhase>("edit");
   const [runGeneration, setRunGeneration] = useState(0);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  /** Human approve/reject for the current successful run — client only, not sent to the server. */
+  const [reviewDisposition, setReviewDisposition] = useState<"approved" | "rejected" | null>(null);
 
   const applicationPageNav = useMemo(() => {
     const i = Math.min(
@@ -423,6 +468,7 @@ export default function HomePage() {
     setErrorPayload(null);
     setRawResponseJson(null);
     setHttpStatus(null);
+    setReviewDisposition(null);
 
     try {
       const formData = new FormData();
@@ -535,7 +581,10 @@ export default function HomePage() {
               </li>
               <li>
                 On success, open <strong className="font-semibold text-stone-900">Results</strong> for the
-                field-by-field comparison table.
+                field-by-field table. <strong className="font-semibold text-stone-900">Approve</strong> /{" "}
+                <strong className="font-semibold text-stone-900">Reject</strong> below the table is optional UI state
+                only (not saved). Use <strong className="font-semibold text-stone-900">Edit inputs</strong> in the
+                results header to change inputs and run again.
               </li>
               <li>
                 This prototype uses OpenAI vision plus deterministic checks (see{" "}
@@ -552,7 +601,9 @@ export default function HomePage() {
             workflowPhase === "edit"
               ? "h-[min(88svh,680px)] grid-rows-[minmax(0,1fr)_auto] sm:h-[min(90svh,720px)]"
               : workflowPhase === "results"
-                ? "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-h-[min(92svh,880px)]"
+                ? successPayload
+                  ? "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-h-[min(92svh,880px)]"
+                  : "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)] sm:max-h-[min(92svh,880px)]"
                 : "h-[min(88svh,680px)] grid-rows-[auto_minmax(0,1fr)_auto] sm:h-[min(90svh,720px)]"
           }`}
         >
@@ -567,13 +618,32 @@ export default function HomePage() {
               </p>
             </div>
           ) : workflowPhase === "results" ? (
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-stone-100 bg-stone-50/70 px-4 py-2.5">
-              <span className="text-sm font-semibold text-stone-900">Outcome &amp; field review</span>
-              {httpStatus !== null ? (
-                <span className="rounded-md bg-stone-200/80 px-2.5 py-1 font-mono text-xs text-stone-800">
-                  HTTP {httpStatus}
-                </span>
-              ) : null}
+            <div className="flex shrink-0 flex-col gap-2 border-b border-stone-100 bg-stone-50/70 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-stone-900">Outcome &amp; field review</span>
+                {httpStatus !== null ? (
+                  <span className="rounded-md bg-stone-200/80 px-2.5 py-1 font-mono text-xs text-stone-800">
+                    HTTP {httpStatus}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex shrink-0 flex-wrap items-stretch gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setWorkflowPhase("edit")}
+                  className="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-2 text-center text-xs font-semibold text-stone-800 shadow-sm transition hover:bg-stone-50 sm:px-4 sm:text-sm"
+                >
+                  Edit inputs
+                </button>
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="cursor-pointer rounded-lg border-2 border-ttb-600 bg-white px-3 py-2 text-center text-xs font-semibold text-ttb-800 shadow-sm transition hover:bg-ttb-50 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-100 disabled:text-stone-500 disabled:shadow-none sm:px-4 sm:text-sm"
+                  title={!canSubmit ? "Add a label image and valid application JSON to run again" : undefined}
+                >
+                  Run again
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -722,7 +792,7 @@ export default function HomePage() {
                     {successPayload && resultsDigest ? (
                       <>
                         <div
-                          className={`rounded-xl border px-4 py-4 shadow-sm ${
+                          className={`rounded-xl border px-3 py-3 shadow-sm sm:px-4 ${
                             resultsDigest.overall === "fail"
                               ? "border-red-200 bg-red-50/90"
                               : resultsDigest.overall === "manual_review"
@@ -732,56 +802,72 @@ export default function HomePage() {
                                   : "border-stone-200 bg-white"
                           }`}
                         >
-                          <h3 className="text-base font-semibold tracking-tight text-stone-900 sm:text-lg">
-                            {overallResultsHeadline(resultsDigest)}
-                          </h3>
-                          <div className="mt-3 rounded-lg border border-stone-300/80 bg-white/90 px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                              Outcome counts
-                            </p>
-                            <p className="mt-1 text-sm font-semibold leading-snug text-stone-900 sm:text-base">
-                              {outcomeWorkloadSummaryLine(resultsDigest)}
-                            </p>
-                            {resultsDigest.counts.not_applicable > 0 ? (
-                              <p className="mt-2 text-xs text-stone-600">
-                                <span
-                                  tabIndex={0}
-                                  className="cursor-help font-medium text-ttb-800 underline decoration-dotted decoration-ttb-600/50 underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ttb-500 focus-visible:ring-offset-1"
-                                  title={resultsDigest.notApplicableTooltip ?? undefined}
-                                  aria-label={resultsDigest.notApplicableTooltip ?? undefined}
-                                >
-                                  What “not applicable” means
-                                </span>
-                              </p>
-                            ) : null}
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="min-w-0 text-base font-semibold leading-snug tracking-tight text-stone-900 sm:text-lg">
+                              {overallResultsHeadline(resultsDigest)}
+                            </h3>
+                            <InfoIconButton description={buildResultsSummaryGuidanceTooltip(resultsDigest)} />
                           </div>
-                          <p className="mt-3 text-sm leading-snug text-stone-800">
-                            {outcomeCardLeadLine(resultsDigest)}
+                          <p className="mt-2 text-sm font-semibold leading-snug text-stone-900">
+                            {outcomeWorkloadSummaryLine(resultsDigest)}
                           </p>
-                          <p className="mt-2 text-xs font-medium text-stone-700">
-                            {outcomeCardNextStepLine(resultsDigest)}
+                        </div>
+
+                        <div>
+                          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                            Field outcomes
+                          </h3>
+                          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
+                            <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+                              <thead>
+                                <tr className="border-b border-stone-200 bg-stone-50 text-[11px] font-semibold uppercase tracking-wide text-stone-600">
+                                  <th className="px-3 py-2">Field</th>
+                                  <th className="whitespace-nowrap px-3 py-2">Status</th>
+                                  <th className="px-3 py-2">From label</th>
+                                  <th className="px-3 py-2">From application</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {successPayload.validation.fields.map((row) => {
+                                  const extractedDisplay = truncateFieldCell(row.extractedValue, 56);
+                                  const applicationDisplay = truncateFieldCell(row.applicationValue, 56);
+                                  return (
+                                    <tr key={row.fieldId} className="border-b border-stone-100 last:border-0">
+                                      <td className="max-w-[10rem] px-3 py-2 font-medium text-stone-900">
+                                        {FIELD_LABELS[row.fieldId]}
+                                      </td>
+                                      <td className="max-w-[9.5rem] px-3 py-2 align-top">
+                                        <span
+                                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold leading-snug ${statusBadgeClasses(row.status)}`}
+                                        >
+                                          {formatStatusLabel(row.status)}
+                                        </span>
+                                      </td>
+                                      <td
+                                        className="max-w-[14rem] px-3 py-2 font-mono text-xs text-stone-800"
+                                        title={row.extractedValue ?? undefined}
+                                      >
+                                        {extractedDisplay}
+                                      </td>
+                                      <td
+                                        className="max-w-[14rem] px-3 py-2 font-mono text-xs text-stone-800"
+                                        title={row.applicationValue ?? undefined}
+                                      >
+                                        {applicationDisplay}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="mt-1.5 flex flex-wrap items-center gap-x-1 text-[11px] text-stone-500">
+                            <span>Hover cells for full text.</span>
+                            <InfoIconButton
+                              compact
+                              description="Open Full comparison by field below for coded rules, model confidence, and validator messages per row."
+                            />
                           </p>
-                          {resultsDigest.uniqueMessage ? (
-                            <div className="mt-4 border-t border-stone-200/80 pt-3">
-                              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                                What the engine reported (same for every row this run)
-                              </p>
-                              <p className="mt-1.5 text-sm leading-relaxed text-stone-800">
-                                {resultsDigest.uniqueMessage}
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="mt-4 border-t border-stone-200/80 pt-3">
-                              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                                Per-field detail
-                              </p>
-                              <p className="mt-1.5 text-xs leading-relaxed text-stone-600">
-                                Validator messages differ by field — expand{" "}
-                                <strong className="font-medium text-stone-800">Full comparison by field</strong>{" "}
-                                below for each row’s explanation.
-                              </p>
-                            </div>
-                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -792,9 +878,9 @@ export default function HomePage() {
                             <div className="mt-3 space-y-3 text-xs leading-relaxed text-stone-700">
                               <p>
                                 This app always runs <strong className="text-stone-900">seven comparisons</strong>{" "}
-                                (one row per field below). It does{" "}
-                                <strong className="text-stone-900">not</strong> read COLA, parse TTB regulations, or
-                                tell you what must appear on a real label — it only compares{" "}
+                                (one row per field in the <strong className="text-stone-900">Field outcomes</strong>{" "}
+                                table above). It does <strong className="text-stone-900">not</strong> read COLA, parse
+                                TTB regulations, or tell you what must appear on a real label — it only compares{" "}
                                 <strong className="text-stone-900">extracted label text</strong> to{" "}
                                 <strong className="text-stone-900">what you put in the application JSON</strong> using
                                 the coded rules in{" "}
@@ -912,61 +998,6 @@ export default function HomePage() {
                               </dl>
                             </div>
                           </details>
-                        </div>
-
-                        <div>
-                          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
-                            Field outcomes
-                          </h3>
-                          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
-                            <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
-                              <thead>
-                                <tr className="border-b border-stone-200 bg-stone-50 text-[11px] font-semibold uppercase tracking-wide text-stone-600">
-                                  <th className="px-3 py-2">Field</th>
-                                  <th className="whitespace-nowrap px-3 py-2">Status</th>
-                                  <th className="px-3 py-2">From label</th>
-                                  <th className="px-3 py-2">From application</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {successPayload.validation.fields.map((row) => {
-                                  const extractedDisplay = truncateFieldCell(row.extractedValue, 56);
-                                  const applicationDisplay = truncateFieldCell(row.applicationValue, 56);
-                                  return (
-                                    <tr key={row.fieldId} className="border-b border-stone-100 last:border-0">
-                                      <td className="max-w-[10rem] px-3 py-2 font-medium text-stone-900">
-                                        {FIELD_LABELS[row.fieldId]}
-                                      </td>
-                                      <td className="max-w-[9.5rem] px-3 py-2 align-top">
-                                        <span
-                                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold leading-snug ${statusBadgeClasses(row.status)}`}
-                                        >
-                                          {formatStatusLabel(row.status)}
-                                        </span>
-                                      </td>
-                                      <td
-                                        className="max-w-[14rem] px-3 py-2 font-mono text-xs text-stone-800"
-                                        title={row.extractedValue ?? undefined}
-                                      >
-                                        {extractedDisplay}
-                                      </td>
-                                      <td
-                                        className="max-w-[14rem] px-3 py-2 font-mono text-xs text-stone-800"
-                                        title={row.applicationValue ?? undefined}
-                                      >
-                                        {applicationDisplay}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className="mt-1.5 text-[11px] text-stone-500">
-                            Hover truncated cells for full text. Open{" "}
-                            <strong className="text-stone-700">Full comparison by field</strong> for rules, confidence,
-                            and messages.
-                          </p>
                         </div>
 
                         <details className="rounded-xl border border-stone-200 bg-stone-50/90 px-3 py-2 sm:px-4">
@@ -1169,54 +1200,100 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-2 sm:px-4">
-            <div className="mx-auto flex w-full max-w-lg flex-col gap-2 sm:flex-row sm:justify-center sm:gap-3">
-              {workflowPhase === "edit" ? (
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300 sm:max-w-md"
-                >
-                  {loading ? "Verifying…" : "Run verification"}
-                </button>
-              ) : workflowPhase === "verify" && !loading ? (
-                hasCompletedRun ? (
-                  <button
-                    type="button"
-                    onClick={() => setWorkflowPhase("results")}
-                    className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 sm:max-w-md"
-                  >
-                    View results
-                  </button>
-                ) : (
-                  <p className="w-full py-2 text-center text-sm text-stone-600 sm:max-w-md">
-                    Use <strong className="text-stone-800">Edit</strong> to run a verification first.
-                  </p>
-                )
-              ) : workflowPhase === "verify" && loading ? (
-                <p className="w-full py-2 text-center text-sm font-medium text-stone-600 sm:max-w-md">
-                  Verification in progress…
-                </p>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setWorkflowPhase("edit")}
-                    className="w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-6 py-2.5 text-sm font-semibold text-stone-800 shadow-sm transition hover:bg-stone-50 sm:max-w-[11rem]"
-                  >
-                    Edit inputs
-                  </button>
+          {workflowPhase !== "results" || successPayload ? (
+            <div
+              className={`shrink-0 border-t border-stone-200 bg-stone-50 px-3 sm:px-4 ${
+                workflowPhase === "results" ? "py-2" : "py-3"
+              }`}
+            >
+              <div
+                className={`mx-auto w-full ${
+                  workflowPhase === "results"
+                    ? "flex flex-col"
+                    : "flex max-w-lg flex-col gap-2 sm:flex-row sm:justify-center sm:gap-3"
+                }`}
+              >
+                {workflowPhase === "edit" ? (
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white sm:max-w-md"
+                    className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300 sm:max-w-md"
                   >
-                    Run again
+                    {loading ? "Verifying…" : "Run verification"}
                   </button>
-                </>
-              )}
+                ) : workflowPhase === "verify" && !loading ? (
+                  hasCompletedRun ? (
+                    <button
+                      type="button"
+                      onClick={() => setWorkflowPhase("results")}
+                      className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 sm:max-w-md"
+                    >
+                      View results
+                    </button>
+                  ) : (
+                    <p className="w-full py-2 text-center text-sm text-stone-600 sm:max-w-md">
+                      Use <strong className="text-stone-800">Edit</strong> to run a verification first.
+                    </p>
+                  )
+                ) : workflowPhase === "verify" && loading ? (
+                  <p className="w-full py-2 text-center text-sm font-medium text-stone-600 sm:max-w-md">
+                    Verification in progress…
+                  </p>
+                ) : successPayload ? (
+                  <div
+                    className="flex w-full flex-col items-center justify-center gap-2"
+                    role="group"
+                    aria-label="Review disposition"
+                  >
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setReviewDisposition("approved")}
+                        aria-pressed={reviewDisposition === "approved"}
+                        className={`min-w-[5.5rem] cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                          reviewDisposition === "approved"
+                            ? "bg-emerald-600 text-white ring-1 ring-emerald-700 hover:bg-emerald-700"
+                            : "border border-emerald-600 bg-white text-emerald-900 hover:bg-emerald-50"
+                        }`}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewDisposition("rejected")}
+                        aria-pressed={reviewDisposition === "rejected"}
+                        className={`min-w-[5.5rem] cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                          reviewDisposition === "rejected"
+                            ? "bg-red-600 text-white ring-1 ring-red-800 hover:bg-red-700"
+                            : "border border-red-600 bg-white text-red-900 hover:bg-red-50"
+                        }`}
+                      >
+                        Reject
+                      </button>
+                      {reviewDisposition ? (
+                        <button
+                          type="button"
+                          onClick={() => setReviewDisposition(null)}
+                          className="cursor-pointer text-xs font-medium text-stone-600 underline decoration-stone-400 underline-offset-2 hover:text-stone-900"
+                        >
+                          Clear
+                        </button>
+                      ) : null}
+                    </div>
+                    {reviewDisposition ? (
+                      <p
+                        className="text-center text-[11px] text-stone-500"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {reviewDisposition === "approved" ? "Approved" : "Rejected"} — not saved.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </form>
 
