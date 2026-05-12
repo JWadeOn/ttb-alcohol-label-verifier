@@ -102,6 +102,157 @@
         "governmentWarning": ["manual_review", "fail", "pass"],
         "countryOfOrigin": ["not_applicable"]
       }
+    },
+    "st_petersburg_whiskey_baseline": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_02": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_glare_warning_02": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_glare_warning_harsh": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_vodka_angle_45": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_blur_moderate": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_distance_crop_warning": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_03": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_04": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_05": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
     }
   }
 }

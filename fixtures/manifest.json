@@ -15,6 +15,72 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "st_petersburg_whiskey_baseline",
+      "relativePath": "labels/st_petersburg_whiskey_baseline.png",
+      "description": "Real-photo baseline anchor for the St. Petersburg Spirits bottle (front-on, bright natural lighting, all core text legible).",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_02",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_02.png",
+      "description": "Real-photo clean baseline variant (alternate scene/lighting); upright front-on bottle with fully visible core label fields.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_brand",
+      "relativePath": "labels/st_petersburg_whiskey_glare_brand.png",
+      "description": "Real-photo glare variant from the St. Petersburg anchor; mild reflection/brightness wash over brand text while ABV, net contents, and warning remain mostly legible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_warning_02",
+      "relativePath": "labels/st_petersburg_whiskey_glare_warning_02.png",
+      "description": "Real-photo glare variant: bright shoulder reflection and label hotspot; stresses legibility of government warning and mid-label text.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_warning_harsh",
+      "relativePath": "labels/st_petersburg_whiskey_glare_warning_harsh.png",
+      "description": "Real-photo harsh glare: bright centered specular wash on the label obscuring ABV/net-contents lines and much of the government-warning block; brand line may remain partially readable.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_vodka_angle_45",
+      "relativePath": "labels/st_petersburg_vodka_angle_45.png",
+      "description": "Real-photo 45-degree angle variant (vodka label) with strong perspective skew and rotated text lines; intended to stress extraction under non-front-on capture.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_blur_moderate",
+      "relativePath": "labels/st_petersburg_whiskey_blur_moderate.png",
+      "description": "Real-photo moderate-blur variant from the St. Petersburg anchor; bottle remains centered and mostly legible but detail sharpness is reduced.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_distance_crop_warning",
+      "relativePath": "labels/st_petersburg_whiskey_distance_crop_warning.png",
+      "description": "Real-photo distance/small-text variant from the St. Petersburg anchor; warning block readability is reduced by smaller on-frame label scale.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_03",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_03.png",
+      "description": "Real-photo clean baseline variant in a darker interior setting; upright front-on bottle with fully visible label text.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_04",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_04.png",
+      "description": "Real-photo clean baseline variant with city-window background; upright front-on bottle and fully visible core label fields.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_05",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_05.png",
+      "description": "Real-photo clean baseline variant (library/lounge background); upright front-on bottle with fully visible core label fields.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "edge-synthetic-glare-label",
       "relativePath": "labels/edge-synthetic-glare.png",
       "description": "Happy-path label with synthetic screen-style glare overlay; correctness eval (non-seed edge). Regenerate via npm run fixtures:edge-labels.",
