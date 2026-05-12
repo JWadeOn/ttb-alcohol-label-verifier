@@ -75,6 +75,12 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "st_petersburg_whiskey_crop_missing_warning",
+      "relativePath": "labels/st_petersburg_whiskey_crop_missing_warning.png",
+      "description": "Real-photo tight vertical crop: brand, class, ABV, and net contents on frame; government warning block absent or clipped (missing-field stress vs full-frame baselines).",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "st_petersburg_whiskey_baseline_03",
       "relativePath": "labels/st_petersburg_whiskey_baseline_03.png",
       "description": "Real-photo clean baseline variant in a darker interior setting; upright front-on bottle with fully visible label text.",

@@ -20,6 +20,7 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Vodka angle | `st_petersburg_vodka_angle_45` | `st_petersburg_vodka_angle_45.png` |
 | Whiskey blur | `st_petersburg_whiskey_blur_moderate` | `…_blur_moderate.png` |
 | Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
+| Whiskey crop (warning off-frame) | `st_petersburg_whiskey_crop_missing_warning` | `st_petersburg_whiskey_crop_missing_warning.png` |
 
 *Track B (alternate label stock) ids are defined in [Golden track B](#golden-track-b-alternate-label-stock-contrast); they are **not** in the manifest until each PNG exists.*
 
@@ -125,6 +126,8 @@ The following priorities extend the **existing** cream/light St. Petersburg bott
 | **Intent** | Forces **missing-field** behavior: brand + class + ABV may be present; **warning block cropped out** or only 1–2 lines visible. |
 
 **Prompt:** Tighter crop on the same whiskey bottle: frame from **mid-label up** so **government warning is absent or clipped** at the bottom edge. Brand and “bourbon whiskey” and 43% / 750 mL still clearly in frame. Intentional composition, not accidental thumb cover.
+
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`).
 
 ---
 
