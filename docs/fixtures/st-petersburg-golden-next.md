@@ -24,8 +24,9 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 | Whiskey low light + grain | `st_petersburg_whiskey_low_light_grain` | `st_petersburg_whiskey_low_light_grain.png` |
 | Whiskey distance / small type | `st_petersburg_whiskey_distance_crop_warning` | `…_distance_crop_warning.png` |
 | Whiskey crop (warning off-frame) | `st_petersburg_whiskey_crop_missing_warning` | `st_petersburg_whiskey_crop_missing_warning.png` |
+| **Track B** Whiskey dark-label baseline | `st_petersburg_whiskey_label_dark_baseline` | `st_petersburg_whiskey_label_dark_baseline.png` |
 
-*Track B (alternate label stock) ids are defined in [Golden track B](#golden-track-b-alternate-label-stock-contrast); they are **not** in the manifest until each PNG exists.*
+*Remaining **Track B** ids (`label_dark_glare`, `label_kraft`, optional vodka dark) are in [Golden track B](#golden-track-b-alternate-label-stock-contrast) until each PNG is wired.*
 
 ---
 
@@ -50,7 +51,9 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 
 **Prompt:** Professional product photo, straight-on: St. Petersburg Spirits **bourbon whiskey**, 750 mL, 43% alc./vol. (86 proof). **Label face is dark charcoal or matte black** with **high-contrast light type** (no illegible microtype). Same information architecture as the cream-label bottles: brand arched at top, class line, ABV and net contents, dense government warning at bottom. Cork or wood stopper; neutral or library bar background; **no** heavy label glare for this baseline frame.
 
-### B2 — Dark label + controlled glare
+**Status:** Shipped in repo (`fixtures/manifest.json`, `docs/evals/fixture-correctness-expectations.json`).
+
+---
 
 | Field | Value |
 |--------|--------|
@@ -82,7 +85,7 @@ Use this list when adding **real-photo** fixtures under `fixtures/labels/`. **Tr
 
 ### Eval bundle suggestion
 
-After wiring, run `eval:fixture-verify` with `EVAL_FIXTURE_IDS` listing all Track B ids together to produce a small contrast-matrix artifact under `docs/evals/`.
+After wiring, run `eval:fixture-verify` with `EVAL_FIXTURE_SET=st_petersburg` (includes Track A + wired Track B ids) or comma-separated Track B ids via `EVAL_FIXTURE_IDS`; optional `EVAL_OUT` writes JSON under `docs/evals/`.
 
 ---
 

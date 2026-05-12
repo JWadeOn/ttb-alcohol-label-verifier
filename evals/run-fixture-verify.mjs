@@ -7,11 +7,17 @@
  *
  * Usage:
  *   EVAL_FIXTURE_IDS=difficult-synthetic-label-photo OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-fixture-verify.mjs
+ *   EVAL_FIXTURE_SET=st_petersburg OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-fixture-verify.mjs
  *   # same + write copy to disk:
  *   EVAL_OUT=docs/evals/fixture-verify-difficult-local.json ... node evals/run-fixture-verify.mjs
  *
- * EVAL_FIXTURE_IDS: comma-separated manifest `id` values (required unless using default).
- * Default when unset: `difficult-synthetic-label-photo` (single stress fixture).
+ * EVAL_FIXTURE_IDS: comma-separated manifest `id` values (exact selection).
+ * EVAL_FIXTURE_SET: comma-separated fixture presets (when EVAL_FIXTURE_IDS is unset):
+ *   - st_petersburg    => ids starting with `st_petersburg_`
+ *   - edge_synthetic   => ids starting with `edge-synthetic-`
+ *   - seed_textures    => ids starting with `seed-texture-`
+ *   - all_manifest     => all manifest fixture ids
+ * Default when both are unset: `difficult-synthetic-label-photo` (single stress fixture).
  * EVAL_EXPECTATIONS: optional JSON path for fixture correctness scoring
  *   (default: docs/evals/fixture-correctness-expectations.json).
  *
@@ -94,6 +100,44 @@ function parseFixtureIds(raw) {
     .split(",")
     .map((x) => x.trim())
     .filter(Boolean);
+}
+
+function parseCsv(raw) {
+  return (raw ?? "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+/**
+ * @param {string[]} manifestIds
+ * @param {string | undefined} idsRaw
+ * @param {string | undefined} setRaw
+ */
+function resolveFixtureIds(manifestIds, idsRaw, setRaw) {
+  const explicitIds = parseCsv(idsRaw);
+  if (explicitIds.length > 0) return { ids: explicitIds, unknownSets: [] };
+
+  const requestedSets = parseCsv(setRaw).map((x) => x.toLowerCase());
+  if (requestedSets.length === 0) return { ids: parseFixtureIds(idsRaw), unknownSets: [] };
+
+  const buckets = {
+    st_petersburg: manifestIds.filter((id) => id.startsWith("st_petersburg_")),
+    edge_synthetic: manifestIds.filter((id) => id.startsWith("edge-synthetic-")),
+    seed_textures: manifestIds.filter((id) => id.startsWith("seed-texture-")),
+    all_manifest: manifestIds,
+  };
+
+  const unknownSets = requestedSets.filter((name) => !(name in buckets));
+  /** @type {string[]} */
+  const out = [];
+  for (const name of requestedSets) {
+    const ids = buckets[name] ?? [];
+    for (const id of ids) {
+      if (!out.includes(id)) out.push(id);
+    }
+  }
+  return { ids: out, unknownSets };
 }
 
 /**
@@ -312,7 +356,27 @@ async function main() {
 
   const manifest = JSON.parse(await readFile(path.join(root, "fixtures", "manifest.json"), "utf8"));
   const application = await readFile(path.join(root, "fixtures", "default-application.json"), "utf8");
-  const ids = parseFixtureIds(process.env.EVAL_FIXTURE_IDS);
+  const manifestIds = manifest.fixtures.map((f) => f.id);
+  const { ids, unknownSets } = resolveFixtureIds(
+    manifestIds,
+    process.env.EVAL_FIXTURE_IDS,
+    process.env.EVAL_FIXTURE_SET,
+  );
+  if (unknownSets.length > 0) {
+    console.log(
+      JSON.stringify(
+        {
+          error: "Unknown fixture set(s) in EVAL_FIXTURE_SET",
+          unknownSets,
+          knownSets: ["st_petersburg", "edge_synthetic", "seed_textures", "all_manifest"],
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(1);
+    return;
+  }
   const expectationsPath = path.isAbsolute(expectationsPathRaw)
     ? expectationsPathRaw
     : path.join(root, expectationsPathRaw);
@@ -331,7 +395,7 @@ async function main() {
       JSON.stringify({
         error: "Unknown fixture id(s) in EVAL_FIXTURE_IDS",
         missing,
-        knownIds: manifest.fixtures.map((f) => f.id),
+        knownIds: manifestIds,
       }),
       null,
       2,

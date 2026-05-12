@@ -337,6 +337,20 @@
         "governmentWarning": ["pass", "manual_review", "fail"],
         "countryOfOrigin": ["not_applicable"]
       }
+    },
+    "st_petersburg_whiskey_label_dark_baseline": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
     }
   }
 }

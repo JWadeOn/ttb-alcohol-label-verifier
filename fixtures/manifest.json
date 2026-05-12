@@ -117,6 +117,12 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "st_petersburg_whiskey_label_dark_baseline",
+      "relativePath": "labels/st_petersburg_whiskey_label_dark_baseline.png",
+      "description": "Track B real-photo: bourbon whiskey with matte charcoal/black label and high-contrast light type (gold/white); front-on baseline for alternate label stock vs cream Track A.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "edge-synthetic-glare-label",
       "relativePath": "labels/edge-synthetic-glare.png",
       "description": "Happy-path label with synthetic screen-style glare overlay; correctness eval (non-seed edge). Regenerate via npm run fixtures:edge-labels.",

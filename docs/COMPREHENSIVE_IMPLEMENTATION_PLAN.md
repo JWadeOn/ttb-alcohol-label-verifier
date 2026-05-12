@@ -141,7 +141,7 @@ From [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §8:
 |--------|---------|
 | `npm run eval:primary-latency` | Latency + `extraction.provider` for `includeInPrimaryLatencyEval` fixtures |
 | `npm run eval:primary-latency:bench` | Same with iterations + P95-style stats |
-| `npm run eval:fixture-verify` | Full `POST /api/verify` for selected manifest ids; optional `EVAL_OUT` for committed logs |
+| `npm run eval:fixture-verify` | Full `POST /api/verify` for selected manifest ids; optional `EVAL_OUT` for committed logs; supports `EVAL_FIXTURE_SET` presets (`st_petersburg`, `edge_synthetic`, `seed_textures`, `all_manifest`) to run full suites without manual id lists |
 
 **Timeline:** [`docs/evals/PRIMARY_LATENCY_RUNS.md`](./evals/PRIMARY_LATENCY_RUNS.md).
 
@@ -149,8 +149,8 @@ From [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §8:
 
 From [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §10 and [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md):
 
-- **In progress (2026-05-12):** scored **`eval:fixture-verify`** + `docs/evals/fixture-correctness-expectations.json` + [`CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) + committed artifacts (happy, difficult, seeds, synthetic glare/blur/tilt).  
-- **Still open:** expand **categorized image set** further (typography stress, missing data, more real photos), and keep **latency P95** bench rows current as deploy/model changes.
+- **Shipped (2026-05-12):** scored **`eval:fixture-verify`** + `docs/evals/fixture-correctness-expectations.json` + [`CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) + committed artifacts (happy, difficult, seeds, synthetic glare/blur/tilt) plus **St. Petersburg Track A real-photo suite** (whiskey + vodka baseline/angle/glare/blur/low-light/crop taxonomy).  
+- **Still open:** expand **Track B** alternate-label-stock set (dark/kraft contrast variants), and keep **latency P95** bench rows current as deploy/model changes.
 
 ---
 
@@ -174,10 +174,11 @@ This is the **implementation backlog** for optional depth after **§16 sign-off 
 1. ~~**Correctness evidence**~~ — **Done:** scored `eval:fixture-verify` + expectations + committed artifacts under `docs/evals/`.  
 2. ~~**Explicit thresholds doc**~~ — **Done:** [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) + `fixture-correctness-expectations.json`.  
 3. **Day 3 UX polish** — image-quality reject copy, provider/`manual_review` clarity, client error shapes ([`DAY3_EXECUTION_CHECKLIST.md`](./DAY3_EXECUTION_CHECKLIST.md) §5:00–6:00).  
-4. ~~**Fallback decision**~~ — **Done (2026-05-12):** Tesseract / local OCR **deferred**; [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md).  
-5. ~~**Batch uploads**~~ — **Out of scope** for this deliverable (single-label prototype); see scope lock §2 + `IMPLEMENTATION_PLAN.md` §5 F-14.  
-6. ~~**Acceptance sign-off**~~ — **Done (2026-05-12):** `IMPLEMENTATION_PLAN.md` §16 all items checked with evidence.  
-7. ~~**Doc drift cleanup**~~ — **Done (2026-05-12)** for §2.3/F-5 timeout narrative.
+4. **Track B fixture depth** — **B1** `st_petersburg_whiskey_label_dark_baseline` shipped; remaining alternate label-stock variants (`label_dark_glare`, `label_kraft`, optional vodka dark) for contrast/segmentation coverage (see [`docs/fixtures/st-petersburg-golden-next.md`](./fixtures/st-petersburg-golden-next.md)).  
+5. ~~**Fallback decision**~~ — **Done (2026-05-12):** Tesseract / local OCR **deferred**; [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md).  
+6. ~~**Batch uploads**~~ — **Out of scope** for this deliverable (single-label prototype); see scope lock §2 + `IMPLEMENTATION_PLAN.md` §5 F-14.  
+7. ~~**Acceptance sign-off**~~ — **Done (2026-05-12):** `IMPLEMENTATION_PLAN.md` §16 all items checked with evidence.  
+8. ~~**Doc drift cleanup**~~ — **Done (2026-05-12)** for §2.3/F-5 timeout narrative.
 
 ---
 
@@ -206,6 +207,7 @@ Mirror of [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 with **
 
 | Date | Change |
 |------|--------|
+| 2026-05-12 | Eval ergonomics + fixture depth sync: `eval:fixture-verify` now supports `EVAL_FIXTURE_SET` presets; §7.3/§9 updated to reflect **St. Petersburg Track A** shipped and **Track B** as the remaining optional fixture expansion. |
 | 2026-05-12 | **`IMPLEMENTATION_PLAN.md` §16** acceptance signed (all items checked + §10.6 eval evidence); **`docs/CORE_REQUIREMENTS_SCORECARD.md`** + §9 backlog updated; F-14 marked out of scope in §5. |
 | 2026-05-12 | Initial **Comprehensive Implementation Plan** — consolidates IMPLEMENTATION_PLAN, ARCHITECTURE, week/day execution, evals, scorecard, and as-built timeouts/deploy. |
 
