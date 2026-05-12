@@ -9,8 +9,9 @@ import {
 } from "@/lib/schemas";
 import { validateLabelFields } from "@/lib/validator";
 
-const DEFAULT_EXTRACT_SOFT_MS = 3000;
-const DEFAULT_EXTRACT_HARD_MS = 3500;
+/** Defaults sized for typical `gpt-4o-mini` vision latency (see production primary-latency eval); override with `VERIFY_EXTRACT_*`. */
+const DEFAULT_EXTRACT_SOFT_MS = 8000;
+const DEFAULT_EXTRACT_HARD_MS = 20000;
 const MAX_EXTRACT_TIMEOUT_MS = 120_000;
 
 function readExtractTimeoutMs(envKey: string, fallback: number): number {
@@ -21,7 +22,7 @@ function readExtractTimeoutMs(envKey: string, fallback: number): number {
   return Math.min(Math.floor(n), MAX_EXTRACT_TIMEOUT_MS);
 }
 
-/** Env overrides for local perf experiments (`VERIFY_EXTRACT_*`); defaults match PRD failover budgets. */
+/** Env overrides for extraction budgets (`VERIFY_EXTRACT_*`); defaults match README production-style tuning. */
 function resolveExtractFailoverTimeouts(): { softTimeoutMs: number; hardTimeoutMs: number } {
   const soft = readExtractTimeoutMs(
     "VERIFY_EXTRACT_SOFT_TIMEOUT_MS",

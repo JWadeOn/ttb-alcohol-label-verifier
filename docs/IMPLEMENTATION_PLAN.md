@@ -23,7 +23,7 @@
 - **Shipped prototype (2026-05-11):** Dockerized service on **Railway** — [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app) — from root **`Dockerfile`** (Next standalone; Tesseract **not** in image until Phase 2).
 - **Original default / alternate:** **Render** (same Dockerfile); see `docs/RENDER_DEPLOY.md` if Render blocks ship on Railway or you want a second host.
 - **Other fallback platforms:** Fly.io or Hugging Face Spaces (Docker mode).
-- **Secrets:** `OPENAI_API_KEY` via platform env; never committed. **Production eval:** see `docs/evals/primary-latency-production-2026-05-11.json` — **200** with provider **`unavailable`** on seed textures under default timeouts (key confirmed on Railway).
+- **Secrets:** `OPENAI_API_KEY` via platform env; never committed. **Production eval:** see `docs/evals/primary-latency-production-2026-05-11.json` — **200** with provider **`openai`** on happy-path + seed fixtures (default **8000 / 20000** ms extract budgets; key on Railway).
 
 ### 2.2 Fallback OCR
 
@@ -393,6 +393,6 @@ ttb-alcohol-label-verifier/
 ### Day 3 notes (2026-05-11)
 
 - **Public URL + docs:** `README.md`, `docs/PROGRESS.md`, `docs/ARCHITECTURE.md`, `docs/DAY3_EXECUTION_CHECKLIST.md` updated for **Railway** deploy; **Render** runbook retained.
-- **Production eval artifact:** [`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json) — **200** + ~3.7–4.1s round trips; **`unavailable`** extraction on noise fixtures (optional: longer **`VERIFY_EXTRACT_*`** or happier fixture in eval set for **`openai`**).
+- **Production eval artifact:** [`docs/evals/primary-latency-production-2026-05-11.json`](./evals/primary-latency-production-2026-05-11.json) — **200** + ~3.5–6.5s round trips; **`openai`** extraction on three fixtures (happy-path + seeds); default **`VERIFY_EXTRACT_*`** **8000 / 20000** ms in app code.
 
 *End of implementation plan.*

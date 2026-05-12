@@ -125,10 +125,10 @@ npm run build   # Production build
 
 Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**, unless **`VERIFY_DEV_STUB=true`** (non-production) returns a stub **200** (see **OpenAI credits** below).
 
-**Temporary extraction timeouts (local perf):** primary vision calls use a **3.0s / 3.5s** soft/hard abort by default. If OpenAI is slow and you see `provider: "unavailable"` after **`Request was aborted`**, set in `.env` / `.env.local` (then restart dev):
+**Extraction timeouts:** primary vision calls use an **8.0s / 20s** soft/hard abort by default (typical `gpt-4o-mini` latency on Railway). Tighten for experiments in `.env` / `.env.local` (then restart dev), e.g. **`3000`** / **`3500`**, if you want faster failover to **`unavailable`**:
 
-- `VERIFY_EXTRACT_SOFT_TIMEOUT_MS` (e.g. `8000`)
-- `VERIFY_EXTRACT_HARD_TIMEOUT_MS` (e.g. `20000`)
+- `VERIFY_EXTRACT_SOFT_TIMEOUT_MS`
+- `VERIFY_EXTRACT_HARD_TIMEOUT_MS`
 
 The dev server logs **`[verify-pipeline] pipeline completed`** (`pipelineMs`, active timeouts) and **`[verify] request completed`** (`totalMs` from handler start through success).
 
@@ -177,7 +177,7 @@ The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while 
 - **Regenerate noise PNGs** (optional, after editing `scripts/generate-fixture-pngs.mjs`): `npm run fixtures:generate`
 - **Primary-path latency eval** (calls OpenAI; requires running app + key): start `npm run dev` in another terminal, then  
   `OPENAI_API_KEY=... npm run eval:primary-latency`  
-  (override base URL with `BASE_URL=http://127.0.0.1:3000` or your **Railway** URL). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold). A **production** snapshot lives under **`docs/evals/`** (see Railway section above).
+  (override base URL with `BASE_URL=http://127.0.0.1:3000` or your **Railway** URL). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold). If **`OPENAI_DISABLED=true`** is in your `.env`, prefix the command with **`OPENAI_DISABLED=`** so the server accepts extraction. A **production** snapshot lives under **`docs/evals/`** (see Railway section above).
 - **Latency benchmark** (same harness, per-fixture **min / max / mean / P95** over multiple POSTs):  
   `npm run eval:primary-latency:bench`  
   (defaults: **5** iterations per fixture, **400 ms** cooldown between requests — tune with **`EVAL_ITERATIONS`**, **`EVAL_COOLDOWN_MS`**, optional **`EVAL_WARMUP=1`** one throwaway request per fixture before timing). Set **`BASE_URL`** and **`OPENAI_API_KEY`** as for the single-pass eval.
@@ -193,11 +193,11 @@ The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while 
 ### Railway (current)
 
 - Service root: connect the GitHub repo and use **Dockerfile** build (root `Dockerfile`).
-- Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`**. With the key set, responses are **200**; synthetic eval fixtures may still show **`extraction.provider: unavailable`** if vision hits default timeouts (see eval snapshot).
+- Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`**. With the key set, responses are **200**; primary-latency eval fixtures expect **`extraction.provider: openai`** when budgets allow (default **8000 / 20000** ms soft/hard in app code — override with **`VERIFY_EXTRACT_*`** on the host if needed).
 - **Public URL:** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
-- **Production eval snapshot (primary-path latency harness):** [`docs/evals/primary-latency-production-2026-05-11.json`](docs/evals/primary-latency-production-2026-05-11.json) — index: [`docs/evals/README.md`](docs/evals/README.md). After the key is set on Railway, re-run:  
+- **Production eval snapshot (primary-path latency harness):** [`docs/evals/primary-latency-production-2026-05-11.json`](docs/evals/primary-latency-production-2026-05-11.json) — index: [`docs/evals/README.md`](docs/evals/README.md). Re-run (unset **`OPENAI_DISABLED`** in the shell if your `.env` sets it):  
   `BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency`  
-  and commit an updated JSON (or a new dated file).
+  and commit an updated JSON when you want a fresh snapshot.
 
 ### Render (operator checklist)
 

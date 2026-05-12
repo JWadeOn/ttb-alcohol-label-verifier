@@ -5,8 +5,8 @@
     {
       "id": "happy-path-synthetic-label",
       "relativePath": "labels/liquor_label_happy_path.png",
-      "description": "Fictitious bottle-style label for manual happy-path checks.",
-      "includeInPrimaryLatencyEval": false
+      "description": "Fictitious bottle-style label for manual happy-path checks; included in primary-latency eval for a real-label OpenAI signal alongside seed textures.",
+      "includeInPrimaryLatencyEval": true
     },
     {
       "id": "seed-texture-01",

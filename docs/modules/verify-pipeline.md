@@ -5,7 +5,7 @@
 Orchestrate the verify **business flow** (no `Request` / Next types):
 
 1. `assessImageQuality(imageBytes)` — reject early if not ok (`VerifyFailedError` **422** / `IMAGE_QUALITY_REJECTED`).
-2. Build primary OpenAI provider + `unavailable` fallback; `extractWithFailover` on **processed** buffer from step 1 (soft/hard timeouts default **3000 / 3500 ms**; override with **`VERIFY_EXTRACT_SOFT_TIMEOUT_MS`** / **`VERIFY_EXTRACT_HARD_TIMEOUT_MS`** for temporary local perf tuning).
+2. Build primary OpenAI provider + `unavailable` fallback; `extractWithFailover` on **processed** buffer from step 1 (soft/hard timeouts default **8000 / 20000 ms**; override with **`VERIFY_EXTRACT_SOFT_TIMEOUT_MS`** / **`VERIFY_EXTRACT_HARD_TIMEOUT_MS`**).
 3. On extraction throw → **502** / `EXTRACTION_FAILED`.
 4. `validateLabelFields(extraction, application)`.
 5. Assemble `VerifySuccessResponse`, `VerifySuccessResponseSchema.safeParse`; schema failure → **500** / `INTERNAL_ERROR`.

@@ -37,8 +37,8 @@ export async function extractWithFailover(
   fallback: ExtractionProvider,
   opts?: ExtractWithFailoverOpts,
 ): Promise<ExtractionResult> {
-  const softMs = opts?.softTimeoutMs ?? 3000;
-  const hardMs = opts?.hardTimeoutMs ?? 3500;
+  const softMs = opts?.softTimeoutMs ?? 8000;
+  const hardMs = opts?.hardTimeoutMs ?? 20000;
   const requestId = opts?.requestId;
 
   const primaryAbort = new AbortController();

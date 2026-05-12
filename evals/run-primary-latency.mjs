@@ -1,6 +1,6 @@
 /**
  * Primary-path latency: POST /api/verify for each manifest fixture with
- * `includeInPrimaryLatencyEval === true` (default: two seed textures).
+ * `includeInPrimaryLatencyEval === true` (default: happy-path label + two seed textures).
  *
  * Requires a running server and OPENAI_API_KEY on the **client** (this script).
  * Without OPENAI_API_KEY: prints skip and exits 0 (CI-friendly scaffold).
