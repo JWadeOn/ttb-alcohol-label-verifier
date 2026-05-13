@@ -16,6 +16,8 @@
     "eval:primary-latency": "node evals/run-primary-latency.mjs",
     "eval:primary-latency:bench": "EVAL_ITERATIONS=5 EVAL_COOLDOWN_MS=400 node evals/run-primary-latency.mjs",
     "eval:fixture-verify": "node evals/run-fixture-verify.mjs",
+    "eval:fixture-verify:subset": "EVAL_FIXTURE_SET=llm_smoke node evals/run-fixture-verify.mjs",
+    "eval:fixture-verify:prod": "sh -ac 'CLI_BASE_URL=\"${BASE_URL-}\"; CLI_EVAL_OUT=\"${EVAL_OUT-}\"; set -a; . ./.env; set +a; OPENAI_DISABLED= VERIFY_DEV_STUB= BASE_URL=\"${CLI_BASE_URL:-${BASE_URL:-https://ttb-alcohol-label-verifier-production.up.railway.app}}\" EVAL_OUT=\"${CLI_EVAL_OUT:-${EVAL_OUT:-docs/evals/fixture-correctness-production-$(date +%F).json}}\" node evals/run-fixture-verify.mjs'",
     "docker:build": "docker build -t ttb-label-verifier:local ."
   },
   "dependencies": {
@@ -24,6 +26,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "sharp": "^0.34.2",
+    "tesseract.js": "^7.0.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

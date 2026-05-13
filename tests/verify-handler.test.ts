@@ -2,16 +2,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ApplicationJson,
   VERIFY_FORM_FIELDS,
+  VerifyExtractOnlyResponseSchema,
   VerifySuccessResponseSchema,
 } from "@/lib/schemas";
 import { buildStubVerifyResponse } from "@/lib/stub-response";
-import { handleVerifyPost } from "@/lib/verify-handler";
+import { handleVerifyExtractOnlyPost, handleVerifyPost } from "@/lib/verify-handler";
+import type { ExtractionResult } from "@/lib/extraction/types";
 
 function multipartRequest(image: Blob, applicationJson: string): Request {
   const fd = new FormData();
   fd.append(VERIFY_FORM_FIELDS.image, image, "fixture.png");
   fd.append(VERIFY_FORM_FIELDS.application, applicationJson);
   return new Request("http://test.local/api/verify", {
+    method: "POST",
+    body: fd,
+  });
+}
+
+function multipartExtractOnlyRequest(image: Blob): Request {
+  const fd = new FormData();
+  fd.append(VERIFY_FORM_FIELDS.image, image, "fixture.png");
+  return new Request("http://test.local/api/verify/extract-only", {
     method: "POST",
     body: fd,
   });
@@ -63,6 +74,25 @@ describe("handleVerifyPost", () => {
     expect(res.status).toBe(503);
     const json = (await res.json()) as { code?: string };
     expect(json.code).toBe("OPENAI_NOT_CONFIGURED");
+  });
+
+  it("allows ocr_only mode without OPENAI_API_KEY", async () => {
+    vi.stubEnv("VERIFY_EXTRACTION_MODE", "ocr_only");
+    vi.stubEnv("OPENAI_API_KEY", "");
+    const mockPipeline = vi.fn(
+      async (params: {
+        requestId: string;
+        application: ApplicationJson;
+      }) => VerifySuccessResponseSchema.parse(buildStubVerifyResponse(params.requestId, params.application)),
+    );
+
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const application = JSON.stringify({ brandName: "Example Distillery" });
+
+    const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
+    const res = await handleVerifyPost(req, { runVerifyPipeline: mockPipeline });
+    expect(res.status).toBe(200);
+    expect(mockPipeline).toHaveBeenCalledTimes(1);
   });
 
   it("returns 503 when OPENAI_DISABLED without calling pipeline", async () => {
@@ -148,5 +178,49 @@ describe("handleVerifyPost", () => {
 
     expect(json.extraction?.provider).toBe("stub");
     expect(json.validation?.fields).toHaveLength(7);
+  });
+
+  it("handles extract-only prefetch and returns cache key", async () => {
+    const mockExtraction = vi.fn(
+      async (): Promise<{
+        imageQuality: { ok: true };
+        extraction: ExtractionResult;
+        timings: { imageQualityMs: number; ocrMs: number; llmMs: number; extractionMs: number };
+      }> => ({
+        imageQuality: { ok: true },
+        extraction: {
+          provider: "openai",
+          durationMs: 10,
+          fields: {
+            brandName: { value: null, confidence: 0, reason: undefined },
+            classType: { value: null, confidence: 0, reason: undefined },
+            alcoholContent: { value: null, confidence: 0, reason: undefined },
+            netContents: { value: null, confidence: 0, reason: undefined },
+            governmentWarning: { value: null, confidence: 0, reason: undefined },
+            nameAddress: { value: null, confidence: 0, reason: undefined },
+            countryOfOrigin: { value: null, confidence: 0, reason: undefined },
+          },
+        },
+        timings: {
+          imageQualityMs: 1,
+          ocrMs: 0,
+          llmMs: 10,
+          extractionMs: 10,
+        },
+      }),
+    );
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const req = multipartExtractOnlyRequest(new Blob([png], { type: "image/png" }));
+    const res = await handleVerifyExtractOnlyPost(req, {
+      runExtractionStage: mockExtraction,
+    });
+    expect(mockExtraction).toHaveBeenCalledTimes(1);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const parsed = VerifyExtractOnlyResponseSchema.safeParse(json);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.cacheKey.length).toBeGreaterThan(8);
+    }
   });
 });

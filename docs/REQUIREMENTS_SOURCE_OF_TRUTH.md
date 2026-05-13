@@ -10,7 +10,7 @@
 
 | Layer | Location | Role |
 |--------|----------|------|
-| **Product scope & intent** | [`docs/PRD.md`](./PRD.md), [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) | What the take-home is supposed to demonstrate; P0 vs P1 fields; non-goals (no full 27 CFR, no COLA). |
+| **Product scope & intent** | [`README.md`](../README.md), [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md) | What the take-home is supposed to demonstrate; P0 vs P1 fields; non-goals (no full 27 CFR, no COLA). |
 | **Per-field pass/fail / manual_review / not_applicable** | **`lib/validator.ts`** (`validateLabelFields`) | **Single implementation source** for deterministic comparison after extraction. Exported numeric thresholds (`CONFIDENCE_MANUAL_REVIEW`, `BRAND_SIMILARITY`, etc.) match this file. |
 | **What appears on the label (primary path)** | **`lib/extraction/openai-provider.ts`** (system + user prompts, Zod shape) | Model instructions and structured fields — not the same as “legal requirements,” but they define what gets extracted for comparison. |
 | **Government warning string used in fixtures/UI defaults** | **`lib/canonical-warning.ts`** | Canonical text for demos and default application JSON; validator compares **exact** (case-sensitive) to **application-supplied** warning text for that run. |
@@ -40,7 +40,7 @@ Use this when mapping “what the UI shows” to “what actually runs.”
 
 ## 3. How an evaluator can verify “does this match what you claim?”
 
-1. **Read** [`docs/PRD.md`](./PRD.md) §6 (functional requirements) and **non-goals** — confirm the prototype does not claim full regulatory coverage.
+1. **Read** [`README.md`](../README.md) and [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md) — confirm the prototype does not claim full regulatory coverage.
 2. **Open** **`lib/validator.ts`** — this is the only place deterministic **match decisions** are made for the shipped vertical slice.
 3. **Compare** exported constants (same names in **Results → “Coded match thresholds”** on the home page) to the branches in `validateLabelFields`.
 4. **Skim** **`lib/extraction/openai-provider.ts`** — confirm extraction scope matches the fields the validator expects.
@@ -73,7 +73,6 @@ When comparison behavior changes:
 
 ## See also
 
-- [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) — canonical merged implementation plan (scope, phases, evals, backlog, acceptance).
 - [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) — pipeline diagram and module index  
 - [`docs/modules/validator.md`](./modules/validator.md) — validator responsibilities  
 - [`docs/modules/extraction.md`](./modules/extraction.md) — providers and failover  

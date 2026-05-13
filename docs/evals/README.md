@@ -1,20 +1,20 @@
-# Eval artifacts
+# Evaluation Artifacts
 
-Committed outputs from **optional** eval scripts (see `README.md` → fixtures / eval scaffold).
+This folder contains committed evidence for correctness and latency in the prototype.
 
-**Triggering:** regenerating these artifacts (or running latency scripts against **Railway** with **`OPENAI_API_KEY`**) is **intentionally manual** — no scheduled or CI-automated production model runs. That avoids surprise cost and flaky comparisons when the model changes. **`npm run test`** remains the default always-on check.
+## Recommended evaluator files
 
-**Timeline (production primary-latency):** **[`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md)** — table of runs with links to each committed JSON (append a new dated file per run; do not overwrite history).
+| File | Purpose |
+|---|---|
+| [`fixture-correctness-production-2026-05-13.json`](./fixture-correctness-production-2026-05-13.json) | Full production fixture run with correctness scoring and latency summary. |
+| [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) | Focused difficult-label fixture run (St. Petersburg subset). |
+| [`CORRECTNESS_THRESHOLDS.md`](./CORRECTNESS_THRESHOLDS.md) | Threshold definitions used to interpret eval outputs. |
+| [`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md) | Chronological index of production latency snapshots. |
 
-| File | What it is |
-|------|----------------|
-| [`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md) | Chronological index of production **`eval:primary-latency`** snapshots + how to add the next run. |
-| [`CORRECTNESS_THRESHOLDS.md`](./CORRECTNESS_THRESHOLDS.md) | Current sign-off thresholds and fixture set for correctness evidence. |
-| [`fixture-correctness-expectations.json`](./fixture-correctness-expectations.json) | Machine-readable expectations profile used by `eval:fixture-verify` scoring output. |
-| [`fixture-correctness-2026-05-12.json`](./fixture-correctness-2026-05-12.json) | First scored fixture-verify artifact (happy path + difficult fixture) with threshold checks and per-check scoring. |
-| [`fixture-correctness-expanded-2026-05-12.json`](./fixture-correctness-expanded-2026-05-12.json) | Expanded scored matrix adding `seed-texture-01/02`; all configured threshold checks pass. |
-| [`fixture-correctness-non-seed-edge-2026-05-12.json`](./fixture-correctness-non-seed-edge-2026-05-12.json) | Full seven-fixture scored matrix: seeds + happy/difficult + **glare / moderate blur / tilt** derivatives (`npm run fixtures:edge-labels`); `thresholdsPass: true` on 2026-05-12 Railway run. |
-| [`primary-latency-production-2026-05-11.json`](./primary-latency-production-2026-05-11.json) | Railway snapshot — **2** seed fixtures; **`unavailable`** (tight default timeouts). |
-| [`primary-latency-production-2026-05-12.json`](./primary-latency-production-2026-05-12.json) | Railway snapshot — **3** fixtures (happy path + seeds); **`openai`** on all. |
-| *(ad hoc)* | **`npm run eval:primary-latency:bench`** — multi-iteration JSON with **min / max / mean / P95** per fixture and overall (`EVAL_ITERATIONS`, `EVAL_COOLDOWN_MS`, `EVAL_WARMUP` — see `README.md`). |
-| *(ad hoc)* | **`npm run eval:fixture-verify`** — `POST /api/verify` for manifest fixture ids. Use exact ids via `EVAL_FIXTURE_IDS` **or** suite presets via `EVAL_FIXTURE_SET` (`st_petersburg`, `edge_synthetic`, `seed_textures`, `all_manifest`; default stress fixture). Optional **`EVAL_OUT`** writes JSON and optional **`EVAL_EXPECTATIONS`** controls scoring profile; see script header in **`evals/run-fixture-verify.mjs`**. |
+## Regenerating artifacts (manual only)
+
+- Full production fixture eval: `npm run eval:fixture-verify:prod`
+- Generic fixture eval: `npm run eval:fixture-verify`
+- Latency-only snapshot: `npm run eval:primary-latency`
+
+Model-backed evals are intentionally run manually to avoid cost and drift from unattended scheduled jobs.

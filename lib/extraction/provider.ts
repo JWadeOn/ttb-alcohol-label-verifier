@@ -15,8 +15,8 @@ function logPrimaryExtractionFailure(params: {
   requestId?: string;
   err: unknown;
   primaryAborted: boolean;
-  softMs: number;
-  hardMs: number;
+  softMs?: number;
+  hardMs?: number;
 }): void {
   const { err, primaryAborted, softMs, hardMs, requestId } = params;
   const name = err instanceof Error ? err.name : "UnknownError";
@@ -26,8 +26,8 @@ function logPrimaryExtractionFailure(params: {
     errorName: name,
     errorMessage: message,
     primaryAborted,
-    softTimeoutMs: softMs,
-    hardTimeoutMs: hardMs,
+    softTimeoutMs: softMs ?? null,
+    hardTimeoutMs: hardMs ?? null,
   });
 }
 
@@ -37,26 +37,34 @@ export async function extractWithFailover(
   fallback: ExtractionProvider,
   opts?: ExtractWithFailoverOpts,
 ): Promise<ExtractionResult> {
-  const softMs = opts?.softTimeoutMs ?? 8000;
-  const hardMs = opts?.hardTimeoutMs ?? 20000;
+  const softMs = typeof opts?.softTimeoutMs === "number" && opts.softTimeoutMs > 0
+    ? opts.softTimeoutMs
+    : undefined;
+  const hardMs = typeof opts?.hardTimeoutMs === "number" && opts.hardTimeoutMs > 0
+    ? opts.hardTimeoutMs
+    : undefined;
   const requestId = opts?.requestId;
 
   const primaryAbort = new AbortController();
-  const hardTimer = setTimeout(() => primaryAbort.abort(), hardMs);
+  const hardTimer = hardMs !== undefined
+    ? setTimeout(() => primaryAbort.abort(), hardMs)
+    : undefined;
 
   let fallbackPromise: Promise<ExtractionResult> | undefined;
-  const softTimer = setTimeout(() => {
-    fallbackPromise = fallback.extract(imageBytes);
-  }, softMs);
+  const softTimer = softMs !== undefined
+    ? setTimeout(() => {
+      fallbackPromise = fallback.extract(imageBytes);
+    }, softMs)
+    : undefined;
 
   try {
     const result = await primary.extract(imageBytes, primaryAbort.signal);
-    clearTimeout(hardTimer);
-    clearTimeout(softTimer);
+    if (hardTimer !== undefined) clearTimeout(hardTimer);
+    if (softTimer !== undefined) clearTimeout(softTimer);
     return result;
   } catch (e) {
-    clearTimeout(hardTimer);
-    clearTimeout(softTimer);
+    if (hardTimer !== undefined) clearTimeout(hardTimer);
+    if (softTimer !== undefined) clearTimeout(softTimer);
     logPrimaryExtractionFailure({
       requestId,
       err: e,

@@ -10,8 +10,8 @@
     },
     {
       "id": "difficult-synthetic-label-photo",
-      "relativePath": "labels/liquor_label_difficult.png",
-      "description": "Stress-case photo label (glare, curvature, dense government warning, intentional character anomalies). Use for manual runs and ad-hoc POST checks; not in primary-latency eval by default.",
+      "relativePath": "labels/liquor_label_difficult.jpg",
+      "description": "Stress-case photo label (glare, curvature, dense government warning, intentional character anomalies) stored as a compressed JPEG to keep full-eval latency realistic. Use for manual runs and ad-hoc POST checks; not in primary-latency eval by default.",
       "includeInPrimaryLatencyEval": false
     },
     {

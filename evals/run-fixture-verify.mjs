@@ -1,6 +1,7 @@
 /**
  * Fixture verify eval: POST /api/verify for selected manifest fixtures (by id).
- * Use for stress labels, regression checks, and committed logs under docs/evals/.
+ * Use for stress labels, regression checks, committed logs under docs/evals/,
+ * and one-pass correctness + latency evidence (per-fixture timings plus suite summary).
  *
  * Requires OPENAI_API_KEY on the **client** (this script), like primary-latency.
  * Without OPENAI_API_KEY: prints skip JSON and exits 0 (CI-friendly).
@@ -16,8 +17,9 @@
  *   - st_petersburg    => ids starting with `st_petersburg_`
  *   - edge_synthetic   => ids starting with `edge-synthetic-`
  *   - seed_textures    => ids starting with `seed-texture-`
+ *   - llm_smoke        => representative low-cost subset for quick iteration
  *   - all_manifest     => all manifest fixture ids
- * Default when both are unset: `difficult-synthetic-label-photo` (single stress fixture).
+ * Default when both are unset: `all_manifest` (all fixtures in manifest).
  * EVAL_EXPECTATIONS: optional JSON path for fixture correctness scoring
  *   (default: docs/evals/fixture-correctness-expectations.json).
  *
@@ -93,15 +95,6 @@ async function postVerify(base, fileName, bytes, applicationJson) {
   };
 }
 
-function parseFixtureIds(raw) {
-  const s = raw?.trim();
-  if (!s) return ["difficult-synthetic-label-photo"];
-  return s
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean);
-}
-
 function parseCsv(raw) {
   return (raw ?? "")
     .split(",")
@@ -119,12 +112,20 @@ function resolveFixtureIds(manifestIds, idsRaw, setRaw) {
   if (explicitIds.length > 0) return { ids: explicitIds, unknownSets: [] };
 
   const requestedSets = parseCsv(setRaw).map((x) => x.toLowerCase());
-  if (requestedSets.length === 0) return { ids: parseFixtureIds(idsRaw), unknownSets: [] };
+  if (requestedSets.length === 0) return { ids: [...manifestIds], unknownSets: [] };
 
   const buckets = {
     st_petersburg: manifestIds.filter((id) => id.startsWith("st_petersburg_")),
     edge_synthetic: manifestIds.filter((id) => id.startsWith("edge-synthetic-")),
     seed_textures: manifestIds.filter((id) => id.startsWith("seed-texture-")),
+    llm_smoke: [
+      "happy-path-synthetic-label",
+      "difficult-synthetic-label-photo",
+      "edge-synthetic-glare-label",
+      "edge-synthetic-blur-label",
+      "seed-texture-01",
+      "st_petersburg_whiskey_label_dark_baseline",
+    ].filter((id) => manifestIds.includes(id)),
     all_manifest: manifestIds,
   };
 
@@ -155,6 +156,51 @@ function fieldStatusMap(body) {
     }
   }
   return out;
+}
+
+/**
+ * @param {number[]} values
+ * @param {number} p
+ */
+function percentile(values, p) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  if (sorted.length === 1) return sorted[0];
+  const idx = Math.ceil((p / 100) * sorted.length) - 1;
+  return sorted[Math.max(0, Math.min(sorted.length - 1, idx))];
+}
+
+/**
+ * @param {number[]} values
+ */
+function summarizeDurations(values) {
+  if (values.length === 0) return null;
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return {
+    count: values.length,
+    minMs: Math.min(...values),
+    maxMs: Math.max(...values),
+    meanMs: total / values.length,
+    medianMs: percentile(values, 50),
+    p95Ms: percentile(values, 95),
+  };
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} results
+ */
+function latencySummary(results) {
+  const requestDurations = results
+    .map((row) => row.durationMs)
+    .filter((value) => typeof value === "number");
+  const extractionDurations = results
+    .map((row) => row.extractionDurationMs)
+    .filter((value) => typeof value === "number");
+
+  return {
+    request: summarizeDurations(requestDurations),
+    extraction: summarizeDurations(extractionDurations),
+  };
 }
 
 /**
@@ -368,7 +414,13 @@ async function main() {
         {
           error: "Unknown fixture set(s) in EVAL_FIXTURE_SET",
           unknownSets,
-          knownSets: ["st_petersburg", "edge_synthetic", "seed_textures", "all_manifest"],
+          knownSets: [
+            "st_petersburg",
+            "edge_synthetic",
+            "seed_textures",
+            "llm_smoke",
+            "all_manifest",
+          ],
         },
         null,
         2,
@@ -454,6 +506,7 @@ async function main() {
     expectationsPath:
       expectations !== null ? path.relative(root, expectationsPath) : null,
     results,
+    latency: latencySummary(results),
     correctness,
   };
 

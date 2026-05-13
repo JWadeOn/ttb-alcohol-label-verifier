@@ -8,6 +8,7 @@ import {
   type FieldId,
   type FieldStatus,
   type VerifyErrorResponse,
+  VerifyExtractOnlyResponseSchema,
   type VerifySuccessResponse,
   VerifyErrorResponseSchema,
   VerifySuccessResponseSchema,
@@ -73,6 +74,94 @@ const FIELD_REQUIREMENTS: Record<FieldId, string> = {
   countryOfOrigin:
     "Not applicable when import is unchecked. For imports, fuzzy match when both sides include text.",
 };
+
+const CLIENT_UPLOAD_MAX_DIMENSION = 1800;
+const CLIENT_UPLOAD_MIN_BYTES = 1_000_000;
+const CLIENT_UPLOAD_JPEG_QUALITY = 0.82;
+
+type PreparedUpload = {
+  file: File;
+  originalName: string;
+  originalBytes: number;
+  uploadBytes: number;
+  compressed: boolean;
+};
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+}
+
+function replaceFileExtension(fileName: string, nextExt: string): string {
+  const i = fileName.lastIndexOf(".");
+  const base = i > 0 ? fileName.slice(0, i) : fileName;
+  return `${base}${nextExt}`;
+}
+
+async function prepareImageUpload(input: File): Promise<PreparedUpload> {
+  if (!input.type.startsWith("image/")) {
+    return {
+      file: input,
+      originalName: input.name,
+      originalBytes: input.size,
+      uploadBytes: input.size,
+      compressed: false,
+    };
+  }
+
+  const bitmap = await createImageBitmap(input);
+  try {
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const shouldResize = longest > CLIENT_UPLOAD_MAX_DIMENSION;
+    const shouldCompress = shouldResize || input.size > CLIENT_UPLOAD_MIN_BYTES || input.type !== "image/jpeg";
+
+    if (!shouldCompress) {
+      return {
+        file: input,
+        originalName: input.name,
+        originalBytes: input.size,
+        uploadBytes: input.size,
+        compressed: false,
+      };
+    }
+
+    const scale = shouldResize ? CLIENT_UPLOAD_MAX_DIMENSION / longest : 1;
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not prepare image canvas.");
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", CLIENT_UPLOAD_JPEG_QUALITY),
+    );
+
+    if (!blob || blob.size >= input.size) {
+      return {
+        file: input,
+        originalName: input.name,
+        originalBytes: input.size,
+        uploadBytes: input.size,
+        compressed: false,
+      };
+    }
+
+    return {
+      file: new File([blob], replaceFileExtension(input.name, ".jpg"), { type: "image/jpeg" }),
+      originalName: input.name,
+      originalBytes: input.size,
+      uploadBytes: blob.size,
+      compressed: true,
+    };
+  } finally {
+    bitmap.close();
+  }
+}
 
 function parseExtractionField(raw: unknown): {
   value: string | null;
@@ -393,9 +482,13 @@ function truncateFieldCell(value: string | null, maxLen: number): string {
 
 export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileSelectionTokenRef = useRef(0);
   const [applicationJson, setApplicationJson] = useState(DEFAULT_APPLICATION);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [preparingFile, setPreparingFile] = useState(false);
+  const [uploadPreparation, setUploadPreparation] = useState<PreparedUpload | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [httpStatus, setHttpStatus] = useState<number | null>(null);
@@ -408,6 +501,8 @@ export default function HomePage() {
   const [workflowPhase, setWorkflowPhase] = useState<WorkflowPhase>("edit");
   const [runGeneration, setRunGeneration] = useState(0);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [extractionCacheKey, setExtractionCacheKey] = useState<string | null>(null);
+  const [prefetchState, setPrefetchState] = useState<"idle" | "prefetching" | "ready" | "error">("idle");
   /** Human approve/reject for the current successful run — client only, not sent to the server. */
   const [reviewDisposition, setReviewDisposition] = useState<"approved" | "rejected" | null>(null);
 
@@ -419,7 +514,7 @@ export default function HomePage() {
     return APPLICATION_FORMATTED_PAGE_NAV[i];
   }, [applicationFieldPage]);
 
-  const canSubmit = useMemo(() => !!file && !loading, [file, loading]);
+  const canSubmit = useMemo(() => !!file && !loading && !preparingFile, [file, loading, preparingFile]);
 
   const hasCompletedRun = runGeneration > 0;
 
@@ -463,6 +558,93 @@ export default function HomePage() {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  useEffect(() => {
+    if (!file || preparingFile) {
+      if (!file) {
+        setExtractionCacheKey(null);
+        setPrefetchState("idle");
+      }
+      return;
+    }
+    const abort = new AbortController();
+    setExtractionCacheKey(null);
+    setPrefetchState("prefetching");
+    void (async () => {
+      try {
+        const fd = new FormData();
+        fd.append(VERIFY_FORM_FIELDS.image, file);
+        const res = await fetch("/api/verify/extract-only", {
+          method: "POST",
+          body: fd,
+          signal: abort.signal,
+        });
+        if (!res.ok) {
+          setPrefetchState("error");
+          return;
+        }
+        const raw: unknown = await res.json();
+        const parsed = VerifyExtractOnlyResponseSchema.safeParse(raw);
+        if (!parsed.success) {
+          setPrefetchState("error");
+          return;
+        }
+        setExtractionCacheKey(parsed.data.cacheKey);
+        setPrefetchState("ready");
+      } catch (err) {
+        if ((err as { name?: string })?.name === "AbortError") return;
+        setPrefetchState("error");
+      }
+    })();
+    return () => abort.abort();
+  }, [file, preparingFile]);
+
+  async function onFileChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const nextFile = ev.target.files?.[0] ?? null;
+    ev.target.value = "";
+
+    const token = ++fileSelectionTokenRef.current;
+    if (!nextFile) {
+      setFile(null);
+      setSelectedFileName(null);
+      setUploadPreparation(null);
+      setPreparingFile(false);
+      return;
+    }
+
+    setSelectedFileName(nextFile.name);
+    setFile(nextFile);
+    setUploadPreparation({
+      file: nextFile,
+      originalName: nextFile.name,
+      originalBytes: nextFile.size,
+      uploadBytes: nextFile.size,
+      compressed: false,
+    });
+    setPreparingFile(true);
+
+    try {
+      const prepared = await prepareImageUpload(nextFile);
+      if (fileSelectionTokenRef.current !== token) return;
+      setFile(prepared.file);
+      setUploadPreparation(prepared);
+    } catch (err) {
+      console.warn("[app/page] client upload compression skipped; using original file", err);
+      if (fileSelectionTokenRef.current !== token) return;
+      setFile(nextFile);
+      setUploadPreparation({
+        file: nextFile,
+        originalName: nextFile.name,
+        originalBytes: nextFile.size,
+        uploadBytes: nextFile.size,
+        compressed: false,
+      });
+    } finally {
+      if (fileSelectionTokenRef.current === token) {
+        setPreparingFile(false);
+      }
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
@@ -484,6 +666,9 @@ export default function HomePage() {
       const formData = new FormData();
       formData.append(VERIFY_FORM_FIELDS.image, file);
       formData.append(VERIFY_FORM_FIELDS.application, applicationJson);
+      if (extractionCacheKey) {
+        formData.append(VERIFY_FORM_FIELDS.extractionCacheKey, extractionCacheKey);
+      }
 
       const res = await fetch("/api/verify", {
         method: "POST",
@@ -682,10 +867,7 @@ export default function HomePage() {
               accept="image/jpeg,image/png"
               className="sr-only"
               aria-label="Choose label image file"
-              onChange={(ev) => {
-                const f = ev.target.files?.[0];
-                setFile(f ?? null);
-              }}
+              onChange={onFileChange}
             />
             <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-stone-100 pb-1">
               <h2
@@ -698,9 +880,9 @@ export default function HomePage() {
                     <span className="shrink-0 font-normal text-stone-500">for</span>
                     <span
                       className="min-w-0 max-w-full truncate font-mono text-[11px] font-normal text-stone-600 sm:text-xs"
-                      title={file.name}
+                      title={selectedFileName ?? file.name}
                     >
-                      &apos;{file.name}&apos;
+                      &apos;{selectedFileName ?? file.name}&apos;
                     </span>
                   </>
                 ) : null}
@@ -718,6 +900,26 @@ export default function HomePage() {
             {!file ? (
               <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
                 Sent to the server for extraction. Full comparison appears in results below.
+              </p>
+            ) : preparingFile ? (
+              <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+                Preparing an optimized upload for faster verification…
+              </p>
+            ) : uploadPreparation?.compressed ? (
+              <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+                Upload optimized before submit: {formatBytes(uploadPreparation.originalBytes)} to{" "}
+                {formatBytes(uploadPreparation.uploadBytes)}.
+              </p>
+            ) : null}
+            {file && !preparingFile ? (
+              <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+                {prefetchState === "prefetching"
+                  ? "Prefetching extraction in the background…"
+                  : prefetchState === "ready"
+                    ? "Extraction prefetched. Verify can reuse cached results."
+                    : prefetchState === "error"
+                      ? "Background prefetch unavailable; verify will run full extraction."
+                      : null}
               </p>
             ) : null}
 
@@ -1192,6 +1394,24 @@ export default function HomePage() {
                                 ) : null}
                               </dd>
                             </div>
+                            <div>
+                              <dt className="text-xs font-medium uppercase tracking-wide text-stone-500">
+                                Pipeline timing
+                              </dt>
+                              <dd className="text-stone-800">
+                                <span className="font-mono text-xs">
+                                  total {successPayload.timings.totalMs} ms
+                                </span>
+                                <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                  image gate {successPayload.timings.imageQualityMs} ms · OCR{" "}
+                                  {successPayload.timings.ocrMs} ms · LLM {successPayload.timings.llmMs} ms · validation{" "}
+                                  {successPayload.timings.validationMs} ms
+                                </span>
+                                <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                  extraction cache {successPayload.timings.cacheHit ? "hit" : "miss"}
+                                </span>
+                              </dd>
+                            </div>
                             <div className="sm:col-span-2">
                               <dt className="text-xs font-medium uppercase tracking-wide text-stone-500">
                                 Image quality
@@ -1261,7 +1481,7 @@ export default function HomePage() {
                     disabled={!canSubmit}
                     className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300 sm:max-w-md"
                   >
-                    {loading ? "Verifying…" : "Run verification"}
+                    {preparingFile ? "Preparing image…" : loading ? "Verifying…" : "Run verification"}
                   </button>
                 ) : workflowPhase === "verify" && !loading ? (
                   hasCompletedRun ? (

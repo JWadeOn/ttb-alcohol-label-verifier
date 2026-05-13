@@ -1,6 +1,6 @@
 # Fixture Correctness Thresholds
 
-This file defines the current correctness-evidence bar for `npm run eval:fixture-verify`.
+This file defines the current correctness-evidence bar for `npm run eval:fixture-verify`. The same run also records latency (`durationMs`, `extractionDurationMs`, and a top-level latency summary), so a separate latency-only run is optional rather than required.
 
 ## Inputs
 
@@ -23,6 +23,8 @@ This file defines the current correctness-evidence bar for `npm run eval:fixture
   - At least half of scored fixtures must meet their fixture-level `minScore`.
 - `requiredFixtureIds`
   - All listed sign-off fixture ids must be present in the run output.
+- Per-fixture latency
+  - Each fixture rule may also require `durationMs <= maxDurationMs`; this is how the full eval enforces latency without a second API-burning run.
 
 ## Fixture rules
 
@@ -62,5 +64,7 @@ This file defines the current correctness-evidence bar for `npm run eval:fixture
 ```bash
 set -a && source .env && set +a && EVAL_FIXTURE_IDS=happy-path-synthetic-label,difficult-synthetic-label-photo,seed-texture-01,seed-texture-02,edge-synthetic-glare-label,edge-synthetic-blur-label,edge-synthetic-angle-label EVAL_OUT=docs/evals/fixture-correctness-$(date +%F).json npm run eval:fixture-verify
 ```
+
+To run the full manifest suite instead, omit `EVAL_FIXTURE_IDS`; `eval:fixture-verify` now defaults to `all_manifest`.
 
 If `OPENAI_API_KEY` is not present in the environment, the eval script intentionally prints a skip payload and exits `0`.

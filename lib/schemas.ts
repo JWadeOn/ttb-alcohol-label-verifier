@@ -5,6 +5,7 @@ export const VERIFY_FORM_FIELDS = {
   image: "image",
   application: "application",
   forceFallback: "force_fallback",
+  extractionCacheKey: "extraction_cache_key",
 } as const;
 
 export const FieldIdSchema = z.enum([
@@ -72,6 +73,15 @@ export const VerifySuccessResponseSchema = z.object({
   validation: z.object({
     fields: z.array(FieldValidationRowSchema),
   }),
+  timings: z.object({
+    imageQualityMs: z.number().nonnegative(),
+    ocrMs: z.number().nonnegative(),
+    llmMs: z.number().nonnegative(),
+    extractionMs: z.number().nonnegative(),
+    validationMs: z.number().nonnegative(),
+    totalMs: z.number().nonnegative(),
+    cacheHit: z.boolean(),
+  }),
 });
 
 export type VerifySuccessResponse = z.infer<typeof VerifySuccessResponseSchema>;
@@ -84,3 +94,23 @@ export const VerifyErrorResponseSchema = z.object({
 });
 
 export type VerifyErrorResponse = z.infer<typeof VerifyErrorResponseSchema>;
+
+export const VerifyExtractOnlyResponseSchema = z.object({
+  requestId: z.string().uuid(),
+  cacheKey: z.string(),
+  imageQuality: ImageQualitySchema,
+  extraction: z.object({
+    provider: z.string(),
+    durationMs: z.number().nonnegative(),
+  }),
+  timings: z.object({
+    imageQualityMs: z.number().nonnegative(),
+    ocrMs: z.number().nonnegative(),
+    llmMs: z.number().nonnegative(),
+    extractionMs: z.number().nonnegative(),
+    totalMs: z.number().nonnegative(),
+    cacheHit: z.boolean(),
+  }),
+});
+
+export type VerifyExtractOnlyResponse = z.infer<typeof VerifyExtractOnlyResponseSchema>;

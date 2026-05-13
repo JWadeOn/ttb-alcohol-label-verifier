@@ -4,7 +4,7 @@ import {
   type ExtractionResult,
 } from "@/lib/extraction/types";
 
-/** Phase 1 placeholder until Tesseract fallback lands (Phase 2). */
+/** Last-resort fallback when both OCR and LLM extraction paths are unavailable. */
 export function createUnavailableFallbackProvider(): ExtractionProvider {
   return {
     async extract(): Promise<ExtractionResult> {
@@ -13,7 +13,7 @@ export function createUnavailableFallbackProvider(): ExtractionProvider {
         provider: "unavailable",
         durationMs: Date.now() - started,
         fields: emptyExtractionFields(
-          "Fallback OCR not configured yet — Phase 2 wires Tesseract here.",
+          "No extraction provider produced a usable result for this request.",
         ),
       };
     },

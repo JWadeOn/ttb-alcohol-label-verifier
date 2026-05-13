@@ -75,5 +75,14 @@ export function buildStubVerifyResponse(
       ),
     },
     validation: { fields },
+    timings: {
+      imageQualityMs: 0,
+      ocrMs: 0,
+      llmMs: 0,
+      extractionMs: 0,
+      validationMs: 0,
+      totalMs: 0,
+      cacheHit: false,
+    },
   };
 }

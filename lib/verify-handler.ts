@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import {
   ApplicationJsonSchema,
   VERIFY_FORM_FIELDS,
+  VerifyExtractOnlyResponseSchema,
 } from "@/lib/schemas";
 import { buildStubVerifyResponse } from "@/lib/stub-response";
 import {
+  buildVerifySuccessResponse,
+  resolveVerifyExtractionMode,
+  runExtractionStage,
   runVerifyPipeline,
   VerifyFailedError,
 } from "@/lib/verify-pipeline";
+import {
+  cacheKeyFromImageBytes,
+  getCachedExtraction,
+  setCachedExtraction,
+} from "@/lib/extraction-cache";
 
 function jsonError(
   requestId: string,
@@ -23,7 +32,9 @@ function jsonError(
 }
 
 export type VerifyHandlerDeps = {
-  runVerifyPipeline: typeof runVerifyPipeline;
+  runVerifyPipeline?: typeof runVerifyPipeline;
+  runExtractionStage?: typeof runExtractionStage;
+  buildVerifySuccessResponse?: typeof buildVerifySuccessResponse;
 };
 
 /** Dev / cost control: set `OPENAI_DISABLED=true` (or `1` / `yes`) to block paid completions while keeping a key in `.env`. */
@@ -44,8 +55,13 @@ function isVerifyDevStubEnabled(): boolean {
 
 export async function handleVerifyPost(
   req: Request,
-  deps: VerifyHandlerDeps = { runVerifyPipeline },
+  deps: VerifyHandlerDeps = {},
 ): Promise<Response> {
+  const resolvedDeps = {
+    runVerifyPipeline: deps.runVerifyPipeline ?? runVerifyPipeline,
+    runExtractionStage: deps.runExtractionStage ?? runExtractionStage,
+    buildVerifySuccessResponse: deps.buildVerifySuccessResponse ?? buildVerifySuccessResponse,
+  };
   const requestId = crypto.randomUUID();
   const verifyWallStarted = Date.now();
 
@@ -123,8 +139,10 @@ export async function handleVerifyPost(
       return NextResponse.json(body);
     }
 
-    const apiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!apiKey) {
+    const extractionMode = resolveVerifyExtractionMode();
+    const requiresApiKey = extractionMode !== "ocr_only";
+    const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
+    if (requiresApiKey && !apiKey) {
       console.warn("[verify] OPENAI_API_KEY missing or blank; refusing pipeline", {
         requestId,
         hint: "Set OPENAI_API_KEY for the Next.js server process (e.g. .env / .env.local) and restart dev.",
@@ -137,7 +155,7 @@ export async function handleVerifyPost(
       );
     }
 
-    if (isOpenAiDisabledByEnv()) {
+    if (requiresApiKey && isOpenAiDisabledByEnv()) {
       console.warn("[verify] OPENAI_DISABLED set; skipping pipeline to avoid API usage", {
         requestId,
       });
@@ -150,18 +168,50 @@ export async function handleVerifyPost(
     }
 
     const imageBytes = Buffer.from(await image.arrayBuffer());
+    const cacheKeyRaw = formData.get(VERIFY_FORM_FIELDS.extractionCacheKey);
+    const extractionCacheKey = typeof cacheKeyRaw === "string" && cacheKeyRaw.trim().length > 0
+      ? cacheKeyRaw.trim()
+      : null;
 
     try {
-      const body = await deps.runVerifyPipeline({
-        requestId,
-        imageBytes,
-        application: appResult.data,
-        openAiApiKey: apiKey,
-      });
+      let body;
+      if (extractionCacheKey) {
+        const hit = getCachedExtraction(extractionCacheKey);
+        if (hit) {
+          body = resolvedDeps.buildVerifySuccessResponse({
+            requestId,
+            application: appResult.data,
+            extraction: hit,
+            imageQuality: { ok: true },
+            extractionTimings: {
+              imageQualityMs: 0,
+              ocrMs: 0,
+              llmMs: 0,
+              extractionMs: 0,
+            },
+            cacheHit: true,
+            startedAtMs: verifyWallStarted,
+          });
+          console.info("[verify] extraction cache hit", {
+            requestId,
+            extractionCacheKey: extractionCacheKey.slice(0, 12),
+          });
+        }
+      }
+
+      if (!body) {
+        body = await resolvedDeps.runVerifyPipeline({
+          requestId,
+          imageBytes,
+          application: appResult.data,
+          openAiApiKey: apiKey,
+        });
+      }
       console.info("[verify] request completed", {
         requestId,
         totalMs: Date.now() - verifyWallStarted,
         extractionProvider: body.extraction.provider,
+        cacheHit: body.timings.cacheHit,
       });
       return NextResponse.json(body);
     } catch (e) {
@@ -178,6 +228,132 @@ export async function handleVerifyPost(
     }
   } catch (err) {
     console.error(err);
+    return jsonError(
+      requestId,
+      500,
+      "INTERNAL_ERROR",
+      "Unexpected server error.",
+    );
+  }
+}
+
+export async function handleVerifyExtractOnlyPost(
+  req: Request,
+  deps: VerifyHandlerDeps = {},
+): Promise<Response> {
+  const resolvedDeps = {
+    runExtractionStage: deps.runExtractionStage ?? runExtractionStage,
+  };
+  const requestId = crypto.randomUUID();
+  const startedAt = Date.now();
+  try {
+    const contentType = req.headers.get("content-type") ?? "";
+    if (!contentType.includes("multipart/form-data")) {
+      return jsonError(
+        requestId,
+        415,
+        "UNSUPPORTED_MEDIA_TYPE",
+        `Expected Content-Type multipart/form-data with field "${VERIFY_FORM_FIELDS.image}".`,
+      );
+    }
+
+    const formData = await req.formData();
+    const image = formData.get(VERIFY_FORM_FIELDS.image);
+    if (!(image instanceof Blob)) {
+      return jsonError(
+        requestId,
+        400,
+        "MISSING_IMAGE",
+        `Multipart part "${VERIFY_FORM_FIELDS.image}" must be a file.`,
+      );
+    }
+    if (image.size === 0) {
+      return jsonError(
+        requestId,
+        400,
+        "EMPTY_IMAGE",
+        `Multipart part "${VERIFY_FORM_FIELDS.image}" must not be empty.`,
+      );
+    }
+
+    const extractionMode = resolveVerifyExtractionMode();
+    const requiresApiKey = extractionMode !== "ocr_only";
+    const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
+    if (requiresApiKey && !apiKey) {
+      return jsonError(
+        requestId,
+        503,
+        "OPENAI_NOT_CONFIGURED",
+        "OPENAI_API_KEY environment variable is not set.",
+      );
+    }
+    if (requiresApiKey && isOpenAiDisabledByEnv()) {
+      return jsonError(
+        requestId,
+        503,
+        "OPENAI_DISABLED",
+        "OpenAI calls are disabled (OPENAI_DISABLED). Remove or unset to run extraction.",
+      );
+    }
+
+    const imageBytes = Buffer.from(await image.arrayBuffer());
+    const cacheKey = cacheKeyFromImageBytes(imageBytes);
+    const cached = getCachedExtraction(cacheKey);
+    if (cached) {
+      const body = VerifyExtractOnlyResponseSchema.parse({
+        requestId,
+        cacheKey,
+        imageQuality: { ok: true },
+        extraction: {
+          provider: cached.provider,
+          durationMs: 0,
+        },
+        timings: {
+          imageQualityMs: 0,
+          ocrMs: 0,
+          llmMs: 0,
+          extractionMs: 0,
+          totalMs: Date.now() - startedAt,
+          cacheHit: true,
+        },
+      });
+      return NextResponse.json(body);
+    }
+
+    const extractionStage = await resolvedDeps.runExtractionStage({
+      requestId,
+      imageBytes,
+      openAiApiKey: apiKey,
+    });
+    setCachedExtraction(cacheKey, extractionStage.extraction);
+
+    const body = VerifyExtractOnlyResponseSchema.parse({
+      requestId,
+      cacheKey,
+      imageQuality: extractionStage.imageQuality,
+      extraction: {
+        provider: extractionStage.extraction.provider,
+        durationMs: extractionStage.extraction.durationMs,
+      },
+      timings: {
+        ...extractionStage.timings,
+        totalMs: Date.now() - startedAt,
+        cacheHit: false,
+      },
+    });
+
+    console.info("[verify.extract-only] cached extraction", {
+      requestId,
+      cacheKey: cacheKey.slice(0, 12),
+      provider: body.extraction.provider,
+      totalMs: body.timings.totalMs,
+    });
+    return NextResponse.json(body);
+  } catch (e) {
+    if (e instanceof VerifyFailedError) {
+      return jsonError(requestId, e.httpStatus, e.code, e.message);
+    }
+    console.error(e);
     return jsonError(
       requestId,
       500,

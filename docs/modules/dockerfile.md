@@ -25,5 +25,4 @@ None; validate with `npm run docker:build` locally.
 
 ## See also
 
-- [`docs/RENDER_DEPLOY.md`](../RENDER_DEPLOY.md) — Render Web Service from this Dockerfile.
-- [`docs/POC1_FALLBACK.md`](../POC1_FALLBACK.md) — when Tesseract is added, extend the image and revisit image size and init time.
+- `README.md` deployment section — current public deployment and runtime expectations.

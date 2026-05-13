@@ -2,11 +2,9 @@
 
 Evaluator-facing snapshot of **correctness** and **completeness** for the AI-powered TTB alcohol label verifier prototype.
 
-**Canonical full plan:** [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) — this scorecard is the rubric-aligned slice; the comprehensive plan merges execution, phases, and backlog.
-
 This maps directly to the take-home rubric and stakeholder interview expectations (speed, usable UX, routine field matching, strict warning handling, image adversity).
 
-**Last updated:** 2026-05-12
+**Last updated:** 2026-05-13
 
 ---
 
@@ -15,8 +13,8 @@ This maps directly to the take-home rubric and stakeholder interview expectation
 - **Done** = implemented and evidenced in code/tests/docs.
 - **Partial** = core capability exists, but evidence depth or edge coverage is still open.
 - **Not started** = no meaningful implementation yet.
-- **Out of scope** = intentionally excluded for this prototype deliverable (documented in plan docs).
-- **Deferred** = policy/thresholds or interface reserved; implementation explicitly postponed (e.g. Phase 2 OCR).
+- **Out of scope** = intentionally excluded for this prototype deliverable.
+- **Deferred** = explicitly postponed and documented.
 
 Prototype scope still applies: this is a standalone POC, not a full COLA integration and not a complete 27 CFR rule engine (see `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`).
 
@@ -30,15 +28,15 @@ Prototype scope still applies: this is a standalone POC, not a full COLA integra
 | **Deterministic validation correctness** (rules over extracted/application values) | **Done** | Strong unit coverage for statuses (`pass`/`fail`/`manual_review`/`not_applicable`), thresholds, parsing, strict warning behavior | `tests/validator.test.ts`, `tests/golden-default-application.test.ts`, `docs/modules/validator.md` | Add a few more explicit test vectors for stakeholder examples (e.g., punctuation/case brand tolerance notes) |
 | **Warning statement strictness** (Jenny: exact wording sensitivity) | **Done** | Warning comparison is strict against application value; mismatch fails | `lib/validator.ts`, `tests/golden-default-application.test.ts`, `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md` | Clarify in evaluator notes that strictness is product behavior for prototype, not full legal implementation |
 | **Judgment-safe behavior for ambiguous OCR** (Dave: nuance) | **Done** | Manual-review pathway is first-class; low-confidence and uncertain outputs can avoid false pass/fail certainty | `lib/validator.ts`, `lib/schemas.ts`, UI in `app/page.tsx` | Add richer image fixtures to prove manual-review behavior on real difficult images |
-| **Latency practical for agent workflow** (Sarah: ~5s target pressure) | **Done** | Production eval harness + committed snapshots; explicit correctness thresholds doc; latest primary-latency run **200** + `openai` on three fixtures (~3.5–6.5s round-trip) | `evals/run-primary-latency.mjs`, `docs/evals/PRIMARY_LATENCY_RUNS.md`, `docs/evals/primary-latency-production-2026-05-12.json`, [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) | Optional: scheduled P95 bench runs as model/deploy drift |
-| **Usable UX for mixed tech comfort** ("my mother could use it") | **Partial** | Results-first flow, obvious actions, expandable guidance, improved review controls, clearer API error and run-metadata copy | `app/page.tsx`, `lib/verify-error-messages.ts`, `docs/modules/app-page.md`, `docs/PROGRESS.md` | Lightweight usability pass on remaining edge cases |
-| **Handles non-ideal images** (glare, angle, blur) | **Partial** | Image-quality gate; difficult stress fixture; synthetic glare/blur/tilt derivatives + scored `eval:fixture-verify` | `lib/image-quality.ts`, `fixtures/labels/`, `docs/evals/fixture-correctness-non-seed-edge-2026-05-12.json`, [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) | Add more **real-photo** edge cases beyond synthetic derivatives |
+| **Latency practical for agent workflow** (Sarah: ~5s target pressure) | **Done** | Production eval harness + committed snapshots; explicit correctness thresholds doc; latest full production fixture run records per-fixture and summary latency | `evals/run-fixture-verify.mjs`, `docs/evals/fixture-correctness-production-2026-05-13.json`, `docs/evals/PRIMARY_LATENCY_RUNS.md`, [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) | Optional: scheduled P95 bench runs as model/deploy drift |
+| **Usable UX for mixed tech comfort** ("my mother could use it") | **Partial** | Results-first flow, obvious actions, expandable guidance, improved review controls, clearer API error and run-metadata copy | `app/page.tsx`, `lib/verify-error-messages.ts`, `docs/modules/app-page.md` | Lightweight usability pass on remaining edge cases |
+| **Handles non-ideal images** (glare, angle, blur) | **Partial** | Image-quality gate, difficult stress fixture set, and targeted difficult-label production eval evidence | `lib/image-quality.ts`, `fixtures/labels/`, `docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json`, [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) | Add more **real-photo** edge cases beyond synthetic derivatives |
 | **Programmatic eval + logged evidence over time** | **Done** | Append-only latency timeline + dated artifacts; scored fixture correctness JSON + expectations profile | `docs/evals/PRIMARY_LATENCY_RUNS.md`, `docs/evals/README.md`, `docs/evals/fixture-correctness-*.json`, `evals/run-fixture-verify.mjs` | Optional: correctness timeline index (mirror latency table style) |
 | **Error handling and fail-safe behavior** | **Done** | Typed error codes, timeout failover path, disabled/missing key behavior, structured logs | `lib/verify-handler.ts`, `lib/extraction/provider.ts`, `tests/verify-handler.test.ts`, `README.md` | Add evaluator-facing "known failure modes" checklist in one place |
 | **Code quality / organization for scope** | **Done** | Thin route, deep modules, test coverage on deterministic core, documented architecture/modules | `docs/ARCHITECTURE.md`, `docs/modules/*.md`, `tests/*`, `AGENTS.md` | Continue small focused increments; keep docs synchronized with behavior changes |
-| **Creative but scoped problem-solving** (prototype discipline) | **Done** | Standalone deploy, no premature COLA integration, explicit OCR defer decision with policy doc; **§16 acceptance signed** | `README.md`, `docs/POC1_FALLBACK.md`, `docs/PROGRESS.md`, [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §16 | Optional polish only — does not reopen sign-off unless contracts change |
-| **Batch uploads during peak seasons** (Sarah request) | **Out of scope** | Single-label workbench by design for this deliverable | [`docs/COMPREHENSIVE_IMPLEMENTATION_PLAN.md`](./COMPREHENSIVE_IMPLEMENTATION_PLAN.md) §2, [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) §5 F-14 | Future phase if product expands beyond POC |
-| **In-app OCR fallback (Tesseract) go/no-go implemented** | **Deferred** | Formal prototype defer; runtime fallback is **`unavailable`** placeholder until Phase 2 | [`docs/POC1_FALLBACK.md`](./POC1_FALLBACK.md), `lib/extraction/unavailable-fallback-provider.ts` | Implement measurable OCR provider + POC-1 harness when Phase 2 is funded |
+| **Creative but scoped problem-solving** (prototype discipline) | **Done** | Standalone deploy, no premature COLA integration, and explicit prototype boundaries | `README.md`, `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md` | Optional polish only |
+| **Batch uploads during peak seasons** (Sarah request) | **Out of scope** | Single-label workbench by design for this deliverable | `README.md` scope section, `docs/CORE_REQUIREMENTS_SCORECARD.md` | Future phase if product expands beyond POC |
+| **In-app OCR fallback (Tesseract) go/no-go implemented** | **Done** | Hybrid OCR-first extraction is implemented (`tesseract.js`) with LLM escalation and placeholder-only last-resort fallback if both providers fail | `lib/extraction/tesseract-provider.ts`, `lib/extraction/hybrid-routing.ts`, `lib/verify-pipeline.ts`, `lib/extraction/unavailable-fallback-provider.ts`, `docs/modules/extraction.md` | Continue tuning OCR routing thresholds against production evals |
 
 ---
 
@@ -51,13 +49,11 @@ Prototype scope still applies: this is a standalone POC, not a full COLA integra
 
 ---
 
-## Minimum closure plan (for take-home scoring confidence)
+## Optional next improvements
 
-1. Add more **real-photo** categorized fixtures (beyond synthetic edge derivatives) if evaluators want broader extraction proof.
-2. Optional: append-only **correctness** timeline index (mirror `PRIMARY_LATENCY_RUNS.md` style).
-3. Optional: extend eval logging with richer per-field deltas for new fixtures only.
-4. ~~Record explicit acceptance thresholds~~ — **Done:** [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) + `fixture-correctness-expectations.json`.
-5. ~~Check off `docs/IMPLEMENTATION_PLAN.md` §16~~ — **Done (2026-05-12):** see §16 sign-off block + evidence bullets.
+1. Add more **real-photo** categorized fixtures (beyond synthetic edge derivatives) for broader extraction proof.
+2. Add a correctness timeline index to mirror `PRIMARY_LATENCY_RUNS.md`.
+3. Extend eval logging with richer per-field deltas for future fixtures.
 
 ---
 
