@@ -94,6 +94,7 @@ This prototype is decision support, not legal automation.
 - No persistent storage of uploaded label data in prototype flow
 - API keys are environment variables only (never committed)
 - Public prototype deployment is acceptable for this exercise; production path would move to Azure OpenAI private endpoints
+- Upload and eval fixture policy uses the current TTB guidance ceiling of **1.5 MB per image**; older COLA attachment references that mention **750 KB** are treated as superseded for this prototype.
 
 ## Local development (Phase 1)
 
@@ -143,8 +144,9 @@ The dev server logs **`[verify-pipeline] pipeline completed`** (`pipelineMs`, ac
 ## Evaluation Artifacts
 
 - Canonical eval index: [`docs/evals/README.md`](docs/evals/README.md)
-- Latest full production fixture run: [`docs/evals/fixture-correctness-production-2026-05-13.json`](docs/evals/fixture-correctness-production-2026-05-13.json)
+- Latest full production fixture run (`on_bottle` / default manifest story): [`docs/evals/fixture-correctness-production-2026-05-13.json`](docs/evals/fixture-correctness-production-2026-05-13.json)
 - Focused difficult subset run: [`docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json`](docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json)
+- Latest scripted synthetic fixture run (`off_bottle` / `synthetic_eval` set): [`docs/evals/fixture-correctness-synthetic-eval-full-2026-05-14.json`](docs/evals/fixture-correctness-synthetic-eval-full-2026-05-14.json)
 
 ## Deployment
 

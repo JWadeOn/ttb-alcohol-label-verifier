@@ -1,0 +1,1 @@
+export const MAX_LABEL_UPLOAD_BYTES = 1.5 * 1024 * 1024;

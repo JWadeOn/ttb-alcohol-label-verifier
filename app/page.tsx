@@ -18,6 +18,7 @@ import {
 import { VerifyRunStepsPanel } from "@/components/VerifyRunStepsPanel";
 import { WorkflowProcessTabs, type WorkflowPhase } from "@/components/WorkflowProcessTabs";
 import { buildVerifyUiStepsFromResponse, buildVerifyUiStepsLoading, verifyResponseIndicatesPipelineFailure } from "@/lib/verify-ui-steps";
+import { MAX_LABEL_UPLOAD_BYTES } from "@/lib/upload-limits";
 import {
   ABV_TOLERANCE,
   BRAND_SIMILARITY,
@@ -80,6 +81,8 @@ const FIELD_REQUIREMENTS: Record<FieldId, string> = {
 const CLIENT_UPLOAD_MAX_DIMENSION = 1800;
 const CLIENT_UPLOAD_MIN_BYTES = 1_000_000;
 const CLIENT_UPLOAD_JPEG_QUALITY = 0.82;
+const CLIENT_UPLOAD_MAX_BYTES = MAX_LABEL_UPLOAD_BYTES;
+const CLIENT_BATCH_MAX_IMAGES = 20;
 
 type PreparedUpload = {
   file: File;
@@ -491,6 +494,7 @@ export default function HomePage() {
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [preparingFile, setPreparingFile] = useState(false);
   const [uploadPreparation, setUploadPreparation] = useState<PreparedUpload | null>(null);
+  const [uploadGuardrailErrorText, setUploadGuardrailErrorText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [httpStatus, setHttpStatus] = useState<number | null>(null);
@@ -613,10 +617,22 @@ export default function HomePage() {
       setFile(null);
       setSelectedFileName(null);
       setUploadPreparation(null);
+      setUploadGuardrailErrorText(null);
       setPreparingFile(false);
       return;
     }
+    if (nextFile.size > CLIENT_UPLOAD_MAX_BYTES) {
+      setFile(null);
+      setSelectedFileName(null);
+      setUploadPreparation(null);
+      setPreparingFile(false);
+      setUploadGuardrailErrorText(
+        `Image is ${formatBytes(nextFile.size)}. Maximum upload size is ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)}.`,
+      );
+      return;
+    }
 
+    setUploadGuardrailErrorText(null);
     setSelectedFileName(nextFile.name);
     setFile(nextFile);
     setUploadPreparation({
@@ -654,6 +670,12 @@ export default function HomePage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
+    if (file.size > CLIENT_UPLOAD_MAX_BYTES) {
+      setUploadGuardrailErrorText(
+        `Image is ${formatBytes(file.size)}. Maximum upload size is ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)}.`,
+      );
+      return;
+    }
 
     let outcomeSuccess: VerifySuccessResponse | null = null;
     let outcomeError: VerifyErrorResponse | null = null;
@@ -745,6 +767,16 @@ export default function HomePage() {
 
   async function onBatchSubmit() {
     if (batchFiles.length === 0) return;
+    if (batchFiles.length > CLIENT_BATCH_MAX_IMAGES) {
+      setBatchErrorText(`Batch size exceeds maximum of ${CLIENT_BATCH_MAX_IMAGES} images.`);
+      return;
+    }
+    if (batchFiles.some((f) => f.size > CLIENT_UPLOAD_MAX_BYTES)) {
+      setBatchErrorText(
+        `Each batch image must be ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)} or smaller.`,
+      );
+      return;
+    }
     setBatchLoading(true);
     setBatchErrorText(null);
     setBatchResponse(null);
@@ -783,6 +815,39 @@ export default function HomePage() {
     [successPayload],
   );
 
+  function onBatchFilesChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(ev.target.files ?? []);
+    ev.target.value = "";
+    if (selected.length === 0) {
+      setBatchFiles([]);
+      setBatchErrorText(null);
+      return;
+    }
+    if (selected.length > CLIENT_BATCH_MAX_IMAGES) {
+      setBatchFiles([]);
+      setBatchResponse(null);
+      setBatchErrorText(
+        `Batch size exceeds maximum of ${CLIENT_BATCH_MAX_IMAGES} images.`,
+      );
+      return;
+    }
+    const oversized = selected.filter((f) => f.size > CLIENT_UPLOAD_MAX_BYTES);
+    if (oversized.length > 0) {
+      const sample = oversized
+        .slice(0, 2)
+        .map((f) => `"${f.name}" (${formatBytes(f.size)})`)
+        .join(", ");
+      setBatchFiles([]);
+      setBatchResponse(null);
+      setBatchErrorText(
+        `Each batch image must be ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)} or smaller. Oversized: ${sample}${oversized.length > 2 ? `, +${oversized.length - 2} more` : ""}.`,
+      );
+      return;
+    }
+    setBatchErrorText(null);
+    setBatchFiles(selected);
+  }
+
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-3 px-4 pt-2 pb-5 sm:gap-3 sm:px-6 sm:pt-3 sm:pb-6">
       <header className="pointer-events-none relative z-20 grid grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] sm:items-center sm:gap-y-0">
@@ -817,8 +882,11 @@ export default function HomePage() {
                 needed.
               </li>
               <li>
-                When you are ready, use <strong className="font-semibold text-stone-900">Run verification</strong> at
-                the bottom of the workbench.
+                For a single label, use{" "}
+                <strong className="font-semibold text-stone-900">Run verification</strong> at the bottom of the
+                workbench. For a small batch, use the{" "}
+                <strong className="font-semibold text-stone-900">Batch verify (MVP)</strong> panel in Edit mode (up to
+                {` ${CLIENT_BATCH_MAX_IMAGES} `}images) with the same application JSON applied to each file.
               </li>
               <li>
                 The <strong className="font-semibold text-stone-900">Verify</strong> tab shows advancing pipeline
@@ -833,8 +901,10 @@ export default function HomePage() {
                 results header to change inputs and run again.
               </li>
               <li>
-                This prototype uses OpenAI vision plus deterministic checks (see{" "}
-                <strong className="font-semibold text-stone-900">README</strong>).
+                Extraction runs in hybrid mode by default (OCR first, then OpenAI vision fallback when needed), then
+                deterministic validation assigns <strong className="font-semibold text-stone-900">pass</strong>,{" "}
+                <strong className="font-semibold text-stone-900">fail</strong>, or{" "}
+                <strong className="font-semibold text-stone-900">manual_review</strong> by field.
               </li>
             </ol>
           </div>
@@ -989,6 +1059,11 @@ export default function HomePage() {
                 </div>
               )}
             </div>
+            {uploadGuardrailErrorText ? (
+              <p className="mt-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
+                {uploadGuardrailErrorText}
+              </p>
+            ) : null}
           </section>
 
             <section
@@ -1019,7 +1094,9 @@ export default function HomePage() {
             <section className="mt-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-stone-900">Batch verify (MVP)</h3>
-                <span className="text-[11px] text-stone-500">Up to 10 images</span>
+                <span className="text-[11px] text-stone-500">
+                  Up to {CLIENT_BATCH_MAX_IMAGES} images, {formatBytes(CLIENT_UPLOAD_MAX_BYTES)} each
+                </span>
               </div>
               <p className="mb-2 text-xs text-stone-600">
                 Uses the current Application JSON for every selected image and returns per-file outcomes.
@@ -1029,7 +1106,7 @@ export default function HomePage() {
                   type="file"
                   accept="image/jpeg,image/png"
                   multiple
-                  onChange={(ev) => setBatchFiles(Array.from(ev.target.files ?? []))}
+                  onChange={onBatchFilesChange}
                   className="block w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-2 py-2 text-xs text-stone-700"
                 />
                 <div className="flex flex-wrap items-center gap-2">

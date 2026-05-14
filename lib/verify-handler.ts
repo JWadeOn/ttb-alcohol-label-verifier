@@ -6,6 +6,7 @@ import {
   VerifyExtractOnlyResponseSchema,
 } from "@/lib/schemas";
 import { buildStubVerifyResponse } from "@/lib/stub-response";
+import { MAX_LABEL_UPLOAD_BYTES } from "@/lib/upload-limits";
 import {
   buildVerifySuccessResponse,
   resolveVerifyExtractionMode,
@@ -60,6 +61,28 @@ function resolveBatchConcurrency(): number {
   return Math.max(1, Math.min(5, Math.floor(raw)));
 }
 
+function resolveBatchMaxImages(): number {
+  const raw = Number(process.env.VERIFY_BATCH_MAX_IMAGES ?? "20");
+  if (!Number.isFinite(raw)) return 20;
+  return Math.max(1, Math.min(50, Math.floor(raw)));
+}
+
+function formatUploadLimit(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return `${Number.isInteger(mb) ? mb.toFixed(0) : mb.toFixed(1)} MB`;
+}
+
+function imageTooLargeError(
+  requestId: string,
+  fieldName: string,
+  opts: { multiple?: boolean } = {},
+) {
+  const message = opts.multiple
+    ? `Each file in multipart field "${fieldName}" must be ${formatUploadLimit(MAX_LABEL_UPLOAD_BYTES)} or smaller.`
+    : `Multipart part "${fieldName}" must be ${formatUploadLimit(MAX_LABEL_UPLOAD_BYTES)} or smaller.`;
+  return jsonError(requestId, 413, "IMAGE_TOO_LARGE", message);
+}
+
 export async function handleVerifyPost(
   req: Request,
   deps: VerifyHandlerDeps = {},
@@ -103,6 +126,9 @@ export async function handleVerifyPost(
         "EMPTY_IMAGE",
         `Multipart part "${VERIFY_FORM_FIELDS.image}" must not be empty.`,
       );
+    }
+    if (image.size > MAX_LABEL_UPLOAD_BYTES) {
+      return imageTooLargeError(requestId, VERIFY_FORM_FIELDS.image);
     }
 
     if (typeof applicationRaw !== "string") {
@@ -282,6 +308,9 @@ export async function handleVerifyExtractOnlyPost(
         `Multipart part "${VERIFY_FORM_FIELDS.image}" must not be empty.`,
       );
     }
+    if (image.size > MAX_LABEL_UPLOAD_BYTES) {
+      return imageTooLargeError(requestId, VERIFY_FORM_FIELDS.image);
+    }
 
     const extractionMode = resolveVerifyExtractionMode();
     const requiresApiKey = extractionMode !== "ocr_only";
@@ -410,12 +439,16 @@ export async function handleVerifyBatchPost(
         `Multipart field "${VERIFY_FORM_FIELDS.images}" must not include empty files.`,
       );
     }
-    if (images.length > 10) {
+    if (images.some((img) => img.size > MAX_LABEL_UPLOAD_BYTES)) {
+      return imageTooLargeError(requestId, VERIFY_FORM_FIELDS.images, { multiple: true });
+    }
+    const batchMaxImages = resolveBatchMaxImages();
+    if (images.length > batchMaxImages) {
       return jsonError(
         requestId,
         400,
         "BATCH_TOO_LARGE",
-        "Batch size exceeds maximum of 10 images.",
+        `Batch size exceeds maximum of ${batchMaxImages} images.`,
       );
     }
 

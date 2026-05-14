@@ -26,6 +26,8 @@ export function verifyErrorUserHeadline(
     case "MISSING_IMAGE":
     case "EMPTY_IMAGE":
       return "Add a non-empty label image, then run verification again.";
+    case "IMAGE_TOO_LARGE":
+      return "Choose a label image that is 1.5 MB or smaller, then run verification again.";
     case "MISSING_APPLICATION":
       return "Application data is missing from the request.";
     case "UNSUPPORTED_MEDIA_TYPE":

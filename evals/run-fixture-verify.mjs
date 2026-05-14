@@ -16,6 +16,9 @@
  * EVAL_FIXTURE_SET: comma-separated fixture presets (when EVAL_FIXTURE_IDS is unset):
  *   - st_petersburg    => ids starting with `st_petersburg_`
  *   - edge_synthetic   => ids starting with `edge-synthetic-`
+ *   - synthetic_eval   => ids starting with `synthetic_eval_`
+ *   - on_bottle        => fixtures stored under `labels/on-bottle/`
+ *   - off_bottle       => fixtures stored under `labels/synthetic_eval_`
  *   - seed_textures    => ids starting with `seed-texture-`
  *   - llm_smoke        => representative low-cost subset for quick iteration
  *   - all_manifest     => all manifest fixture ids
@@ -23,7 +26,11 @@
  * EVAL_EXPECTATIONS: optional JSON path for fixture correctness scoring
  *   (default: docs/evals/fixture-correctness-expectations.json).
  *
- * EVAL_OUT: optional path (repo-relative or absolute); writes the same JSON object as stdout.
+ * EVAL_OUT: optional path (repo-relative or absolute) for output file.
+ *   - If unset, output is auto-written to:
+ *     docs/evals/fixture-correctness-<run-scope>-YYYY-MM-DD.json
+ *   - If set and contains "{date}", it is replaced with YYYY-MM-DD.
+ * Writes the same JSON object as stdout.
  * EVAL_EXIT_ON_HTTP_ERROR: if `0`/`false`/`no`, exit 0 even when any response has HTTP >= 400
  *   (still records status in JSON). Default: exit 1 on any HTTP >= 400 or transport error.
  */
@@ -102,12 +109,48 @@ function parseCsv(raw) {
     .filter(Boolean);
 }
 
+function slugify(value) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /**
- * @param {string[]} manifestIds
+ * @param {string[]} ids
+ * @param {string | undefined} idsRaw
+ * @param {string | undefined} setRaw
+ * @returns {string}
+ */
+function resolveOutputPathRaw(ids, idsRaw, setRaw) {
+  const explicit = process.env.EVAL_OUT?.trim();
+  const date = todayIsoDate();
+  if (explicit) return explicit.replaceAll("{date}", date);
+
+  const requestedSets = parseCsv(setRaw).map((x) => slugify(x)).filter(Boolean);
+  let scope = "all-manifest";
+  if (requestedSets.length > 0) {
+    scope = requestedSets.join("-");
+  } else if (parseCsv(idsRaw).length > 0) {
+    const first = ids[0] ? slugify(ids[0]) : "custom";
+    scope = ids.length === 1 ? first : `custom-${ids.length}`;
+  }
+  return `docs/evals/fixture-correctness-${scope}-${date}.json`;
+}
+
+/**
+ * @param {{id: string, relativePath: string}[]} manifestFixtures
  * @param {string | undefined} idsRaw
  * @param {string | undefined} setRaw
  */
-function resolveFixtureIds(manifestIds, idsRaw, setRaw) {
+function resolveFixtureIds(manifestFixtures, idsRaw, setRaw) {
+  const manifestIds = manifestFixtures.map((f) => f.id);
   const explicitIds = parseCsv(idsRaw);
   if (explicitIds.length > 0) return { ids: explicitIds, unknownSets: [] };
 
@@ -117,6 +160,17 @@ function resolveFixtureIds(manifestIds, idsRaw, setRaw) {
   const buckets = {
     st_petersburg: manifestIds.filter((id) => id.startsWith("st_petersburg_")),
     edge_synthetic: manifestIds.filter((id) => id.startsWith("edge-synthetic-")),
+    synthetic_eval: manifestIds.filter((id) => id.startsWith("synthetic_eval_")),
+    on_bottle: manifestFixtures
+      .filter((f) => typeof f.relativePath === "string" && f.relativePath.startsWith("labels/on-bottle/"))
+      .map((f) => f.id),
+    off_bottle: manifestFixtures
+      .filter(
+        (f) =>
+          typeof f.relativePath === "string" &&
+          (f.relativePath.startsWith("labels/synthetic_eval_") || f.id.startsWith("synthetic_eval_")),
+      )
+      .map((f) => f.id),
     seed_textures: manifestIds.filter((id) => id.startsWith("seed-texture-")),
     llm_smoke: [
       "happy-path-synthetic-label",
@@ -396,18 +450,21 @@ async function main() {
 
   const base = (process.env.BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
   const exitOnHttpError = !falsyEnv("EVAL_EXIT_ON_HTTP_ERROR");
-  const outPathRaw = process.env.EVAL_OUT?.trim();
   const expectationsPathRaw =
     process.env.EVAL_EXPECTATIONS?.trim() || "docs/evals/fixture-correctness-expectations.json";
 
   const manifest = JSON.parse(await readFile(path.join(root, "fixtures", "manifest.json"), "utf8"));
-  const application = await readFile(path.join(root, "fixtures", "default-application.json"), "utf8");
+  const defaultApplication = await readFile(
+    path.join(root, "fixtures", "default-application.json"),
+    "utf8",
+  );
   const manifestIds = manifest.fixtures.map((f) => f.id);
   const { ids, unknownSets } = resolveFixtureIds(
-    manifestIds,
+    manifest.fixtures,
     process.env.EVAL_FIXTURE_IDS,
     process.env.EVAL_FIXTURE_SET,
   );
+  const outPathRaw = resolveOutputPathRaw(ids, process.env.EVAL_FIXTURE_IDS, process.env.EVAL_FIXTURE_SET);
   if (unknownSets.length > 0) {
     console.log(
       JSON.stringify(
@@ -417,6 +474,9 @@ async function main() {
           knownSets: [
             "st_petersburg",
             "edge_synthetic",
+            "synthetic_eval",
+            "on_bottle",
+            "off_bottle",
             "seed_textures",
             "llm_smoke",
             "all_manifest",
@@ -462,6 +522,11 @@ async function main() {
     const imagePath = path.join(root, "fixtures", f.relativePath);
     const bytes = await readFile(imagePath);
     const fileName = path.basename(f.relativePath);
+    const applicationPath =
+      typeof f.applicationPath === "string" && f.applicationPath.trim().length > 0
+        ? path.join(root, "fixtures", f.applicationPath.trim())
+        : null;
+    const application = applicationPath ? await readFile(applicationPath, "utf8") : defaultApplication;
     const r = await postVerify(base, fileName, bytes, application);
 
     if (!r.ok) {
@@ -480,6 +545,7 @@ async function main() {
     const row = {
       id,
       relativePath: f.relativePath,
+      applicationPath: applicationPath ? path.relative(root, applicationPath) : "fixtures/default-application.json",
       httpStatus,
       durationMs,
       extractionProvider: body?.extraction?.provider ?? null,
@@ -513,12 +579,10 @@ async function main() {
   const text = JSON.stringify(payload, null, 2);
   console.log(text);
 
-  if (outPathRaw) {
-    const abs = path.isAbsolute(outPathRaw) ? outPathRaw : path.join(root, outPathRaw);
-    await mkdir(path.dirname(abs), { recursive: true });
-    await writeFile(abs, text, "utf8");
-    console.error(`[fixture-verify] wrote ${path.relative(root, abs)}`);
-  }
+  const abs = path.isAbsolute(outPathRaw) ? outPathRaw : path.join(root, outPathRaw);
+  await mkdir(path.dirname(abs), { recursive: true });
+  await writeFile(abs, text, "utf8");
+  console.error(`[fixture-verify] wrote ${path.relative(root, abs)}`);
 
   const transportFail = results.some((x) => x.ok === false);
   const httpFail = results.some((x) => typeof x.httpStatus === "number" && x.httpStatus >= 400);

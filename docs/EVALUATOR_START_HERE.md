@@ -26,6 +26,7 @@ Use this short path to review the submission without internal planning noise.
 - `docs/evals/README.md` - canonical eval artifact index.
 - `docs/evals/fixture-correctness-production-2026-05-13.json` - full production fixture correctness + latency run.
 - `docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json` - focused difficult-label subset run.
+- `docs/evals/fixture-correctness-synthetic-eval-full-2026-05-14.json` - full scripted `off_bottle` synthetic correctness + latency run.
 - `docs/evals/CORRECTNESS_THRESHOLDS.md` - thresholds used to interpret eval outputs.
 
 ## Notes

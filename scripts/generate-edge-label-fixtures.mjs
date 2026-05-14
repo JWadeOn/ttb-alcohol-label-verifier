@@ -13,12 +13,13 @@ import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const srcPath = path.join(root, "fixtures", "labels", "liquor_label_happy_path.png");
+const outDir = path.join(root, "fixtures", "labels", "on-bottle");
+const srcPath = path.join(outDir, "liquor_label_happy_path.png");
 
 const OUT = {
-  glare: path.join(root, "fixtures", "labels", "edge-synthetic-glare.png"),
-  blur: path.join(root, "fixtures", "labels", "edge-synthetic-moderate-blur.png"),
-  tilt: path.join(root, "fixtures", "labels", "edge-synthetic-tilt.png"),
+  glare: path.join(outDir, "edge-synthetic-glare.png"),
+  blur: path.join(outDir, "edge-synthetic-moderate-blur.png"),
+  tilt: path.join(outDir, "edge-synthetic-tilt.png"),
 };
 
 /** Laplacian variance (downscaled greyscale) — must stay >= 12 for assessImageQuality pass. */

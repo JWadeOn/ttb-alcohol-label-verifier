@@ -13,6 +13,7 @@ import {
   handleVerifyPost,
 } from "@/lib/verify-handler";
 import type { ExtractionResult } from "@/lib/extraction/types";
+import { MAX_LABEL_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 function multipartRequest(image: Blob, applicationJson: string): Request {
   const fd = new FormData();
@@ -45,6 +46,10 @@ function multipartBatchRequest(images: Blob[], applicationJson: string): Request
   });
 }
 
+function oversizedPngBlob(): Blob {
+  return new Blob([new Uint8Array(MAX_LABEL_UPLOAD_BYTES + 1)], { type: "image/png" });
+}
+
 describe("handleVerifyPost", () => {
   beforeEach(() => {
     // Host `.env` may set VERIFY_DEV_STUB / OPENAI_DISABLED; stub so branches stay deterministic.
@@ -74,6 +79,15 @@ describe("handleVerifyPost", () => {
     expect(res.status).toBe(400);
     const json = (await res.json()) as { code?: string };
     expect(json.code).toBe("INVALID_APPLICATION_JSON");
+  });
+
+  it("returns 413 when image exceeds upload limit", async () => {
+    const req = multipartRequest(oversizedPngBlob(), JSON.stringify({ brandName: "Example Distillery" }));
+    const res = await handleVerifyPost(req);
+    expect(res.status).toBe(413);
+    const json = (await res.json()) as { code?: string; message?: string };
+    expect(json.code).toBe("IMAGE_TOO_LARGE");
+    expect(json.message).toContain("1.5 MB");
   });
 
   it("returns 503 when OPENAI_API_KEY is missing", async () => {
@@ -241,6 +255,13 @@ describe("handleVerifyPost", () => {
     }
   });
 
+  it("rejects extract-only uploads above the limit", async () => {
+    const res = await handleVerifyExtractOnlyPost(multipartExtractOnlyRequest(oversizedPngBlob()));
+    expect(res.status).toBe(413);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("IMAGE_TOO_LARGE");
+  });
+
   it("runs batch verify and returns per-item outcomes", async () => {
     const mockPipeline = vi.fn(
       async (params: { requestId: string; application: ApplicationJson }) =>
@@ -266,13 +287,36 @@ describe("handleVerifyPost", () => {
     }
   });
 
-  it("rejects batches larger than ten images", async () => {
+  it("rejects batches larger than default max images", async () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const images = Array.from({ length: 11 }, () => new Blob([png], { type: "image/png" }));
+    const images = Array.from({ length: 21 }, () => new Blob([png], { type: "image/png" }));
     const req = multipartBatchRequest(images, JSON.stringify({ brandName: "Example Distillery" }));
     const res = await handleVerifyBatchPost(req);
     expect(res.status).toBe(400);
     const json = (await res.json()) as { code?: string };
     expect(json.code).toBe("BATCH_TOO_LARGE");
+  });
+
+  it("rejects batch uploads with oversized images", async () => {
+    const req = multipartBatchRequest(
+      [oversizedPngBlob()],
+      JSON.stringify({ brandName: "Example Distillery" }),
+    );
+    const res = await handleVerifyBatchPost(req);
+    expect(res.status).toBe(413);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("IMAGE_TOO_LARGE");
+  });
+
+  it("respects VERIFY_BATCH_MAX_IMAGES override", async () => {
+    vi.stubEnv("VERIFY_BATCH_MAX_IMAGES", "3");
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const images = Array.from({ length: 4 }, () => new Blob([png], { type: "image/png" }));
+    const req = multipartBatchRequest(images, JSON.stringify({ brandName: "Example Distillery" }));
+    const res = await handleVerifyBatchPost(req);
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code?: string; message?: string };
+    expect(json.code).toBe("BATCH_TOO_LARGE");
+    expect(json.message).toContain("3");
   });
 });

@@ -123,6 +123,7 @@ export function buildVerifyUiStepsFromResponse(input: {
     switch (code) {
       case "MISSING_IMAGE":
       case "EMPTY_IMAGE":
+      case "IMAGE_TOO_LARGE":
       case "MISSING_APPLICATION":
       case "INVALID_APPLICATION_JSON":
       case "INVALID_APPLICATION_SCHEMA":

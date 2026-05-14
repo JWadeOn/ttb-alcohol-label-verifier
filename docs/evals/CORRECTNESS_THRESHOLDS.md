@@ -1,6 +1,8 @@
 # Fixture Correctness Thresholds
 
-This file defines the current correctness-evidence bar for `npm run eval:fixture-verify`. The same run also records latency (`durationMs`, `extractionDurationMs`, and a top-level latency summary), so a separate latency-only run is optional rather than required.
+This file defines the current correctness-evidence bar for `npm run eval:fixture-verify` when you are scoring the default `on_bottle` sign-off story. The same run also records latency (`durationMs`, `extractionDurationMs`, and a top-level latency summary), so a separate latency-only run is optional rather than required.
+
+For the dedicated `off_bottle` synthetic set, use `docs/evals/fixture-correctness-expectations-synthetic-eval.json` with `EVAL_FIXTURE_SET=off_bottle` or `EVAL_FIXTURE_SET=synthetic_eval`.
 
 ## Inputs
 
@@ -52,7 +54,7 @@ This file defines the current correctness-evidence bar for `npm run eval:fixture
   - Expect all MVP/P1 comparison fields to stay `manual_review`, with `countryOfOrigin = not_applicable`.
 
 - **Non-seed edge fixtures (`edge-synthetic-glare-label`, `edge-synthetic-blur-label`, `edge-synthetic-angle-label`)**
-  - Derived from `liquor_label_happy_path.png` via `npm run fixtures:edge-labels` (glare overlay, moderate blur still above the Laplacian gate, ~22° tilt).
+  - Derived from `labels/on-bottle/liquor_label_happy_path.png` via `npm run fixtures:edge-labels` (glare overlay, moderate blur still above the Laplacian gate, ~22° tilt).
   - Allow provider `openai` or `unavailable`.
   - Require `imageQuality.ok = true`.
   - Require `durationMs <= 20000`.

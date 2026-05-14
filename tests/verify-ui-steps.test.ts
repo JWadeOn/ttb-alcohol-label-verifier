@@ -64,6 +64,21 @@ describe("buildVerifyUiStepsFromResponse", () => {
     expect(steps[1].state).toBe("failed");
     expect(steps[2].state).toBe("skipped");
   });
+
+  it("fails inputs on IMAGE_TOO_LARGE", () => {
+    const steps = buildVerifyUiStepsFromResponse({
+      httpStatus: 413,
+      successPayload: null,
+      errorPayload: {
+        requestId: "00000000-0000-4000-8000-000000000004",
+        code: "IMAGE_TOO_LARGE",
+        message: "Too large",
+      },
+      errorText: null,
+    });
+    expect(steps[0].state).toBe("failed");
+    expect(steps[1].state).toBe("skipped");
+  });
 });
 
 describe("verifyResponseIndicatesPipelineFailure", () => {
