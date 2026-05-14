@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ApplicationJson,
+  VerifyBatchResponseSchema,
   VERIFY_FORM_FIELDS,
   VerifyExtractOnlyResponseSchema,
   VerifySuccessResponseSchema,
 } from "@/lib/schemas";
 import { buildStubVerifyResponse } from "@/lib/stub-response";
-import { handleVerifyExtractOnlyPost, handleVerifyPost } from "@/lib/verify-handler";
+import {
+  handleVerifyBatchPost,
+  handleVerifyExtractOnlyPost,
+  handleVerifyPost,
+} from "@/lib/verify-handler";
 import type { ExtractionResult } from "@/lib/extraction/types";
 
 function multipartRequest(image: Blob, applicationJson: string): Request {
@@ -23,6 +28,18 @@ function multipartExtractOnlyRequest(image: Blob): Request {
   const fd = new FormData();
   fd.append(VERIFY_FORM_FIELDS.image, image, "fixture.png");
   return new Request("http://test.local/api/verify/extract-only", {
+    method: "POST",
+    body: fd,
+  });
+}
+
+function multipartBatchRequest(images: Blob[], applicationJson: string): Request {
+  const fd = new FormData();
+  for (const image of images) {
+    fd.append(VERIFY_FORM_FIELDS.images, image, "fixture.png");
+  }
+  fd.append(VERIFY_FORM_FIELDS.application, applicationJson);
+  return new Request("http://test.local/api/verify/batch", {
     method: "POST",
     body: fd,
   });
@@ -222,5 +239,40 @@ describe("handleVerifyPost", () => {
     if (parsed.success) {
       expect(parsed.data.cacheKey.length).toBeGreaterThan(8);
     }
+  });
+
+  it("runs batch verify and returns per-item outcomes", async () => {
+    const mockPipeline = vi.fn(
+      async (params: { requestId: string; application: ApplicationJson }) =>
+        VerifySuccessResponseSchema.parse(buildStubVerifyResponse(params.requestId, params.application)),
+    );
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const application = JSON.stringify({ brandName: "Example Distillery" });
+    const req = multipartBatchRequest(
+      [new Blob([png], { type: "image/png" }), new Blob([png], { type: "image/png" })],
+      application,
+    );
+    const res = await handleVerifyBatchPost(req, {
+      runVerifyPipeline: mockPipeline,
+    });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const parsed = VerifyBatchResponseSchema.safeParse(json);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.summary.total).toBe(2);
+      expect(parsed.data.summary.success).toBe(2);
+      expect(parsed.data.items).toHaveLength(2);
+    }
+  });
+
+  it("rejects batches larger than ten images", async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const images = Array.from({ length: 11 }, () => new Blob([png], { type: "image/png" }));
+    const req = multipartBatchRequest(images, JSON.stringify({ brandName: "Example Distillery" }));
+    const res = await handleVerifyBatchPost(req);
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("BATCH_TOO_LARGE");
   });
 });

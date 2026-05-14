@@ -35,7 +35,7 @@ Prototype scope still applies: this is a standalone POC, not a full COLA integra
 | **Error handling and fail-safe behavior** | **Done** | Typed error codes, timeout failover path, disabled/missing key behavior, structured logs | `lib/verify-handler.ts`, `lib/extraction/provider.ts`, `tests/verify-handler.test.ts`, `README.md` | Add evaluator-facing "known failure modes" checklist in one place |
 | **Code quality / organization for scope** | **Done** | Thin route, deep modules, test coverage on deterministic core, documented architecture/modules | `docs/ARCHITECTURE.md`, `docs/modules/*.md`, `tests/*`, `AGENTS.md` | Continue small focused increments; keep docs synchronized with behavior changes |
 | **Creative but scoped problem-solving** (prototype discipline) | **Done** | Standalone deploy, no premature COLA integration, and explicit prototype boundaries | `README.md`, `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md` | Optional polish only |
-| **Batch uploads during peak seasons** (Sarah request) | **Out of scope** | Single-label workbench by design for this deliverable | `README.md` scope section, `docs/CORE_REQUIREMENTS_SCORECARD.md` | Future phase if product expands beyond POC |
+| **Batch uploads during peak seasons** (Sarah request) | **Partial** | MVP batch flow is implemented (`/api/verify/batch`) with multi-image upload, per-item outcomes, and bounded server concurrency; no persistent jobs/queue yet | `app/api/verify/batch/route.ts`, `lib/verify-handler.ts`, `app/page.tsx`, `tests/verify-handler.test.ts` | Add queued/background jobs + resume/polling for larger operational batches |
 | **In-app OCR fallback (Tesseract) go/no-go implemented** | **Done** | Hybrid OCR-first extraction is implemented (`tesseract.js`) with LLM escalation and placeholder-only last-resort fallback if both providers fail | `lib/extraction/tesseract-provider.ts`, `lib/extraction/hybrid-routing.ts`, `lib/verify-pipeline.ts`, `lib/extraction/unavailable-fallback-provider.ts`, `docs/modules/extraction.md` | Continue tuning OCR routing thresholds against production evals |
 
 ---
@@ -45,7 +45,7 @@ Prototype scope still applies: this is a standalone POC, not a full COLA integra
 1. **Strongest area:** deterministic validation correctness and API/workflow reliability.
 2. **Main evidence gap:** extraction proof on a **broader real-photo** set (synthetic + difficult label covered; more SKUs/conditions optional).
 3. **Main product gap:** usability/error-polish validation for low-tech operator workflows.
-4. **Main roadmap gap:** batch workflow and real OCR fallback remain **out of scope / Phase 2** for this deliverable (documented in plans + scorecard).
+4. **Main roadmap gap:** batch is currently an **MVP synchronous flow** (no queued/background job lifecycle yet), while OCR fallback is shipped and now in tuning/coverage-expansion phase.
 
 ---
 

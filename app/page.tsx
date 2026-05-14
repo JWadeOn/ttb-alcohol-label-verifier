@@ -7,6 +7,8 @@ import {
   VERIFY_FORM_FIELDS,
   type FieldId,
   type FieldStatus,
+  type VerifyBatchResponse,
+  VerifyBatchResponseSchema,
   type VerifyErrorResponse,
   VerifyExtractOnlyResponseSchema,
   type VerifySuccessResponse,
@@ -505,6 +507,10 @@ export default function HomePage() {
   const [prefetchState, setPrefetchState] = useState<"idle" | "prefetching" | "ready" | "error">("idle");
   /** Human approve/reject for the current successful run — client only, not sent to the server. */
   const [reviewDisposition, setReviewDisposition] = useState<"approved" | "rejected" | null>(null);
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchErrorText, setBatchErrorText] = useState<string | null>(null);
+  const [batchResponse, setBatchResponse] = useState<VerifyBatchResponse | null>(null);
 
   const applicationPageNav = useMemo(() => {
     const i = Math.min(
@@ -737,6 +743,39 @@ export default function HomePage() {
     }
   }
 
+  async function onBatchSubmit() {
+    if (batchFiles.length === 0) return;
+    setBatchLoading(true);
+    setBatchErrorText(null);
+    setBatchResponse(null);
+    try {
+      const formData = new FormData();
+      for (const batchFile of batchFiles) {
+        formData.append(VERIFY_FORM_FIELDS.images, batchFile);
+      }
+      formData.append(VERIFY_FORM_FIELDS.application, applicationJson);
+      const res = await fetch("/api/verify/batch", {
+        method: "POST",
+        body: formData,
+      });
+      const raw: unknown = await res.json();
+      const parsed = VerifyBatchResponseSchema.safeParse(raw);
+      if (!res.ok) {
+        setBatchErrorText(`Batch request failed (HTTP ${res.status}).`);
+        return;
+      }
+      if (!parsed.success) {
+        setBatchErrorText("Batch response schema mismatch.");
+        return;
+      }
+      setBatchResponse(parsed.data);
+    } catch (err) {
+      setBatchErrorText(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBatchLoading(false);
+    }
+  }
+
   const showResultsBody = hasCompletedRun;
 
   const resultsDigest = useMemo(
@@ -856,6 +895,7 @@ export default function HomePage() {
 
           <div className="min-h-0 overflow-y-auto px-2.5 pb-2 pt-0 lg:px-3">
             {workflowPhase === "edit" ? (
+          <>
           <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:gap-3">
             <section
               aria-labelledby="workbench-label-heading"
@@ -976,6 +1016,81 @@ export default function HomePage() {
             </div>
           </section>
           </div>
+            <section className="mt-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-stone-900">Batch verify (MVP)</h3>
+                <span className="text-[11px] text-stone-500">Up to 10 images</span>
+              </div>
+              <p className="mb-2 text-xs text-stone-600">
+                Uses the current Application JSON for every selected image and returns per-file outcomes.
+              </p>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={(ev) => setBatchFiles(Array.from(ev.target.files ?? []))}
+                  className="block w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-2 py-2 text-xs text-stone-700"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void onBatchSubmit()}
+                    disabled={batchFiles.length === 0 || batchLoading}
+                    className="cursor-pointer rounded-lg bg-ttb-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+                  >
+                    {batchLoading ? "Running batch..." : "Run batch verification"}
+                  </button>
+                  <span className="text-[11px] text-stone-500">
+                    {batchFiles.length} file{batchFiles.length === 1 ? "" : "s"} selected
+                  </span>
+                </div>
+              </div>
+              {batchErrorText ? (
+                <p className="mt-2 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
+                  {batchErrorText}
+                </p>
+              ) : null}
+              {batchResponse ? (
+                <div className="mt-3 space-y-2">
+                  <div className="rounded-md border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs text-stone-700">
+                    total {batchResponse.summary.total} · success {batchResponse.summary.success} · error{" "}
+                    {batchResponse.summary.error} · pass {batchResponse.summary.pass} · fail{" "}
+                    {batchResponse.summary.fail} · manual review {batchResponse.summary.manualReview} ·{" "}
+                    {batchResponse.summary.totalMs} ms
+                  </div>
+                  <div className="max-h-48 overflow-y-auto rounded-md border border-stone-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 text-stone-600">
+                        <tr>
+                          <th className="px-2 py-1">File</th>
+                          <th className="px-2 py-1">Status</th>
+                          <th className="px-2 py-1">Result</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batchResponse.items.map((item) => (
+                          <tr key={`${item.index}-${item.fileName}`} className="border-t border-stone-100">
+                            <td className="px-2 py-1 font-mono text-[11px] text-stone-800">{item.fileName}</td>
+                            <td className="px-2 py-1 text-stone-700">{item.status}</td>
+                            <td className="px-2 py-1 text-stone-700">
+                              {item.ok
+                                ? item.result?.validation?.fields?.some((f) => f.status === "fail")
+                                  ? "fail"
+                                  : item.result?.validation?.fields?.some((f) => f.status === "manual_review")
+                                    ? "manual_review"
+                                    : "pass"
+                                : item.error?.code ?? "error"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          </>
             ) : workflowPhase === "verify" ? (
               <div className="mx-auto max-w-2xl px-1 py-3">
                 {!hasCompletedRun && !loading ? (

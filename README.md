@@ -30,13 +30,15 @@ The take-home instructions note that exact requirements vary by beverage type, b
 
 ### MVP (core-first)
 
-The MVP prioritizes common cross-beverage fields most critical to review throughput:
+The MVP implements common cross-beverage fields most critical to review throughput:
 
 - Brand name
 - Class/type
 - Alcohol content (ABV/proof text)
 - Net contents
 - Government warning
+- Name/address of bottler or producer
+- Country of origin for imports (conditional on application import flag)
 
 Comparison logic is deterministic (fuzzy normalization where appropriate, strict matching where required).
 
@@ -50,9 +52,8 @@ After core checks are stable, implementation expands by beverage vertical in thi
 
 ### High-value follow-ons
 
-- Name/address extraction and comparison
-- Country of origin extraction and conditional validation for imports
-- Batch upload/reporting polish
+- Name/address and country-of-origin robustness polish (edge-case phrasing/format variants)
+- Batch upload/reporting polish (MVP batch verify panel now available; advanced job orchestration remains future work)
 - Provider confidence indicators and manual fallback toggle
 
 ## Compliance Boundaries

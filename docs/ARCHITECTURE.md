@@ -13,12 +13,12 @@
 | **Vertical** | Distilled-spirits-oriented fields first; wine/beer deferred for this prototype scope. |
 | **Pipeline** | image quality → hybrid extraction (OCR first, LLM fallback) → deterministic validation. Details: [`docs/modules/verify-pipeline.md`](./modules/verify-pipeline.md). |
 | **Fallback OCR** | Implemented via `tesseract.js` in hybrid mode, with `unavailable` placeholder only as last resort if OCR/LLM both fail. See [`docs/modules/extraction.md`](./modules/extraction.md). |
-| **UI** | Single client page → `POST /api/verify`. Layout and spot-check UX: [`docs/modules/app-page.md`](./modules/app-page.md). |
+| **UI** | Single client page with single-label verify (`POST /api/verify`) and MVP batch verify (`POST /api/verify/batch`). Layout and spot-check UX: [`docs/modules/app-page.md`](./modules/app-page.md). |
 | **Requirements traceability** | Not CFR/COLA — see [`REQUIREMENTS_SOURCE_OF_TRUTH.md`](./REQUIREMENTS_SOURCE_OF_TRUTH.md); deterministic checks in [`validator.md`](./modules/validator.md) (`lib/validator.ts`). |
 | **Persistence** | None; in-memory per request. |
 | **Container** | `Dockerfile` (Next **standalone**); `npm run docker:build`. Includes dependencies for hybrid extraction path. |
 | **Fixtures / eval** | `fixtures/manifest.json`; canonical production evidence via `npm run eval:fixture-verify:prod` (see `docs/evals/README.md`). |
-| **Public deploy** | **Railway (live URL)** — see [`README.md`](../README.md) deployment section; set **`OPENAI_API_KEY`** on the service for working `POST /api/verify`. |
+| **Public deploy** | **Railway (live URL)** — see [`README.md`](../README.md) deployment section; set **`OPENAI_API_KEY`** on the service for working verify endpoints (`POST /api/verify`, `POST /api/verify/batch`). |
 
 ---
 
@@ -30,7 +30,8 @@ flowchart LR
     UI[app/page.tsx]
   end
   subgraph api [Next.js API]
-    Route[app/api/verify/route.ts]
+    RouteSingle[app/api/verify/route.ts]
+    RouteBatch[app/api/verify/batch/route.ts]
     Handler[lib/verify-handler.ts]
   end
   subgraph core [Core lib]
@@ -39,8 +40,10 @@ flowchart LR
     Ext[lib/extraction/*]
     Val[lib/validator.ts]
   end
-  UI -->|multipart image + application JSON| Route
-  Route --> Handler
+  UI -->|single image + application JSON| RouteSingle
+  UI -->|batch images + application JSON| RouteBatch
+  RouteSingle --> Handler
+  RouteBatch --> Handler
   Handler -->|OPENAI_API_KEY check| Handler
   Handler --> Pipe
   Pipe --> IQ

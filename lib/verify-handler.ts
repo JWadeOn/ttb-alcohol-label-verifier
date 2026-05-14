@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   ApplicationJsonSchema,
+  VerifyBatchResponseSchema,
   VERIFY_FORM_FIELDS,
   VerifyExtractOnlyResponseSchema,
 } from "@/lib/schemas";
@@ -51,6 +52,12 @@ function isVerifyDevStubEnabled(): boolean {
   if (process.env.NODE_ENV === "production") return false;
   const v = process.env.VERIFY_DEV_STUB?.trim().toLowerCase();
   return v === "1" || v === "true" || v === "yes";
+}
+
+function resolveBatchConcurrency(): number {
+  const raw = Number(process.env.VERIFY_BATCH_CONCURRENCY ?? "2");
+  if (!Number.isFinite(raw)) return 2;
+  return Math.max(1, Math.min(5, Math.floor(raw)));
 }
 
 export async function handleVerifyPost(
@@ -353,6 +360,240 @@ export async function handleVerifyExtractOnlyPost(
     if (e instanceof VerifyFailedError) {
       return jsonError(requestId, e.httpStatus, e.code, e.message);
     }
+    console.error(e);
+    return jsonError(
+      requestId,
+      500,
+      "INTERNAL_ERROR",
+      "Unexpected server error.",
+    );
+  }
+}
+
+export async function handleVerifyBatchPost(
+  req: Request,
+  deps: VerifyHandlerDeps = {},
+): Promise<Response> {
+  const resolvedDeps = {
+    runVerifyPipeline: deps.runVerifyPipeline ?? runVerifyPipeline,
+  };
+  const requestId = crypto.randomUUID();
+  const startedAt = Date.now();
+
+  try {
+    const contentType = req.headers.get("content-type") ?? "";
+    if (!contentType.includes("multipart/form-data")) {
+      return jsonError(
+        requestId,
+        415,
+        "UNSUPPORTED_MEDIA_TYPE",
+        `Expected Content-Type multipart/form-data with fields "${VERIFY_FORM_FIELDS.images}" and "${VERIFY_FORM_FIELDS.application}".`,
+      );
+    }
+
+    const formData = await req.formData();
+    const imageParts = formData.getAll(VERIFY_FORM_FIELDS.images);
+    const images = imageParts.filter((part): part is File => part instanceof File);
+    if (images.length === 0) {
+      return jsonError(
+        requestId,
+        400,
+        "MISSING_IMAGES",
+        `Multipart field "${VERIFY_FORM_FIELDS.images}" must include at least one file.`,
+      );
+    }
+    if (images.some((img) => img.size === 0)) {
+      return jsonError(
+        requestId,
+        400,
+        "EMPTY_IMAGE",
+        `Multipart field "${VERIFY_FORM_FIELDS.images}" must not include empty files.`,
+      );
+    }
+    if (images.length > 10) {
+      return jsonError(
+        requestId,
+        400,
+        "BATCH_TOO_LARGE",
+        "Batch size exceeds maximum of 10 images.",
+      );
+    }
+
+    const applicationRaw = formData.get(VERIFY_FORM_FIELDS.application);
+    if (typeof applicationRaw !== "string") {
+      return jsonError(
+        requestId,
+        400,
+        "MISSING_APPLICATION",
+        `Multipart part "${VERIFY_FORM_FIELDS.application}" must be a JSON string.`,
+      );
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(applicationRaw);
+    } catch {
+      return jsonError(
+        requestId,
+        400,
+        "INVALID_APPLICATION_JSON",
+        "Application JSON could not be parsed.",
+      );
+    }
+
+    const appResult = ApplicationJsonSchema.safeParse(parsed);
+    if (!appResult.success) {
+      return jsonError(
+        requestId,
+        400,
+        "INVALID_APPLICATION_SCHEMA",
+        "Application JSON failed validation.",
+        appResult.error.flatten(),
+      );
+    }
+
+    const extractionMode = resolveVerifyExtractionMode();
+    const requiresApiKey = extractionMode !== "ocr_only";
+    const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
+
+    if (requiresApiKey && !apiKey) {
+      return jsonError(
+        requestId,
+        503,
+        "OPENAI_NOT_CONFIGURED",
+        "OPENAI_API_KEY environment variable is not set.",
+      );
+    }
+    if (requiresApiKey && isOpenAiDisabledByEnv()) {
+      return jsonError(
+        requestId,
+        503,
+        "OPENAI_DISABLED",
+        "OpenAI calls are disabled (OPENAI_DISABLED). Remove or unset to run extraction.",
+      );
+    }
+
+    const concurrency = resolveBatchConcurrency();
+    const items: Array<{
+      index: number;
+      fileName: string;
+      ok: boolean;
+      status: number;
+      result?: unknown;
+      error?: { code: string; message: string };
+    }> = new Array(images.length);
+
+    let cursor = 0;
+    const runOne = async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= images.length) return;
+        const image = images[index]!;
+        const fileName = image instanceof File && image.name ? image.name : `image-${index + 1}`;
+        const itemRequestId = crypto.randomUUID();
+
+        if (isVerifyDevStubEnabled()) {
+          const stub = buildStubVerifyResponse(itemRequestId, appResult.data);
+          items[index] = {
+            index,
+            fileName,
+            ok: true,
+            status: 200,
+            result: stub,
+          };
+          continue;
+        }
+
+        try {
+          const imageBytes = Buffer.from(await image.arrayBuffer());
+          const result = await resolvedDeps.runVerifyPipeline({
+            requestId: itemRequestId,
+            imageBytes,
+            application: appResult.data,
+            openAiApiKey: apiKey,
+          });
+          items[index] = {
+            index,
+            fileName,
+            ok: true,
+            status: 200,
+            result,
+          };
+        } catch (e) {
+          if (e instanceof VerifyFailedError) {
+            items[index] = {
+              index,
+              fileName,
+              ok: false,
+              status: e.httpStatus,
+              error: {
+                code: e.code,
+                message: e.message,
+              },
+            };
+            continue;
+          }
+          console.error(e);
+          items[index] = {
+            index,
+            fileName,
+            ok: false,
+            status: 500,
+            error: {
+              code: "INTERNAL_ERROR",
+              message: "Unexpected server error.",
+            },
+          };
+        }
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, images.length) }, () => runOne()),
+    );
+
+    const success = items.filter((item) => item?.ok).length;
+    const error = items.length - success;
+    const pass = items.reduce((count, item) => {
+      if (!item?.ok || !item.result || typeof item.result !== "object") return count;
+      const result = item.result as { validation?: { fields?: Array<{ status?: string }> } };
+      const fields = result.validation?.fields ?? [];
+      const hasFail = fields.some((field) => field.status === "fail");
+      const hasManualReview = fields.some((field) => field.status === "manual_review");
+      if (!hasFail && !hasManualReview) return count + 1;
+      return count;
+    }, 0);
+    const fail = items.reduce((count, item) => {
+      if (!item?.ok || !item.result || typeof item.result !== "object") return count;
+      const result = item.result as { validation?: { fields?: Array<{ status?: string }> } };
+      const fields = result.validation?.fields ?? [];
+      return fields.some((field) => field.status === "fail") ? count + 1 : count;
+    }, 0);
+    const manualReview = items.reduce((count, item) => {
+      if (!item?.ok || !item.result || typeof item.result !== "object") return count;
+      const result = item.result as { validation?: { fields?: Array<{ status?: string }> } };
+      const fields = result.validation?.fields ?? [];
+      const hasFail = fields.some((field) => field.status === "fail");
+      if (hasFail) return count;
+      return fields.some((field) => field.status === "manual_review") ? count + 1 : count;
+    }, 0);
+
+    const body = VerifyBatchResponseSchema.parse({
+      requestId,
+      summary: {
+        total: items.length,
+        success,
+        error,
+        pass,
+        fail,
+        manualReview,
+        totalMs: Date.now() - startedAt,
+      },
+      items,
+    });
+
+    return NextResponse.json(body);
+  } catch (e) {
     console.error(e);
     return jsonError(
       requestId,

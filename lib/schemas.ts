@@ -3,6 +3,7 @@ import { z } from "zod";
 /** Multipart field names for POST /api/verify */
 export const VERIFY_FORM_FIELDS = {
   image: "image",
+  images: "images",
   application: "application",
   forceFallback: "force_fallback",
   extractionCacheKey: "extraction_cache_key",
@@ -114,3 +115,35 @@ export const VerifyExtractOnlyResponseSchema = z.object({
 });
 
 export type VerifyExtractOnlyResponse = z.infer<typeof VerifyExtractOnlyResponseSchema>;
+
+export const VerifyBatchItemSchema = z.object({
+  index: z.number().int().nonnegative(),
+  fileName: z.string(),
+  ok: z.boolean(),
+  status: z.number().int().min(100).max(599),
+  result: VerifySuccessResponseSchema.optional(),
+  error: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+    })
+    .optional(),
+});
+
+export type VerifyBatchItem = z.infer<typeof VerifyBatchItemSchema>;
+
+export const VerifyBatchResponseSchema = z.object({
+  requestId: z.string().uuid(),
+  summary: z.object({
+    total: z.number().int().nonnegative(),
+    success: z.number().int().nonnegative(),
+    error: z.number().int().nonnegative(),
+    pass: z.number().int().nonnegative(),
+    fail: z.number().int().nonnegative(),
+    manualReview: z.number().int().nonnegative(),
+    totalMs: z.number().nonnegative(),
+  }),
+  items: z.array(VerifyBatchItemSchema),
+});
+
+export type VerifyBatchResponse = z.infer<typeof VerifyBatchResponseSchema>;

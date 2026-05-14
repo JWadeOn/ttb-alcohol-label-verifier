@@ -4,6 +4,8 @@
 
 Expose `POST /api/verify` by delegating the incoming `Request` to `handleVerifyPost` from `lib/verify-handler.ts`.
 
+Batch endpoint lives beside it at `app/api/verify/batch/route.ts`, delegating to `handleVerifyBatchPost`.
+
 ## Decisions
 
 - Route stays **thin** (one line of business logic) so HTTP parsing, validation, and pipeline orchestration remain testable in `lib/` without importing Next route types in deep modules.
