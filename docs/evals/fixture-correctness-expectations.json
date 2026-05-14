@@ -1,0 +1,671 @@
+{
+  "version": 1,
+  "profile": "prototype-day3-v1",
+  "thresholds": {
+    "minOverallScore": 0.7,
+    "minFixturePassRate": 0.5,
+    "requiredFixtureIds": [
+      "happy-path-synthetic-label",
+      "difficult-synthetic-label-photo",
+      "seed-texture-01",
+      "seed-texture-02",
+      "edge-synthetic-glare-label",
+      "edge-synthetic-blur-label",
+      "edge-synthetic-angle-label"
+    ]
+  },
+  "fixtures": {
+    "happy-path-synthetic-label": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 12000,
+      "minScore": 0.85,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review"],
+        "nameAddress": ["manual_review", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "difficult-synthetic-label-photo": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minManualReviewCount": 1,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "seed-texture-01": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 12000,
+      "minManualReviewCount": 5,
+      "minScore": 0.85,
+      "expectedFieldStatuses": {
+        "brandName": ["manual_review"],
+        "classType": ["manual_review"],
+        "alcoholContent": ["manual_review"],
+        "netContents": ["manual_review"],
+        "governmentWarning": ["manual_review"],
+        "nameAddress": ["manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "seed-texture-02": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 12000,
+      "minManualReviewCount": 5,
+      "minScore": 0.85,
+      "expectedFieldStatuses": {
+        "brandName": ["manual_review"],
+        "classType": ["manual_review"],
+        "alcoholContent": ["manual_review"],
+        "netContents": ["manual_review"],
+        "governmentWarning": ["manual_review"],
+        "nameAddress": ["manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "edge-synthetic-glare-label": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "edge-synthetic-blur-label": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "edge-synthetic-angle-label": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_cream_baseline_front": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.8,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_cream_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_cream_angle_30": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_cream_low_light_grain": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_cream_crop_warning_partial": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "nameAddress": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_dark_baseline_front": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.8,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_dark_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_dark_angle_30": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_dark_low_light_grain": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_whiskey_dark_crop_warning_partial": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "nameAddress": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_vodka_import_baseline_front": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.8,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["pass", "manual_review", "fail"]
+      }
+    },
+    "synthetic_eval_vodka_import_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["pass", "manual_review", "fail"]
+      }
+    },
+    "synthetic_eval_vodka_import_angle_30": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["pass", "manual_review", "fail"]
+      }
+    },
+    "synthetic_eval_vodka_import_low_light_grain": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["pass", "manual_review", "fail"]
+      }
+    },
+    "synthetic_eval_vodka_import_crop_warning_partial": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "nameAddress": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["pass", "manual_review", "fail"]
+      }
+    },
+    "synthetic_eval_spiced_rum_baseline_front": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.8,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_spiced_rum_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_spiced_rum_angle_30": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_spiced_rum_low_light_grain": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.6,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "nameAddress": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "synthetic_eval_spiced_rum_crop_warning_partial": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "nameAddress": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_02": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_glare_warning_02": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_glare_warning_harsh": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_angle_28": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_vodka_baseline": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_vodka_angle_45": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_vodka_glare_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review", "fail"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "smirnoff_vodka_happy_path": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.85,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_blur_moderate": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_blur_strong": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_low_light_grain": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_distance_crop_warning": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["manual_review", "fail", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_crop_missing_warning": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["fail", "manual_review", "pass"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_03": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_04": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_baseline_05": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    },
+    "st_petersburg_whiskey_label_dark_baseline": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["pass", "manual_review", "fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review", "fail"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review", "fail"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    }
+  }
+}

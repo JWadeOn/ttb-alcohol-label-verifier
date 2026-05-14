@@ -1,14 +1,24 @@
-# Eval artifacts
+# Evaluation Artifacts
 
-Committed outputs from **optional** eval scripts (see `README.md` → fixtures / eval scaffold).
+This folder contains committed evidence for correctness and latency in the prototype.
 
-**Triggering:** regenerating these artifacts (or running latency scripts against **Railway** with **`OPENAI_API_KEY`**) is **intentionally manual** — no scheduled or CI-automated production model runs. That avoids surprise cost and flaky comparisons when the model changes. **`npm run test`** remains the default always-on check.
+## Recommended evaluator files
 
-**Timeline (production primary-latency):** **[`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md)** — table of runs with links to each committed JSON (append a new dated file per run; do not overwrite history).
+| File | Purpose |
+|---|---|
+| [`fixture-correctness-production-2026-05-13.json`](./fixture-correctness-production-2026-05-13.json) | Full `on_bottle` production fixture run with correctness scoring and latency summary. |
+| [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) | Focused difficult-label fixture run (St. Petersburg subset). |
+| [`fixture-correctness-synthetic-eval-full-2026-05-14.json`](./fixture-correctness-synthetic-eval-full-2026-05-14.json) | Full `off_bottle` scripted synthetic run (4 families x 5 stress variants) with per-fixture correctness and latency. |
+| [`fixture-correctness-expectations-synthetic-eval.json`](./fixture-correctness-expectations-synthetic-eval.json) | Dedicated expectations profile for the synthetic batch so top-level thresholds reflect that subset only. |
+| [`CORRECTNESS_THRESHOLDS.md`](./CORRECTNESS_THRESHOLDS.md) | Threshold definitions used to interpret eval outputs. |
+| [`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md) | Chronological index of production latency snapshots. |
 
-| File | What it is |
-|------|----------------|
-| [`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md) | Chronological index of production **`eval:primary-latency`** snapshots + how to add the next run. |
-| [`primary-latency-production-2026-05-11.json`](./primary-latency-production-2026-05-11.json) | Railway snapshot — **2** seed fixtures; **`unavailable`** (tight default timeouts). |
-| [`primary-latency-production-2026-05-12.json`](./primary-latency-production-2026-05-12.json) | Railway snapshot — **3** fixtures (happy path + seeds); **`openai`** on all. |
-| *(ad hoc)* | **`npm run eval:primary-latency:bench`** — multi-iteration JSON with **min / max / mean / P95** per fixture and overall (`EVAL_ITERATIONS`, `EVAL_COOLDOWN_MS`, `EVAL_WARMUP` — see `README.md`). |
+## Regenerating artifacts (manual only)
+
+- Full production fixture eval: `npm run eval:fixture-verify:prod`
+- Generic fixture eval: `npm run eval:fixture-verify`
+- `on_bottle` subset: `EVAL_FIXTURE_SET=on_bottle npm run eval:fixture-verify`
+- `off_bottle` synthetic subset: `EVAL_FIXTURE_SET=off_bottle EVAL_EXPECTATIONS=docs/evals/fixture-correctness-expectations-synthetic-eval.json npm run eval:fixture-verify`
+- Latency-only snapshot: `npm run eval:primary-latency`
+
+Model-backed evals are intentionally run manually to avoid cost and drift from unattended scheduled jobs.

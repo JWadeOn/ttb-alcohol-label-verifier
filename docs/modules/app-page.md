@@ -14,7 +14,11 @@ Client-only page: file upload, application data editor, `POST /api/verify` via `
 ## Behavior
 
 - Builds `FormData` using `VERIFY_FORM_FIELDS` from `lib/schemas.ts` (`image` file, `application` JSON string).
+- Client-side upload prep: selected JPEG/PNG images over a moderate threshold are resized in-browser to **max 1800px** and re-encoded to JPEG before submit when that reduces bytes; the UI keeps the original filename in the preview heading and shows a small “optimized upload” note with the before/after sizes.
+- Upload guardrail: single-image and batch selection reject files above **1.5 MB** client-side and show inline guidance before any request is sent.
 - Parses responses with `VerifySuccessResponseSchema` / `VerifyErrorResponseSchema` for structured UI; keeps raw JSON string for a collapsible `<details>` block.
+- Includes a lightweight **Batch verify (MVP)** panel in Edit mode: select multiple images (UI cap 20, server default cap 20), submit to `POST /api/verify/batch`, and render per-file status with aggregate summary.
+- **Error UX:** API failures use `verifyErrorUserHeadline` (`lib/verify-error-messages.ts`) for a plain-language headline; **Code** / **Message** from the JSON body stay visible; **HTTP status** shown as a secondary line. **Run metadata** explains **`unavailable`** extraction (placeholder + manual review) vs **`openai`**, and adds reshoot hints when image quality fails (defensive; pipeline usually rejects before success).
 - **Image preview:** `URL.createObjectURL` for the selected file; revoked in `useEffect` cleanup when the file changes or unmounts.
 - **Native `<img>`** for blob previews (not `next/image`): `blob:` + `next/image` has triggered broken dev runtimes in this stack; plain `img` is correct for local object URLs.
 
@@ -56,4 +60,4 @@ None (client UI is not covered by Vitest in this repo). Manual: run `npm run dev
 
 ## Product notes
 
-High-level UX principles: `docs/PRD.md`, `AGENTS.md`. This file is the place for **concrete UI layout** tied to this component.
+High-level UX principles: `README.md`, `AGENTS.md`. This file is the place for **concrete UI layout** tied to this component.

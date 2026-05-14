@@ -4,6 +4,8 @@ AI-powered prototype for validating alcohol label fields against submitted appli
 
 This project is intentionally scoped as a take-home evaluation build: working core flow, clear trade-offs, and explicit compliance boundaries.
 
+Evaluator quick path: [`docs/EVALUATOR_START_HERE.md`](docs/EVALUATOR_START_HERE.md)
+
 ## Project Objective
 
 Help TTB compliance agents reduce repetitive manual matching work by:
@@ -12,7 +14,7 @@ Help TTB compliance agents reduce repetitive manual matching work by:
 - comparing extracted values against application JSON, and
 - returning per-field pass/fail/manual-review results quickly enough to fit agent workflow.
 
-Target latency is sub-5-second P95 per label, including failover conditions.
+Target latency is approximately 5 seconds per label on average for production-style fixture runs, with tail latency explicitly tracked in committed eval artifacts.
 
 ## Assignment-Aligned Scope
 
@@ -28,13 +30,15 @@ The take-home instructions note that exact requirements vary by beverage type, b
 
 ### MVP (core-first)
 
-The MVP prioritizes common cross-beverage fields most critical to review throughput:
+The MVP implements common cross-beverage fields most critical to review throughput:
 
 - Brand name
 - Class/type
 - Alcohol content (ABV/proof text)
 - Net contents
 - Government warning
+- Name/address of bottler or producer
+- Country of origin for imports (conditional on application import flag)
 
 Comparison logic is deterministic (fuzzy normalization where appropriate, strict matching where required).
 
@@ -48,9 +52,8 @@ After core checks are stable, implementation expands by beverage vertical in thi
 
 ### High-value follow-ons
 
-- Name/address extraction and comparison
-- Country of origin extraction and conditional validation for imports
-- Batch upload/reporting polish
+- Name/address and country-of-origin robustness polish (edge-case phrasing/format variants)
+- Batch upload/reporting polish (MVP batch verify panel now available; advanced job orchestration remains future work)
 - Provider confidence indicators and manual fallback toggle
 
 ## Compliance Boundaries
@@ -67,23 +70,16 @@ This prototype is decision support, not legal automation.
 
 ## Technical Approach
 
-- **Primary extraction:** Vision LLM (`gpt-4o-mini`) with structured JSON output.
-- **Fallback extraction:** Local OCR path (`tesseract.js`) for resilience and network-restricted environments.
-- **Failover orchestration:** Soft timeout starts fallback in parallel; hard timeout cancels primary and returns fallback.
+- **Primary extraction (hybrid default):** OCR-first (`tesseract.js`) for latency, with vision LLM (`gpt-4o-mini`) fallback when OCR misses critical fields or confidence is too low.
+- **Last-resort fallback:** If OCR/LLM both fail, the pipeline returns an **`unavailable`** placeholder provider (typed empty fields + reasons) so responses stay schema-valid and route to **`manual_review`** in the validator.
+- **Failover orchestration:** Soft timeout starts fallback **in parallel** with primary; hard timeout **aborts** primary and returns fallback (`lib/extraction/provider.ts`).
 - **Validation engine:** Deterministic regex + normalized fuzzy comparison, with per-field evidence in results.
 - **Image quality gate:** Rejects unreadable images with a clear resubmission message.
 
-## Fallback OCR Decision Policy
+## OCR and Fallback (shipped vs research)
 
-- Default fallback is **Tesseract-first** to keep the prototype Node-native and simple.
-- A go/no-go POC runs early in implementation.
-- Keep Tesseract only if both are true:
-  - fallback OCR latency stays within target budget on fixtures,
-  - structured-field fallback extraction (warning/ABV/net contents) meets minimum coverage threshold.
-- If thresholds are missed, pivot behind the same provider interface:
-  1. worker-thread and Node-native OCR tuning,
-  2. ONNX-based OCR path,
-  3. PaddleOCR sidecar/service as a final fallback option.
+- **What ships in this repo:** hybrid extraction is implemented in runtime code. OCR (`tesseract.js`) runs first in `hybrid` mode, then escalates to OpenAI vision when OCR misses required coverage/confidence thresholds. If both OCR and LLM fail, runtime returns an `unavailable` placeholder extraction that routes fields to manual review.
+- **What remains for tuning:** OCR routing thresholds and latency/correctness trade-offs are tuned using committed eval artifacts in `docs/evals/`.
 
 ## UX Principles
 
@@ -98,6 +94,7 @@ This prototype is decision support, not legal automation.
 - No persistent storage of uploaded label data in prototype flow
 - API keys are environment variables only (never committed)
 - Public prototype deployment is acceptable for this exercise; production path would move to Azure OpenAI private endpoints
+- Upload and eval fixture policy uses the current TTB guidance ceiling of **1.5 MB per image**; older COLA attachment references that mention **750 KB** are treated as superseded for this prototype.
 
 ## Local development (Phase 1)
 
@@ -113,9 +110,9 @@ Set **`OPENAI_API_KEY`** (for example in `.env.local` at the project root). Next
 npm run dev
 ```
 
-Use **`npm run dev:clean`** (`rm -rf .next && next dev`) if the dev overlay throws **React Client Manifest** / **`MetadataBoundary`** errors (see **Dev server issues** below).
+Use **`npm run dev:clean`** (`rm -rf .next && next dev`) if the dev overlay throws transient manifest/cache errors.
 
-Then open the app URL printed by Next.js (default **http://localhost:3000**). Upload a label image and application JSON — **`POST /api/verify`** runs **image quality → OpenAI vision extraction (`gpt-4o-mini`) → deterministic validation**. If the primary path errors after retries, an **`unavailable`** fallback placeholder is returned until Phase 2 wires Tesseract.
+Then open the app URL printed by Next.js (default **http://localhost:3000**). Upload a label image and application JSON — **`POST /api/verify`** runs **image quality → hybrid extraction (OCR-first, LLM fallback) → deterministic validation**.
 
 ```bash
 npm run test    # Vitest (validator, golden default-application, failover, image-quality, handler wiring)
@@ -123,85 +120,38 @@ npm run lint    # ESLint (Next core-web-vitals + TS)
 npm run build   # Production build
 ```
 
-Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`**, unless **`VERIFY_DEV_STUB=true`** (non-production) returns a stub **200** (see **OpenAI credits** below).
+Without `OPENAI_API_KEY`, the API responds with **503** and code **`OPENAI_NOT_CONFIGURED`** unless `VERIFY_DEV_STUB=true` is set in non-production.
 
-**Extraction timeouts:** primary vision calls use an **8.0s / 20s** soft/hard abort by default (typical `gpt-4o-mini` latency on Railway). Tighten for experiments in `.env` / `.env.local` (then restart dev), e.g. **`3000`** / **`3500`**, if you want faster failover to **`unavailable`**:
+**Extraction timeouts:** by default there is **no forced soft/hard extraction timeout**; primary extraction can run to completion. For experiments (or cheaper/faster failover), set explicit budgets in `.env` / `.env.local` (then restart dev), e.g. **`3000`** / **`3500`**:
 
 - `VERIFY_EXTRACT_SOFT_TIMEOUT_MS`
 - `VERIFY_EXTRACT_HARD_TIMEOUT_MS`
 
+**OpenAI vision tuning (LLM-only):** you can reduce extraction latency/cost without enabling fallback OCR via:
+
+- `OPENAI_VISION_DETAIL` (`low` default, or `auto` / `high`)
+- `OPENAI_MAX_OUTPUT_TOKENS` (default `500`, accepted `200..4096`)
+
+**Hybrid routing controls:** adjust when OCR should escalate to LLM:
+
+- `VERIFY_EXTRACTION_MODE` (`hybrid` default, or `llm_only` / `ocr_only`)
+- `VERIFY_OCR_MIN_CRITICAL_FIELDS_PRESENT` (default `3`)
+- `VERIFY_OCR_MIN_MEAN_CONFIDENCE` (default `0.58`)
+- `VERIFY_OCR_MIN_REQUIRED_FIELD_CONFIDENCE` (default `0.52` for class/alcohol/net)
+
 The dev server logs **`[verify-pipeline] pipeline completed`** (`pipelineMs`, active timeouts) and **`[verify] request completed`** (`totalMs` from handler start through success).
 
-### OpenAI credits (what costs money)
+## Evaluation Artifacts
 
-- **Each successful verify** that reaches extraction triggers **one** `gpt-4o-mini` vision completion (input tokens scale with image/detail; prompts add fixed overhead).
-- **Image quality runs first** — unusable images can be rejected with **422** before any OpenAI call (see `lib/image-quality.ts`).
-- **`npm run eval:primary-latency`** sends **one POST per flagged fixture** when `OPENAI_API_KEY` is set — run intentionally, not in a tight loop.
-- **Results UI / design without credits (local):** set **`VERIFY_DEV_STUB=true`** in `.env` / `.env.local` and restart dev. **`POST /api/verify`** returns **200** with the same **`stub`** success shape as tests (`buildStubVerifyResponse`) — no **`OPENAI_API_KEY`** required, no image buffer read, no OpenAI. **Ignored when `NODE_ENV=production`** (so it never runs on Railway/Docker prod by accident). Remove the flag when you want real extractions again.
-- **Hard block (503, no success body):** set **`OPENAI_DISABLED=true`** (keep or omit the key). Verify returns **503** / **`OPENAI_DISABLED`** and does **not** read the image into a buffer or call OpenAI. Use when you want the API to refuse rather than return a stub success.
+- Canonical eval index: [`docs/evals/README.md`](docs/evals/README.md)
+- Latest full production fixture run (`on_bottle` / default manifest story): [`docs/evals/fixture-correctness-production-2026-05-13.json`](docs/evals/fixture-correctness-production-2026-05-13.json)
+- Focused difficult subset run: [`docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json`](docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json)
+- Latest scripted synthetic fixture run (`off_bottle` / `synthetic_eval` set): [`docs/evals/fixture-correctness-synthetic-eval-full-2026-05-14.json`](docs/evals/fixture-correctness-synthetic-eval-full-2026-05-14.json)
 
-### Dev server issues (500 / ENOENT under `.next`)
+## Deployment
 
-If you see **`ENOENT`** for `app-build-manifest.json`, **`_buildManifest.js.tmp.*`**, **`.next/server/vendor-chunks/next.js`**, or flaky **500**s right after HMR:
-
-1. Stop **all** `next dev` processes (only one instance should own the project directory).
-2. Delete the cache and restart:
-
-   ```bash
-   rm -rf .next && npm run dev
-   ```
-
-3. Default **`npm run dev`** uses the **Webpack** dev server (most stable here). To try **Turbopack** instead: `npm run dev:turbo` — if it misbehaves, fall back to `npm run dev`.
-
-### Next.js dev: `Could not find the module … in the React Client Manifest`
-
-If the **browser** or terminal shows **`MetadataBoundary`**, **`ViewportBoundary`**, **`layout-router`**, **`ClientPageRoot`**, **`segment-explorer-node`**, etc., that is almost always a **broken dev client manifest** (Next 15 dev / RSC + Fast Refresh), **not** a bug in your page code. **`npm run build`** should still pass.
-
-**Common triggers (from real logs):**
-
-- **`Port 3000 is in use … using … 3002`** — you have **two** `next dev` processes. Only **one** should own this repo. Stop the stray one (macOS: `lsof -ti :3000` to see PID, then quit that process), then restart a **single** `npm run dev`.
-- **`Reload env: .env`** — saving `.env` mid-session can leave dev in a bad state. Prefer **stop dev → save `.env` → `npm run dev:clean`** (below) instead of relying on hot env reload when you see manifest spam.
-
-**Fix (in order):**
-
-1. Stop **every** `next dev` for this project (all terminals / ports).
-2. Start fresh: **`npm run dev:clean`** (same as `rm -rf .next && next dev`). Or manually: **`rm -rf .next && npm run dev`**.
-3. If it still happens: **`rm -rf node_modules/.cache`** (if present), then **`npm run dev:clean`** again; last resort **`rm -rf node_modules && npm ci`**.
-4. Sanity check without dev overlay: **`npm run build && npm run start`**.
-
-The terminal may still show **`GET / 200`** or **`POST /api/verify 200`** while errors print — treat repeated manifest lines as **cache / process hygiene**, not application logic, until a clean dev run is stable.
-
-### Fixtures and eval scaffold (Day 1)
-
-- **`fixtures/manifest.json`** — catalog of label PNGs under `fixtures/labels/` (synthetic reference + deterministic noise seeds).
-- **Regenerate noise PNGs** (optional, after editing `scripts/generate-fixture-pngs.mjs`): `npm run fixtures:generate`
-- **Primary-path latency eval** (calls OpenAI; requires running app + key): start `npm run dev` in another terminal, then  
-  `OPENAI_API_KEY=... npm run eval:primary-latency`  
-  (override base URL with `BASE_URL=http://127.0.0.1:3000` or your **Railway** URL). Without `OPENAI_API_KEY`, the script exits 0 and prints a skip JSON line (CI-safe scaffold). If **`OPENAI_DISABLED=true`** is in your `.env`, prefix the command with **`OPENAI_DISABLED=`** so the server accepts extraction. A **production** snapshot lives under **`docs/evals/`** (see Railway section above).
-- **Latency benchmark** (same harness, per-fixture **min / max / mean / P95** over multiple POSTs):  
-  `npm run eval:primary-latency:bench`  
-  (defaults: **5** iterations per fixture, **400 ms** cooldown between requests — tune with **`EVAL_ITERATIONS`**, **`EVAL_COOLDOWN_MS`**, optional **`EVAL_WARMUP=1`** one throwaway request per fixture before timing). Set **`BASE_URL`** and **`OPENAI_API_KEY`** as for the single-pass eval.
-- **Eval policy (cost + drift):** any script that calls a **live** app with **OpenAI** (local or Railway) is **manual-only** — run when *you* choose (e.g. from your machine). **Do not** schedule nightly/cron jobs or CI workflows that hit production or spend keys automatically; keep **`npm run test`** as the always-on gate with deterministic tests (includes **`tests/golden-default-application.test.ts`** vs **`fixtures/default-application.json`**).
-- **Docker production image:** `npm run docker:build` then run as in `docs/modules/dockerfile.md`. POC-1 OCR thresholds and measurement contract are documented in **`docs/POC1_FALLBACK.md`** (OCR path still deferred in code).
-
-## Deployment Decision
-
-- **Production prototype:** deployed on **Railway** from this repo’s **`Dockerfile`** (multi-stage Node 22 / Next standalone).
-- **Alternative hosts:** the same image pattern works on **Render** (see below), **Fly.io**, or **Hugging Face Spaces (Docker mode)** if you need a different platform.
-- **Secrets:** set **`OPENAI_API_KEY`** in the host’s environment (never commit it). Health check: **`/`**; smoke **`POST /api/verify`** with a small PNG + application JSON.
-
-### Railway (current)
-
-- Service root: connect the GitHub repo and use **Dockerfile** build (root `Dockerfile`).
-- Add **`OPENAI_API_KEY`** under the service’s **Variables** (or equivalent). Without it, **`POST /api/verify`** returns **503** / **`OPENAI_NOT_CONFIGURED`**. With the key set, responses are **200**; primary-latency eval fixtures expect **`extraction.provider: openai`** when budgets allow (default **8000 / 20000** ms soft/hard in app code — override with **`VERIFY_EXTRACT_*`** on the host if needed).
-- **Public URL:** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
-- **Production eval snapshots (primary-path latency harness):** timeline [`docs/evals/PRIMARY_LATENCY_RUNS.md`](docs/evals/PRIMARY_LATENCY_RUNS.md); index [`docs/evals/README.md`](docs/evals/README.md). Re-run (unset **`OPENAI_DISABLED`** in the shell if your `.env` sets it):  
-  `BASE_URL=https://ttb-alcohol-label-verifier-production.up.railway.app OPENAI_API_KEY=sk-... npm run eval:primary-latency`  
-  and commit an updated JSON when you want a fresh snapshot.
-
-### Render (operator checklist)
-
-Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (Web Service from this repo’s `Dockerfile`, **`OPENAI_API_KEY`** secret, health check on `/`, smoke `POST /api/verify`). Render’s builders may reject generic BuildKit **`RUN --mount=type=cache`** `id=` values; this Dockerfile uses plain **`RUN npm ci`** so the file stays portable across hosts.
+- Prototype is deployed on Railway.
+- Public URL: [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
 
 ## Repository Deliverables
 
@@ -214,13 +164,8 @@ Step-by-step: **[`docs/RENDER_DEPLOY.md`](docs/RENDER_DEPLOY.md)** (Web Service 
 
 Regulatory references used for framing are documented in project docs and should be treated as source material for prototype checks, not as exhaustive legal implementation.
 
-- **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`** — **Evaluator start here:** what is (and is not) regulatory source of truth; field → code → PRD trace; where checks run.
-- `docs/PROGRESS.md` — **living** short status: done recently, next steps, blockers (update as you ship)
-- `docs/ARCHITECTURE.md` — **living** system overview (data flow, phase snapshot, links to module docs)
-- `docs/modules/README.md` — index of **per-module** living docs (`docs/modules/*.md`: responsibilities, decisions, tests for each unit)
-- `docs/PRD.md`
-- `docs/PRESEARCH.md`
-- `docs/IMPLEMENTATION_PLAN.md` — technical contracts, phases, evals, and PRD traceability for implementation
-- `docs/POC1_FALLBACK.md` — OCR fallback go/no-go thresholds and measurement contract (OCR still deferred in code)
-- `docs/evals/README.md` — committed **eval artifacts** (e.g. production primary-latency run)
+- `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md` — scope boundaries and field-to-rule traceability.
+- `docs/ARCHITECTURE.md` — system flow and module boundaries.
+- `docs/CORE_REQUIREMENTS_SCORECARD.md` — rubric-aligned status with evidence links.
+- `docs/evals/README.md` — entry point for committed correctness and latency artifacts.
 

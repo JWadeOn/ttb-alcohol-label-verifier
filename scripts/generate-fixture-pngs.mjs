@@ -10,7 +10,7 @@ import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const outDir = path.join(root, "fixtures", "labels");
+const outDir = path.join(root, "fixtures", "labels", "seed-textures");
 
 const WIDTH = 200;
 const HEIGHT = 200;

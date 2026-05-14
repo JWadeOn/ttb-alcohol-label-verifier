@@ -7,7 +7,10 @@ import {
   VERIFY_FORM_FIELDS,
   type FieldId,
   type FieldStatus,
+  type VerifyBatchResponse,
+  VerifyBatchResponseSchema,
   type VerifyErrorResponse,
+  VerifyExtractOnlyResponseSchema,
   type VerifySuccessResponse,
   VerifyErrorResponseSchema,
   VerifySuccessResponseSchema,
@@ -15,6 +18,7 @@ import {
 import { VerifyRunStepsPanel } from "@/components/VerifyRunStepsPanel";
 import { WorkflowProcessTabs, type WorkflowPhase } from "@/components/WorkflowProcessTabs";
 import { buildVerifyUiStepsFromResponse, buildVerifyUiStepsLoading, verifyResponseIndicatesPipelineFailure } from "@/lib/verify-ui-steps";
+import { MAX_LABEL_UPLOAD_BYTES } from "@/lib/upload-limits";
 import {
   ABV_TOLERANCE,
   BRAND_SIMILARITY,
@@ -25,6 +29,7 @@ import {
   VOLUME_TOLERANCE_ML,
   VOLUME_TOLERANCE_RATIO,
 } from "@/lib/validator";
+import { verifyErrorUserHeadline } from "@/lib/verify-error-messages";
 
 const DEFAULT_APPLICATION = JSON.stringify(
   {
@@ -72,6 +77,96 @@ const FIELD_REQUIREMENTS: Record<FieldId, string> = {
   countryOfOrigin:
     "Not applicable when import is unchecked. For imports, fuzzy match when both sides include text.",
 };
+
+const CLIENT_UPLOAD_MAX_DIMENSION = 1800;
+const CLIENT_UPLOAD_MIN_BYTES = 1_000_000;
+const CLIENT_UPLOAD_JPEG_QUALITY = 0.82;
+const CLIENT_UPLOAD_MAX_BYTES = MAX_LABEL_UPLOAD_BYTES;
+const CLIENT_BATCH_MAX_IMAGES = 20;
+
+type PreparedUpload = {
+  file: File;
+  originalName: string;
+  originalBytes: number;
+  uploadBytes: number;
+  compressed: boolean;
+};
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+}
+
+function replaceFileExtension(fileName: string, nextExt: string): string {
+  const i = fileName.lastIndexOf(".");
+  const base = i > 0 ? fileName.slice(0, i) : fileName;
+  return `${base}${nextExt}`;
+}
+
+async function prepareImageUpload(input: File): Promise<PreparedUpload> {
+  if (!input.type.startsWith("image/")) {
+    return {
+      file: input,
+      originalName: input.name,
+      originalBytes: input.size,
+      uploadBytes: input.size,
+      compressed: false,
+    };
+  }
+
+  const bitmap = await createImageBitmap(input);
+  try {
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const shouldResize = longest > CLIENT_UPLOAD_MAX_DIMENSION;
+    const shouldCompress = shouldResize || input.size > CLIENT_UPLOAD_MIN_BYTES || input.type !== "image/jpeg";
+
+    if (!shouldCompress) {
+      return {
+        file: input,
+        originalName: input.name,
+        originalBytes: input.size,
+        uploadBytes: input.size,
+        compressed: false,
+      };
+    }
+
+    const scale = shouldResize ? CLIENT_UPLOAD_MAX_DIMENSION / longest : 1;
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not prepare image canvas.");
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", CLIENT_UPLOAD_JPEG_QUALITY),
+    );
+
+    if (!blob || blob.size >= input.size) {
+      return {
+        file: input,
+        originalName: input.name,
+        originalBytes: input.size,
+        uploadBytes: input.size,
+        compressed: false,
+      };
+    }
+
+    return {
+      file: new File([blob], replaceFileExtension(input.name, ".jpg"), { type: "image/jpeg" }),
+      originalName: input.name,
+      originalBytes: input.size,
+      uploadBytes: blob.size,
+      compressed: true,
+    };
+  } finally {
+    bitmap.close();
+  }
+}
 
 function parseExtractionField(raw: unknown): {
   value: string | null;
@@ -392,9 +487,14 @@ function truncateFieldCell(value: string | null, maxLen: number): string {
 
 export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileSelectionTokenRef = useRef(0);
   const [applicationJson, setApplicationJson] = useState(DEFAULT_APPLICATION);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [preparingFile, setPreparingFile] = useState(false);
+  const [uploadPreparation, setUploadPreparation] = useState<PreparedUpload | null>(null);
+  const [uploadGuardrailErrorText, setUploadGuardrailErrorText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [httpStatus, setHttpStatus] = useState<number | null>(null);
@@ -407,8 +507,14 @@ export default function HomePage() {
   const [workflowPhase, setWorkflowPhase] = useState<WorkflowPhase>("edit");
   const [runGeneration, setRunGeneration] = useState(0);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [extractionCacheKey, setExtractionCacheKey] = useState<string | null>(null);
+  const [prefetchState, setPrefetchState] = useState<"idle" | "prefetching" | "ready" | "error">("idle");
   /** Human approve/reject for the current successful run — client only, not sent to the server. */
   const [reviewDisposition, setReviewDisposition] = useState<"approved" | "rejected" | null>(null);
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchErrorText, setBatchErrorText] = useState<string | null>(null);
+  const [batchResponse, setBatchResponse] = useState<VerifyBatchResponse | null>(null);
 
   const applicationPageNav = useMemo(() => {
     const i = Math.min(
@@ -418,7 +524,7 @@ export default function HomePage() {
     return APPLICATION_FORMATTED_PAGE_NAV[i];
   }, [applicationFieldPage]);
 
-  const canSubmit = useMemo(() => !!file && !loading, [file, loading]);
+  const canSubmit = useMemo(() => !!file && !loading && !preparingFile, [file, loading, preparingFile]);
 
   const hasCompletedRun = runGeneration > 0;
 
@@ -462,9 +568,114 @@ export default function HomePage() {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  useEffect(() => {
+    if (!file || preparingFile) {
+      if (!file) {
+        setExtractionCacheKey(null);
+        setPrefetchState("idle");
+      }
+      return;
+    }
+    const abort = new AbortController();
+    setExtractionCacheKey(null);
+    setPrefetchState("prefetching");
+    void (async () => {
+      try {
+        const fd = new FormData();
+        fd.append(VERIFY_FORM_FIELDS.image, file);
+        const res = await fetch("/api/verify/extract-only", {
+          method: "POST",
+          body: fd,
+          signal: abort.signal,
+        });
+        if (!res.ok) {
+          setPrefetchState("error");
+          return;
+        }
+        const raw: unknown = await res.json();
+        const parsed = VerifyExtractOnlyResponseSchema.safeParse(raw);
+        if (!parsed.success) {
+          setPrefetchState("error");
+          return;
+        }
+        setExtractionCacheKey(parsed.data.cacheKey);
+        setPrefetchState("ready");
+      } catch (err) {
+        if ((err as { name?: string })?.name === "AbortError") return;
+        setPrefetchState("error");
+      }
+    })();
+    return () => abort.abort();
+  }, [file, preparingFile]);
+
+  async function onFileChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const nextFile = ev.target.files?.[0] ?? null;
+    ev.target.value = "";
+
+    const token = ++fileSelectionTokenRef.current;
+    if (!nextFile) {
+      setFile(null);
+      setSelectedFileName(null);
+      setUploadPreparation(null);
+      setUploadGuardrailErrorText(null);
+      setPreparingFile(false);
+      return;
+    }
+    if (nextFile.size > CLIENT_UPLOAD_MAX_BYTES) {
+      setFile(null);
+      setSelectedFileName(null);
+      setUploadPreparation(null);
+      setPreparingFile(false);
+      setUploadGuardrailErrorText(
+        `Image is ${formatBytes(nextFile.size)}. Maximum upload size is ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)}.`,
+      );
+      return;
+    }
+
+    setUploadGuardrailErrorText(null);
+    setSelectedFileName(nextFile.name);
+    setFile(nextFile);
+    setUploadPreparation({
+      file: nextFile,
+      originalName: nextFile.name,
+      originalBytes: nextFile.size,
+      uploadBytes: nextFile.size,
+      compressed: false,
+    });
+    setPreparingFile(true);
+
+    try {
+      const prepared = await prepareImageUpload(nextFile);
+      if (fileSelectionTokenRef.current !== token) return;
+      setFile(prepared.file);
+      setUploadPreparation(prepared);
+    } catch (err) {
+      console.warn("[app/page] client upload compression skipped; using original file", err);
+      if (fileSelectionTokenRef.current !== token) return;
+      setFile(nextFile);
+      setUploadPreparation({
+        file: nextFile,
+        originalName: nextFile.name,
+        originalBytes: nextFile.size,
+        uploadBytes: nextFile.size,
+        compressed: false,
+      });
+    } finally {
+      if (fileSelectionTokenRef.current === token) {
+        setPreparingFile(false);
+      }
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
+    if (file.size > CLIENT_UPLOAD_MAX_BYTES) {
+      setUploadGuardrailErrorText(
+        `Image is ${formatBytes(file.size)}. Maximum upload size is ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)}.`,
+      );
+      return;
+    }
 
     let outcomeSuccess: VerifySuccessResponse | null = null;
     let outcomeError: VerifyErrorResponse | null = null;
@@ -483,6 +694,9 @@ export default function HomePage() {
       const formData = new FormData();
       formData.append(VERIFY_FORM_FIELDS.image, file);
       formData.append(VERIFY_FORM_FIELDS.application, applicationJson);
+      if (extractionCacheKey) {
+        formData.append(VERIFY_FORM_FIELDS.extractionCacheKey, extractionCacheKey);
+      }
 
       const res = await fetch("/api/verify", {
         method: "POST",
@@ -496,7 +710,11 @@ export default function HomePage() {
       } catch {
         const msg = `Non-JSON response (${res.status}): ${text.slice(0, 500)}`;
         outcomeErrorText = msg;
-        setErrorText(msg);
+        setErrorText(
+          res.status >= 200 && res.status < 300
+            ? msg
+            : "The server returned an unexpected response (not JSON). Check that you are on the app URL and try again.",
+        );
         setHttpStatus(res.status);
         return;
       }
@@ -512,7 +730,9 @@ export default function HomePage() {
         } else {
           const msg = "Response JSON did not match the expected success schema.";
           outcomeErrorText = msg;
-          setErrorText(msg);
+          setErrorText(
+            "The server response could not be shown in the comparison UI. Use Raw API JSON below if you need details.",
+          );
         }
       } else {
         const errParsed = VerifyErrorResponseSchema.safeParse(parsed);
@@ -522,11 +742,17 @@ export default function HomePage() {
         }
         const msg = `HTTP ${res.status}`;
         outcomeErrorText = msg;
-        setErrorText(msg);
+        setErrorText(
+          verifyErrorUserHeadline(res.status, errParsed.success ? errParsed.data : null, msg),
+        );
       }
     } catch (err) {
       outcomeErrorText = err instanceof Error ? err.message : String(err);
-      setErrorText(outcomeErrorText);
+      setErrorText(
+        err instanceof TypeError && err.message.includes("fetch")
+          ? "Could not reach the server. Check your network and that the app is running."
+          : outcomeErrorText,
+      );
     } finally {
       setLoading(false);
       setRunGeneration((n) => n + 1);
@@ -539,12 +765,88 @@ export default function HomePage() {
     }
   }
 
+  async function onBatchSubmit() {
+    if (batchFiles.length === 0) return;
+    if (batchFiles.length > CLIENT_BATCH_MAX_IMAGES) {
+      setBatchErrorText(`Batch size exceeds maximum of ${CLIENT_BATCH_MAX_IMAGES} images.`);
+      return;
+    }
+    if (batchFiles.some((f) => f.size > CLIENT_UPLOAD_MAX_BYTES)) {
+      setBatchErrorText(
+        `Each batch image must be ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)} or smaller.`,
+      );
+      return;
+    }
+    setBatchLoading(true);
+    setBatchErrorText(null);
+    setBatchResponse(null);
+    try {
+      const formData = new FormData();
+      for (const batchFile of batchFiles) {
+        formData.append(VERIFY_FORM_FIELDS.images, batchFile);
+      }
+      formData.append(VERIFY_FORM_FIELDS.application, applicationJson);
+      const res = await fetch("/api/verify/batch", {
+        method: "POST",
+        body: formData,
+      });
+      const raw: unknown = await res.json();
+      const parsed = VerifyBatchResponseSchema.safeParse(raw);
+      if (!res.ok) {
+        setBatchErrorText(`Batch request failed (HTTP ${res.status}).`);
+        return;
+      }
+      if (!parsed.success) {
+        setBatchErrorText("Batch response schema mismatch.");
+        return;
+      }
+      setBatchResponse(parsed.data);
+    } catch (err) {
+      setBatchErrorText(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBatchLoading(false);
+    }
+  }
+
   const showResultsBody = hasCompletedRun;
 
   const resultsDigest = useMemo(
     () => (successPayload?.validation?.fields?.length ? buildResultsDigest(successPayload) : null),
     [successPayload],
   );
+
+  function onBatchFilesChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(ev.target.files ?? []);
+    ev.target.value = "";
+    if (selected.length === 0) {
+      setBatchFiles([]);
+      setBatchErrorText(null);
+      return;
+    }
+    if (selected.length > CLIENT_BATCH_MAX_IMAGES) {
+      setBatchFiles([]);
+      setBatchResponse(null);
+      setBatchErrorText(
+        `Batch size exceeds maximum of ${CLIENT_BATCH_MAX_IMAGES} images.`,
+      );
+      return;
+    }
+    const oversized = selected.filter((f) => f.size > CLIENT_UPLOAD_MAX_BYTES);
+    if (oversized.length > 0) {
+      const sample = oversized
+        .slice(0, 2)
+        .map((f) => `"${f.name}" (${formatBytes(f.size)})`)
+        .join(", ");
+      setBatchFiles([]);
+      setBatchResponse(null);
+      setBatchErrorText(
+        `Each batch image must be ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)} or smaller. Oversized: ${sample}${oversized.length > 2 ? `, +${oversized.length - 2} more` : ""}.`,
+      );
+      return;
+    }
+    setBatchErrorText(null);
+    setBatchFiles(selected);
+  }
 
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-3 px-4 pt-2 pb-5 sm:gap-3 sm:px-6 sm:pt-3 sm:pb-6">
@@ -580,8 +882,11 @@ export default function HomePage() {
                 needed.
               </li>
               <li>
-                When you are ready, use <strong className="font-semibold text-stone-900">Run verification</strong> at
-                the bottom of the workbench.
+                For a single label, use{" "}
+                <strong className="font-semibold text-stone-900">Run verification</strong> at the bottom of the
+                workbench. For a small batch, use the{" "}
+                <strong className="font-semibold text-stone-900">Batch verify (MVP)</strong> panel in Edit mode (up to
+                {` ${CLIENT_BATCH_MAX_IMAGES} `}images) with the same application JSON applied to each file.
               </li>
               <li>
                 The <strong className="font-semibold text-stone-900">Verify</strong> tab shows advancing pipeline
@@ -596,8 +901,10 @@ export default function HomePage() {
                 results header to change inputs and run again.
               </li>
               <li>
-                This prototype uses OpenAI vision plus deterministic checks (see{" "}
-                <strong className="font-semibold text-stone-900">README</strong>).
+                Extraction runs in hybrid mode by default (OCR first, then OpenAI vision fallback when needed), then
+                deterministic validation assigns <strong className="font-semibold text-stone-900">pass</strong>,{" "}
+                <strong className="font-semibold text-stone-900">fail</strong>, or{" "}
+                <strong className="font-semibold text-stone-900">manual_review</strong> by field.
               </li>
             </ol>
           </div>
@@ -658,6 +965,7 @@ export default function HomePage() {
 
           <div className="min-h-0 overflow-y-auto px-2.5 pb-2 pt-0 lg:px-3">
             {workflowPhase === "edit" ? (
+          <>
           <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:gap-3">
             <section
               aria-labelledby="workbench-label-heading"
@@ -669,10 +977,7 @@ export default function HomePage() {
               accept="image/jpeg,image/png"
               className="sr-only"
               aria-label="Choose label image file"
-              onChange={(ev) => {
-                const f = ev.target.files?.[0];
-                setFile(f ?? null);
-              }}
+              onChange={onFileChange}
             />
             <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-stone-100 pb-1">
               <h2
@@ -685,9 +990,9 @@ export default function HomePage() {
                     <span className="shrink-0 font-normal text-stone-500">for</span>
                     <span
                       className="min-w-0 max-w-full truncate font-mono text-[11px] font-normal text-stone-600 sm:text-xs"
-                      title={file.name}
+                      title={selectedFileName ?? file.name}
                     >
-                      &apos;{file.name}&apos;
+                      &apos;{selectedFileName ?? file.name}&apos;
                     </span>
                   </>
                 ) : null}
@@ -705,6 +1010,26 @@ export default function HomePage() {
             {!file ? (
               <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
                 Sent to the server for extraction. Full comparison appears in results below.
+              </p>
+            ) : preparingFile ? (
+              <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+                Preparing an optimized upload for faster verification…
+              </p>
+            ) : uploadPreparation?.compressed ? (
+              <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+                Upload optimized before submit: {formatBytes(uploadPreparation.originalBytes)} to{" "}
+                {formatBytes(uploadPreparation.uploadBytes)}.
+              </p>
+            ) : null}
+            {file && !preparingFile ? (
+              <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+                {prefetchState === "prefetching"
+                  ? "Prefetching extraction in the background…"
+                  : prefetchState === "ready"
+                    ? "Extraction prefetched. Verify can reuse cached results."
+                    : prefetchState === "error"
+                      ? "Background prefetch unavailable; verify will run full extraction."
+                      : null}
               </p>
             ) : null}
 
@@ -734,6 +1059,11 @@ export default function HomePage() {
                 </div>
               )}
             </div>
+            {uploadGuardrailErrorText ? (
+              <p className="mt-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
+                {uploadGuardrailErrorText}
+              </p>
+            ) : null}
           </section>
 
             <section
@@ -761,6 +1091,83 @@ export default function HomePage() {
             </div>
           </section>
           </div>
+            <section className="mt-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-stone-900">Batch verify (MVP)</h3>
+                <span className="text-[11px] text-stone-500">
+                  Up to {CLIENT_BATCH_MAX_IMAGES} images, {formatBytes(CLIENT_UPLOAD_MAX_BYTES)} each
+                </span>
+              </div>
+              <p className="mb-2 text-xs text-stone-600">
+                Uses the current Application JSON for every selected image and returns per-file outcomes.
+              </p>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={onBatchFilesChange}
+                  className="block w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-2 py-2 text-xs text-stone-700"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void onBatchSubmit()}
+                    disabled={batchFiles.length === 0 || batchLoading}
+                    className="cursor-pointer rounded-lg bg-ttb-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+                  >
+                    {batchLoading ? "Running batch..." : "Run batch verification"}
+                  </button>
+                  <span className="text-[11px] text-stone-500">
+                    {batchFiles.length} file{batchFiles.length === 1 ? "" : "s"} selected
+                  </span>
+                </div>
+              </div>
+              {batchErrorText ? (
+                <p className="mt-2 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
+                  {batchErrorText}
+                </p>
+              ) : null}
+              {batchResponse ? (
+                <div className="mt-3 space-y-2">
+                  <div className="rounded-md border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs text-stone-700">
+                    total {batchResponse.summary.total} · success {batchResponse.summary.success} · error{" "}
+                    {batchResponse.summary.error} · pass {batchResponse.summary.pass} · fail{" "}
+                    {batchResponse.summary.fail} · manual review {batchResponse.summary.manualReview} ·{" "}
+                    {batchResponse.summary.totalMs} ms
+                  </div>
+                  <div className="max-h-48 overflow-y-auto rounded-md border border-stone-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 text-stone-600">
+                        <tr>
+                          <th className="px-2 py-1">File</th>
+                          <th className="px-2 py-1">Status</th>
+                          <th className="px-2 py-1">Result</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batchResponse.items.map((item) => (
+                          <tr key={`${item.index}-${item.fileName}`} className="border-t border-stone-100">
+                            <td className="px-2 py-1 font-mono text-[11px] text-stone-800">{item.fileName}</td>
+                            <td className="px-2 py-1 text-stone-700">{item.status}</td>
+                            <td className="px-2 py-1 text-stone-700">
+                              {item.ok
+                                ? item.result?.validation?.fields?.some((f) => f.status === "fail")
+                                  ? "fail"
+                                  : item.result?.validation?.fields?.some((f) => f.status === "manual_review")
+                                    ? "manual_review"
+                                    : "pass"
+                                : item.error?.code ?? "error"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          </>
             ) : workflowPhase === "verify" ? (
               <div className="mx-auto max-w-2xl px-1 py-3">
                 {!hasCompletedRun && !loading ? (
@@ -781,6 +1188,9 @@ export default function HomePage() {
                 {errorText ? (
                   <section className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
                     <p className="font-medium">{errorText}</p>
+                    {httpStatus !== null ? (
+                      <p className="mt-1 text-xs text-red-800/85">HTTP {httpStatus}</p>
+                    ) : null}
                     {errorPayload ? (
                       <dl className="mt-2 grid gap-1 text-xs">
                         <div>
@@ -1164,6 +1574,34 @@ export default function HomePage() {
                                   {" "}
                                   · {successPayload.extraction.durationMs} ms
                                 </span>
+                                {successPayload.extraction.provider === "unavailable" ? (
+                                  <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                    Primary vision did not return usable results in time. Extracted values are
+                                    placeholders—treat every field as needing human review.
+                                  </span>
+                                ) : successPayload.extraction.provider === "openai" ? (
+                                  <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                    Vision model completed for this run.
+                                  </span>
+                                ) : null}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-xs font-medium uppercase tracking-wide text-stone-500">
+                                Pipeline timing
+                              </dt>
+                              <dd className="text-stone-800">
+                                <span className="font-mono text-xs">
+                                  total {successPayload.timings.totalMs} ms
+                                </span>
+                                <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                  image gate {successPayload.timings.imageQualityMs} ms · OCR{" "}
+                                  {successPayload.timings.ocrMs} ms · LLM {successPayload.timings.llmMs} ms · validation{" "}
+                                  {successPayload.timings.validationMs} ms
+                                </span>
+                                <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                  extraction cache {successPayload.timings.cacheHit ? "hit" : "miss"}
+                                </span>
                               </dd>
                             </div>
                             <div className="sm:col-span-2">
@@ -1172,11 +1610,23 @@ export default function HomePage() {
                               </dt>
                               <dd className="text-stone-800">
                                 {successPayload.imageQuality.ok ? (
-                                  <span className="text-emerald-800">Passed</span>
+                                  <>
+                                    <span className="text-emerald-800">Passed</span>
+                                    <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                      Image is clear enough for the reader to run. If results look wrong, try a
+                                      straighter photo with less glare.
+                                    </span>
+                                  </>
                                 ) : (
-                                  <span className="text-red-800">
-                                    {successPayload.imageQuality.reason ?? "Not ok"}
-                                  </span>
+                                  <>
+                                    <span className="text-red-800">
+                                      {successPayload.imageQuality.reason ?? "Not ok"}
+                                    </span>
+                                    <span className="mt-1 block text-xs leading-snug text-stone-600">
+                                      Upload a new photo: brighter light, hold steady, fill the frame with the label,
+                                      and avoid heavy blur or tiny text.
+                                    </span>
+                                  </>
                                 )}
                               </dd>
                             </div>
@@ -1223,7 +1673,7 @@ export default function HomePage() {
                     disabled={!canSubmit}
                     className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300 sm:max-w-md"
                   >
-                    {loading ? "Verifying…" : "Run verification"}
+                    {preparingFile ? "Preparing image…" : loading ? "Verifying…" : "Run verification"}
                   </button>
                 ) : workflowPhase === "verify" && !loading ? (
                   hasCompletedRun ? (

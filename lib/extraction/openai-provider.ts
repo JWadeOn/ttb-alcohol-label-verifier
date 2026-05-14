@@ -14,13 +14,13 @@ const FieldSchema = z
   .object({
     value: z.string().nullable().optional(),
     confidence: z.number().min(0).max(1).optional(),
-    reason: z.string().optional(),
+    reason: z.string().nullable().optional(),
   })
   .transform(
     (o): ExtractedField => ({
       value: o.value ?? null,
       confidence: o.confidence ?? 0,
-      reason: o.reason,
+      reason: o.reason ?? undefined,
     }),
   );
 
@@ -66,10 +66,34 @@ Fields: brandName, classType, alcoholContent, netContents, governmentWarning, na
 
 const USER_PROMPT = `Read this label image and extract these JSON fields with { "value": string|null, "confidence": number, "reason"?: string } each:
 brandName, classType, alcoholContent, netContents, governmentWarning, nameAddress, countryOfOrigin.
-Use null value when absent or illegible. governmentWarning must be the full warning paragraph as printed (including the GOVERNMENT WARNING heading line if present).`;
+Use null value when absent or illegible.
+Include "reason" only when value is null (omit "reason" when value is present).
+governmentWarning must be the full warning paragraph as printed (including the GOVERNMENT WARNING heading line if present).`;
+
+type VisionDetail = "low" | "high" | "auto";
+const DEFAULT_VISION_DETAIL: VisionDetail = "low";
+const DEFAULT_MAX_OUTPUT_TOKENS = 500;
+
+function resolveVisionDetail(): VisionDetail {
+  const raw = process.env.OPENAI_VISION_DETAIL?.trim().toLowerCase();
+  if (raw === "low" || raw === "high" || raw === "auto") {
+    return raw;
+  }
+  return DEFAULT_VISION_DETAIL;
+}
+
+function resolveMaxOutputTokens(): number {
+  const raw = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS);
+  if (Number.isInteger(raw) && raw >= 200 && raw <= 4096) {
+    return raw;
+  }
+  return DEFAULT_MAX_OUTPUT_TOKENS;
+}
 
 export function createOpenAIProvider(apiKey: string): ExtractionProvider {
   const client = new OpenAI({ apiKey });
+  const visionDetail = resolveVisionDetail();
+  const maxOutputTokens = resolveMaxOutputTokens();
 
   return {
     async extract(imageBytes: Buffer, signal?: AbortSignal): Promise<ExtractionResult> {
@@ -81,7 +105,7 @@ export function createOpenAIProvider(apiKey: string): ExtractionProvider {
         {
           model: "gpt-4o-mini",
           response_format: { type: "json_object" },
-          max_tokens: 1600,
+          max_tokens: maxOutputTokens,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             {
@@ -90,7 +114,7 @@ export function createOpenAIProvider(apiKey: string): ExtractionProvider {
                 { type: "text", text: USER_PROMPT },
                 {
                   type: "image_url",
-                  image_url: { url: dataUrl },
+                  image_url: { url: dataUrl, detail: visionDetail },
                 },
               ],
             },

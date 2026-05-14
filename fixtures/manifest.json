@@ -4,61 +4,340 @@
   "fixtures": [
     {
       "id": "happy-path-synthetic-label",
-      "relativePath": "labels/liquor_label_happy_path.png",
+      "relativePath": "labels/on-bottle/liquor_label_happy_path.png",
       "description": "Fictitious bottle-style label for manual happy-path checks; included in primary-latency eval for a real-label OpenAI signal alongside seed textures.",
       "includeInPrimaryLatencyEval": true
     },
     {
+      "id": "difficult-synthetic-label-photo",
+      "relativePath": "labels/on-bottle/liquor_label_difficult.jpg",
+      "description": "Stress-case photo label (glare, curvature, dense government warning, intentional character anomalies) stored as a compressed JPEG to keep full-eval latency realistic. Use for manual runs and ad-hoc POST checks; not in primary-latency eval by default.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_baseline.png",
+      "description": "Real-photo baseline anchor for the St. Petersburg Spirits bottle (front-on, bright natural lighting, all core text legible).",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_02",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_baseline_02.png",
+      "description": "Real-photo clean baseline variant (alternate scene/lighting); upright front-on bottle with fully visible core label fields.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_brand",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_glare_brand.png",
+      "description": "Real-photo glare variant from the St. Petersburg anchor; mild reflection/brightness wash over brand text while ABV, net contents, and warning remain mostly legible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_warning_02",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_glare_warning_02.png",
+      "description": "Real-photo glare variant: bright shoulder reflection and label hotspot; stresses legibility of government warning and mid-label text.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_warning_harsh",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_glare_warning_harsh.png",
+      "description": "Real-photo harsh glare: bright centered specular wash on the label obscuring ABV/net-contents lines and much of the government-warning block; brand line may remain partially readable.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_angle_28",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_angle_28.png",
+      "description": "Real-photo bourbon whiskey bottle with ~28° yaw from camera; cream label in perspective on marble surface, library-style background; bridges front-on baselines and stronger skew (e.g. vodka 45°).",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_vodka_baseline",
+      "relativePath": "labels/on-bottle/st_petersburg_vodka_baseline.png",
+      "description": "Real-photo front-on baseline for the St. Petersburg Spirits vodka bottle (frosted glass, cream label, 40% alc./vol. / 750 mL legible); pairs with st_petersburg_vodka_angle_45 for perspective stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_vodka_angle_45",
+      "relativePath": "labels/on-bottle/st_petersburg_vodka_angle_45.png",
+      "description": "Real-photo 45-degree angle variant (vodka label) with strong perspective skew and rotated text lines; intended to stress extraction under non-front-on capture.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_vodka_glare_brand",
+      "relativePath": "labels/on-bottle/st_petersburg_vodka_glare_brand.png",
+      "description": "Real-photo vodka bottle with bright vertical specular on the label washing brand and upper lines (SPIRITS / SINGLE BARREL); mid-label proof and government warning relatively more legible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "smirnoff_vodka_happy_path",
+      "relativePath": "labels/on-bottle/smirnoff_vodka_happy_path.png",
+      "applicationPath": "applications/smirnoff_vodka_happy_path.json",
+      "description": "Real-label happy-path vodka panel (Smirnoff, 40% ALC/VOL, 1.75 L) with full government warning and producer/address block visible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_blur_moderate",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_blur_moderate.png",
+      "description": "Real-photo moderate-blur variant from the St. Petersburg anchor; bottle remains centered and mostly legible but detail sharpness is reduced.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_blur_strong",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_blur_strong.png",
+      "description": "Real-photo strong shallow depth-of-field: bourbon label and bottle held sharp; background heavily defocused (bokeh) for segmentation stress vs blur_moderate label softness.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_low_light_grain",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_low_light_grain.png",
+      "description": "Real-photo dim library/marble scene with visible filmic or high-ISO grain; warm practical lighting, label and warning still in frame with decipherable type.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_distance_crop_warning",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_distance_crop_warning.png",
+      "description": "Real-photo distance/small-text variant from the St. Petersburg anchor; warning block readability is reduced by smaller on-frame label scale.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_crop_missing_warning",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_crop_missing_warning.png",
+      "description": "Real-photo tight vertical crop: brand, class, ABV, and net contents on frame; government warning block absent or clipped (missing-field stress vs full-frame baselines).",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_03",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_baseline_03.png",
+      "description": "Real-photo clean baseline variant in a darker interior setting; upright front-on bottle with fully visible label text.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_04",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_baseline_04.png",
+      "description": "Real-photo clean baseline variant with city-window background; upright front-on bottle and fully visible core label fields.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_05",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_baseline_05.png",
+      "description": "Real-photo clean baseline variant (library/lounge background); upright front-on bottle with fully visible core label fields.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "st_petersburg_whiskey_label_dark_baseline",
+      "relativePath": "labels/on-bottle/st_petersburg_whiskey_label_dark_baseline.png",
+      "description": "Track B real-photo: bourbon whiskey with matte charcoal/black label and high-contrast light type (gold/white); front-on baseline for alternate label stock vs cream Track A.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "edge-synthetic-glare-label",
+      "relativePath": "labels/on-bottle/edge-synthetic-glare.png",
+      "description": "Happy-path label with synthetic screen-style glare overlay; correctness eval (non-seed edge). Regenerate via npm run fixtures:edge-labels.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "edge-synthetic-blur-label",
+      "relativePath": "labels/on-bottle/edge-synthetic-moderate-blur.png",
+      "description": "Happy-path label with moderate blur; tuned to stay above image-quality Laplacian gate. Regenerate via npm run fixtures:edge-labels.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "edge-synthetic-angle-label",
+      "relativePath": "labels/on-bottle/edge-synthetic-tilt.png",
+      "description": "Happy-path label rotated ~22° on white (simulated camera tilt). Regenerate via npm run fixtures:edge-labels.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_cream_baseline_front",
+      "relativePath": "labels/synthetic_eval_whiskey_cream_baseline_front.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_cream.json",
+      "description": "Synthetic scripted light-stock bourbon whiskey baseline front-on label with all core fields fully visible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_cream_glare_brand",
+      "relativePath": "labels/synthetic_eval_whiskey_cream_glare_brand.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_cream.json",
+      "description": "Synthetic scripted light-stock bourbon whiskey brand-area glare variant with upper-label reflection stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_cream_angle_30",
+      "relativePath": "labels/synthetic_eval_whiskey_cream_angle_30.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_cream.json",
+      "description": "Synthetic scripted light-stock bourbon whiskey moderate angle variant with rotated/skewed label plane stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_cream_low_light_grain",
+      "relativePath": "labels/synthetic_eval_whiskey_cream_low_light_grain.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_cream.json",
+      "description": "Synthetic scripted light-stock bourbon whiskey low-light grain variant with darker exposure and synthetic noise.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_cream_crop_warning_partial",
+      "relativePath": "labels/synthetic_eval_whiskey_cream_crop_warning_partial.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_cream.json",
+      "description": "Synthetic scripted light-stock bourbon whiskey partial crop variant with lower warning/address region intentionally obscured.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_dark_baseline_front",
+      "relativePath": "labels/synthetic_eval_whiskey_dark_baseline_front.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_dark.json",
+      "description": "Synthetic scripted dark-stock bourbon whiskey baseline front-on label with all core fields fully visible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_dark_glare_brand",
+      "relativePath": "labels/synthetic_eval_whiskey_dark_glare_brand.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_dark.json",
+      "description": "Synthetic scripted dark-stock bourbon whiskey brand-area glare variant with upper-label reflection stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_dark_angle_30",
+      "relativePath": "labels/synthetic_eval_whiskey_dark_angle_30.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_dark.json",
+      "description": "Synthetic scripted dark-stock bourbon whiskey moderate angle variant with rotated/skewed label plane stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_dark_low_light_grain",
+      "relativePath": "labels/synthetic_eval_whiskey_dark_low_light_grain.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_dark.json",
+      "description": "Synthetic scripted dark-stock bourbon whiskey low-light grain variant with darker exposure and synthetic noise.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_whiskey_dark_crop_warning_partial",
+      "relativePath": "labels/synthetic_eval_whiskey_dark_crop_warning_partial.jpg",
+      "applicationPath": "applications/synthetic_eval_whiskey_dark.json",
+      "description": "Synthetic scripted dark-stock bourbon whiskey partial crop variant with lower warning/address region intentionally obscured.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_vodka_import_baseline_front",
+      "relativePath": "labels/synthetic_eval_vodka_import_baseline_front.jpg",
+      "applicationPath": "applications/synthetic_eval_vodka_import.json",
+      "description": "Synthetic scripted imported vodka baseline front-on label with all core fields fully visible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_vodka_import_glare_brand",
+      "relativePath": "labels/synthetic_eval_vodka_import_glare_brand.jpg",
+      "applicationPath": "applications/synthetic_eval_vodka_import.json",
+      "description": "Synthetic scripted imported vodka brand-area glare variant with upper-label reflection stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_vodka_import_angle_30",
+      "relativePath": "labels/synthetic_eval_vodka_import_angle_30.jpg",
+      "applicationPath": "applications/synthetic_eval_vodka_import.json",
+      "description": "Synthetic scripted imported vodka moderate angle variant with rotated/skewed label plane stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_vodka_import_low_light_grain",
+      "relativePath": "labels/synthetic_eval_vodka_import_low_light_grain.jpg",
+      "applicationPath": "applications/synthetic_eval_vodka_import.json",
+      "description": "Synthetic scripted imported vodka low-light grain variant with darker exposure and synthetic noise.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_vodka_import_crop_warning_partial",
+      "relativePath": "labels/synthetic_eval_vodka_import_crop_warning_partial.jpg",
+      "applicationPath": "applications/synthetic_eval_vodka_import.json",
+      "description": "Synthetic scripted imported vodka partial crop variant with lower warning/address region intentionally obscured.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_spiced_rum_baseline_front",
+      "relativePath": "labels/synthetic_eval_spiced_rum_baseline_front.jpg",
+      "applicationPath": "applications/synthetic_eval_spiced_rum.json",
+      "description": "Synthetic scripted spiced rum baseline front-on label with all core fields fully visible.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_spiced_rum_glare_brand",
+      "relativePath": "labels/synthetic_eval_spiced_rum_glare_brand.jpg",
+      "applicationPath": "applications/synthetic_eval_spiced_rum.json",
+      "description": "Synthetic scripted spiced rum brand-area glare variant with upper-label reflection stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_spiced_rum_angle_30",
+      "relativePath": "labels/synthetic_eval_spiced_rum_angle_30.jpg",
+      "applicationPath": "applications/synthetic_eval_spiced_rum.json",
+      "description": "Synthetic scripted spiced rum moderate angle variant with rotated/skewed label plane stress.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_spiced_rum_low_light_grain",
+      "relativePath": "labels/synthetic_eval_spiced_rum_low_light_grain.jpg",
+      "applicationPath": "applications/synthetic_eval_spiced_rum.json",
+      "description": "Synthetic scripted spiced rum low-light grain variant with darker exposure and synthetic noise.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
+      "id": "synthetic_eval_spiced_rum_crop_warning_partial",
+      "relativePath": "labels/synthetic_eval_spiced_rum_crop_warning_partial.jpg",
+      "applicationPath": "applications/synthetic_eval_spiced_rum.json",
+      "description": "Synthetic scripted spiced rum partial crop variant with lower warning/address region intentionally obscured.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "seed-texture-01",
-      "relativePath": "labels/seed-texture-01.png",
+      "relativePath": "labels/seed-textures/seed-texture-01.png",
       "description": "Deterministic noise PNG; passes image-quality gate; default single-call latency eval.",
       "includeInPrimaryLatencyEval": true
     },
     {
       "id": "seed-texture-02",
-      "relativePath": "labels/seed-texture-02.png",
+      "relativePath": "labels/seed-textures/seed-texture-02.png",
       "description": "Deterministic noise PNG; passes image-quality gate.",
       "includeInPrimaryLatencyEval": true
     },
     {
       "id": "seed-texture-03",
-      "relativePath": "labels/seed-texture-03.png",
+      "relativePath": "labels/seed-textures/seed-texture-03.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     },
     {
       "id": "seed-texture-04",
-      "relativePath": "labels/seed-texture-04.png",
+      "relativePath": "labels/seed-textures/seed-texture-04.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     },
     {
       "id": "seed-texture-05",
-      "relativePath": "labels/seed-texture-05.png",
+      "relativePath": "labels/seed-textures/seed-texture-05.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     },
     {
       "id": "seed-texture-06",
-      "relativePath": "labels/seed-texture-06.png",
+      "relativePath": "labels/seed-textures/seed-texture-06.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     },
     {
       "id": "seed-texture-07",
-      "relativePath": "labels/seed-texture-07.png",
+      "relativePath": "labels/seed-textures/seed-texture-07.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     },
     {
       "id": "seed-texture-08",
-      "relativePath": "labels/seed-texture-08.png",
+      "relativePath": "labels/seed-textures/seed-texture-08.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     },
     {
       "id": "seed-texture-09",
-      "relativePath": "labels/seed-texture-09.png",
+      "relativePath": "labels/seed-textures/seed-texture-09.png",
       "description": "Deterministic noise PNG.",
       "includeInPrimaryLatencyEval": false
     }

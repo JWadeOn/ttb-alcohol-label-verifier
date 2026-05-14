@@ -9,7 +9,7 @@ describe("fixtures manifest", () => {
   it("lists fixtures whose files exist on disk", async () => {
     const raw = await readFile(path.join(root, "fixtures", "manifest.json"), "utf8");
     const manifest = JSON.parse(raw) as {
-      fixtures: { id: string; relativePath: string }[];
+      fixtures: { id: string; relativePath: string; applicationPath?: string }[];
     };
     expect(manifest.fixtures.length).toBeGreaterThanOrEqual(5);
 
@@ -17,6 +17,11 @@ describe("fixtures manifest", () => {
       const abs = path.join(root, "fixtures", f.relativePath);
       const buf = await readFile(abs);
       expect(buf.byteLength).toBeGreaterThan(100);
+      if (typeof f.applicationPath === "string" && f.applicationPath.trim().length > 0) {
+        const applicationAbs = path.join(root, "fixtures", f.applicationPath);
+        const applicationRaw = await readFile(applicationAbs, "utf8");
+        expect(applicationRaw.trim().length).toBeGreaterThan(2);
+      }
     }
   });
 

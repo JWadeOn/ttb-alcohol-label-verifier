@@ -1,7 +1,7 @@
 import sharp from "sharp";
 
 const MIN_DIMENSION = 48;
-const MAX_DIMENSION = 2048;
+const MAX_DIMENSION = 1280;
 /** Laplacian variance on downscaled greyscale; lower ⇒ more blur / flat signal */
 const BLUR_VARIANCE_THRESHOLD = 12;
 
@@ -100,7 +100,7 @@ export async function assessImageQuality(input: Buffer): Promise<ImageQualityRes
         withoutEnlargement: true,
       });
     }
-    const processedBuffer = await pipeline.jpeg({ quality: 88 }).toBuffer();
+    const processedBuffer = await pipeline.jpeg({ quality: 80 }).toBuffer();
     return { ok: true, processedBuffer };
   } catch {
     return {

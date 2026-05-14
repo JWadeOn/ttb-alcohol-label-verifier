@@ -34,6 +34,15 @@ describe("buildVerifyUiStepsFromResponse", () => {
           fields: {},
         },
         validation: { fields: [] },
+        timings: {
+          imageQualityMs: 1,
+          ocrMs: 1,
+          llmMs: 1,
+          extractionMs: 1,
+          validationMs: 1,
+          totalMs: 1,
+          cacheHit: false,
+        },
       },
       errorPayload: null,
       errorText: null,
@@ -55,6 +64,21 @@ describe("buildVerifyUiStepsFromResponse", () => {
     expect(steps[1].state).toBe("failed");
     expect(steps[2].state).toBe("skipped");
   });
+
+  it("fails inputs on IMAGE_TOO_LARGE", () => {
+    const steps = buildVerifyUiStepsFromResponse({
+      httpStatus: 413,
+      successPayload: null,
+      errorPayload: {
+        requestId: "00000000-0000-4000-8000-000000000004",
+        code: "IMAGE_TOO_LARGE",
+        message: "Too large",
+      },
+      errorText: null,
+    });
+    expect(steps[0].state).toBe("failed");
+    expect(steps[1].state).toBe("skipped");
+  });
 });
 
 describe("verifyResponseIndicatesPipelineFailure", () => {
@@ -66,6 +90,15 @@ describe("verifyResponseIndicatesPipelineFailure", () => {
           imageQuality: { ok: true },
           extraction: { provider: "openai", durationMs: 1, fields: {} },
           validation: { fields: [] },
+          timings: {
+            imageQualityMs: 1,
+            ocrMs: 0,
+            llmMs: 1,
+            extractionMs: 1,
+            validationMs: 1,
+            totalMs: 1,
+            cacheHit: false,
+          },
         },
         errorPayload: null,
         errorText: null,

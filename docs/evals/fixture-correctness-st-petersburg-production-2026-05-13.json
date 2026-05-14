@@ -1,0 +1,2086 @@
+{
+  "eval": "fixture-verify",
+  "generatedAt": "2026-05-13T16:32:41.856Z",
+  "base": "https://ttb-alcohol-label-verifier-production.up.railway.app",
+  "fixtureIds": [
+    "st_petersburg_whiskey_baseline",
+    "st_petersburg_whiskey_baseline_02",
+    "st_petersburg_whiskey_glare_brand",
+    "st_petersburg_whiskey_glare_warning_02",
+    "st_petersburg_whiskey_glare_warning_harsh",
+    "st_petersburg_whiskey_angle_28",
+    "st_petersburg_vodka_baseline",
+    "st_petersburg_vodka_angle_45",
+    "st_petersburg_vodka_glare_brand",
+    "st_petersburg_whiskey_blur_moderate",
+    "st_petersburg_whiskey_blur_strong",
+    "st_petersburg_whiskey_low_light_grain",
+    "st_petersburg_whiskey_distance_crop_warning",
+    "st_petersburg_whiskey_crop_missing_warning",
+    "st_petersburg_whiskey_baseline_03",
+    "st_petersburg_whiskey_baseline_04",
+    "st_petersburg_whiskey_baseline_05",
+    "st_petersburg_whiskey_label_dark_baseline"
+  ],
+  "expectationsPath": "docs/evals/fixture-correctness-expectations.json",
+  "results": [
+    {
+      "id": "st_petersburg_whiskey_baseline",
+      "relativePath": "labels/st_petersburg_whiskey_baseline.png",
+      "httpStatus": 200,
+      "durationMs": 12491,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 11153,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_02",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_02.png",
+      "httpStatus": 200,
+      "durationMs": 6704,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 5890,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_brand",
+      "relativePath": "labels/st_petersburg_whiskey_glare_brand.png",
+      "httpStatus": 200,
+      "durationMs": 7864,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7375,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_warning_02",
+      "relativePath": "labels/st_petersburg_whiskey_glare_warning_02.png",
+      "httpStatus": 200,
+      "durationMs": 7875,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7306,
+      "validationSummary": {
+        "pass": 1,
+        "fail": 4,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "fail",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_glare_warning_harsh",
+      "relativePath": "labels/st_petersburg_whiskey_glare_warning_harsh.png",
+      "httpStatus": 200,
+      "durationMs": 10543,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 9629,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_angle_28",
+      "relativePath": "labels/st_petersburg_whiskey_angle_28.png",
+      "httpStatus": 200,
+      "durationMs": 10398,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 9842,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_vodka_baseline",
+      "relativePath": "labels/st_petersburg_vodka_baseline.png",
+      "httpStatus": 200,
+      "durationMs": 11094,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 10554,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_vodka_angle_45",
+      "relativePath": "labels/st_petersburg_vodka_angle_45.png",
+      "httpStatus": 200,
+      "durationMs": 11717,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 11117,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_vodka_glare_brand",
+      "relativePath": "labels/st_petersburg_vodka_glare_brand.png",
+      "httpStatus": 200,
+      "durationMs": 6017,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 5555,
+      "validationSummary": {
+        "pass": 1,
+        "fail": 4,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "fail",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_blur_moderate",
+      "relativePath": "labels/st_petersburg_whiskey_blur_moderate.png",
+      "httpStatus": 200,
+      "durationMs": 7689,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7149,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_blur_strong",
+      "relativePath": "labels/st_petersburg_whiskey_blur_strong.png",
+      "httpStatus": 200,
+      "durationMs": 8539,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7977,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_low_light_grain",
+      "relativePath": "labels/st_petersburg_whiskey_low_light_grain.png",
+      "httpStatus": 200,
+      "durationMs": 8425,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7804,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_distance_crop_warning",
+      "relativePath": "labels/st_petersburg_whiskey_distance_crop_warning.png",
+      "httpStatus": 200,
+      "durationMs": 6651,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 5812,
+      "validationSummary": {
+        "pass": 1,
+        "fail": 3,
+        "manual_review": 2,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "manual_review",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_crop_missing_warning",
+      "relativePath": "labels/st_petersburg_whiskey_crop_missing_warning.png",
+      "httpStatus": 200,
+      "durationMs": 7889,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7254,
+      "validationSummary": {
+        "pass": 1,
+        "fail": 3,
+        "manual_review": 2,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "manual_review",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_03",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_03.png",
+      "httpStatus": 200,
+      "durationMs": 8991,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 8503,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_04",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_04.png",
+      "httpStatus": 200,
+      "durationMs": 7914,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7399,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_baseline_05",
+      "relativePath": "labels/st_petersburg_whiskey_baseline_05.png",
+      "httpStatus": 200,
+      "durationMs": 8588,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 7967,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "st_petersburg_whiskey_label_dark_baseline",
+      "relativePath": "labels/st_petersburg_whiskey_label_dark_baseline.png",
+      "httpStatus": 200,
+      "durationMs": 6877,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 6361,
+      "validationSummary": {
+        "pass": 2,
+        "fail": 3,
+        "manual_review": 1,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "fail",
+        "classType": "fail",
+        "alcoholContent": "fail",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "manual_review",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    }
+  ],
+  "correctness": {
+    "fixtureScores": [
+      {
+        "id": "st_petersburg_whiskey_baseline",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 12491
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8571428571428571,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_baseline_02",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 6704
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_glare_brand",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 7864
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.875,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_glare_warning_02",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 7875
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "manual_review",
+              "fail",
+              "pass"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_glare_warning_harsh",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 10543
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "manual_review",
+              "fail",
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_angle_28",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 10398
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_vodka_baseline",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 11094
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_vodka_angle_45",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 11717
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_vodka_glare_brand",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 6017
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_blur_moderate",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 7689
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_blur_strong",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 8539
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_low_light_grain",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 8425
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "manual_review",
+              "fail",
+              "pass"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_distance_crop_warning",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 6651
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "manual_review",
+              "fail",
+              "pass"
+            ],
+            "actual": "manual_review"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_crop_missing_warning",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 7889
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "fail",
+              "manual_review",
+              "pass"
+            ],
+            "actual": "manual_review"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_baseline_03",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 8991
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_baseline_04",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 7914
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_baseline_05",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 8588
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      },
+      {
+        "id": "st_petersburg_whiskey_label_dark_baseline",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 6877
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": false,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 0.8888888888888888,
+        "minScore": 0.5,
+        "pass": true
+      }
+    ],
+    "totals": {
+      "totalChecks": 159,
+      "passedChecks": 145,
+      "overallScore": 0.9119496855345912,
+      "scoredFixtures": 18,
+      "fixturesPassed": 18,
+      "fixturePassRate": 1
+    },
+    "thresholdChecks": [
+      {
+        "name": "minOverallScore",
+        "pass": true,
+        "expected": 0.7,
+        "actual": 0.9119496855345912
+      },
+      {
+        "name": "minFixturePassRate",
+        "pass": true,
+        "expected": 0.5,
+        "actual": 1
+      },
+      {
+        "name": "requiredFixtureIdsPresent",
+        "pass": false,
+        "expected": [
+          "happy-path-synthetic-label",
+          "difficult-synthetic-label-photo",
+          "seed-texture-01",
+          "seed-texture-02",
+          "edge-synthetic-glare-label",
+          "edge-synthetic-blur-label",
+          "edge-synthetic-angle-label"
+        ],
+        "actual": [],
+        "missing": [
+          "happy-path-synthetic-label",
+          "difficult-synthetic-label-photo",
+          "seed-texture-01",
+          "seed-texture-02",
+          "edge-synthetic-glare-label",
+          "edge-synthetic-blur-label",
+          "edge-synthetic-angle-label"
+        ]
+      }
+    ],
+    "thresholdsPass": false
+  }
+}
