@@ -2,6 +2,11 @@
 
 Use this short path to review the submission without internal planning noise.
 
+## Architecture diagram
+
+- In-depth evaluator diagram: `docs/ARCHITECTURE_DIAGRAM.md`
+- The diagram includes API boundaries, pipeline internals, OCR/LLM fallback decision points, and output/evidence flow.
+
 ## 1) Run and try the app
 
 - Public prototype URL: [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
