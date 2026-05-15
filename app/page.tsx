@@ -552,6 +552,66 @@ function truncateFieldCell(value: string | null, maxLen: number): string {
   return `${t.slice(0, Math.max(1, maxLen - 1))}…`;
 }
 
+type ReviewDisposition = "approved" | "rejected" | null;
+
+function ReviewDispositionControls({
+  disposition,
+  onDisposition,
+  compact = false,
+}: {
+  disposition: ReviewDisposition;
+  onDisposition: (next: ReviewDisposition) => void;
+  compact?: boolean;
+}) {
+  const btnPad = compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm";
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2 border-stone-200 sm:border-l sm:pl-2"
+      role="group"
+      aria-label="Review disposition"
+    >
+      <button
+        type="button"
+        onClick={() => onDisposition("approved")}
+        aria-pressed={disposition === "approved"}
+        className={`min-w-[5rem] cursor-pointer rounded-lg font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${btnPad} ${
+          disposition === "approved"
+            ? "bg-emerald-600 text-white ring-1 ring-emerald-700 hover:bg-emerald-700"
+            : "border border-emerald-600 bg-white text-emerald-900 hover:bg-emerald-50"
+        }`}
+      >
+        Approve
+      </button>
+      <button
+        type="button"
+        onClick={() => onDisposition("rejected")}
+        aria-pressed={disposition === "rejected"}
+        className={`min-w-[5rem] cursor-pointer rounded-lg font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${btnPad} ${
+          disposition === "rejected"
+            ? "bg-red-600 text-white ring-1 ring-red-800 hover:bg-red-700"
+            : "border border-red-600 bg-white text-red-900 hover:bg-red-50"
+        }`}
+      >
+        Reject
+      </button>
+      {disposition ? (
+        <button
+          type="button"
+          onClick={() => onDisposition(null)}
+          className="cursor-pointer text-xs font-medium text-stone-600 underline decoration-stone-400 underline-offset-2 hover:text-stone-900"
+        >
+          Clear
+        </button>
+      ) : null}
+      {disposition ? (
+        <span className="w-full text-[11px] text-stone-500 sm:w-auto" role="status" aria-live="polite">
+          {disposition === "approved" ? "Approved" : "Rejected"} — not saved.
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
@@ -1142,9 +1202,9 @@ export default function HomePage() {
                 <li>
                   On success, open <strong className="font-semibold text-stone-900">Results</strong> for the
                   field-by-field table. <strong className="font-semibold text-stone-900">Approve</strong> /{" "}
-                  <strong className="font-semibold text-stone-900">Reject</strong> below the table is optional UI state
-                  only (not saved). Use <strong className="font-semibold text-stone-900">Edit inputs</strong> in the
-                  results header to change inputs and run again.
+                  <strong className="font-semibold text-stone-900">Reject</strong> in the results header is optional UI
+                  state only (not saved). Use <strong className="font-semibold text-stone-900">Edit inputs</strong> to
+                  change inputs and run again.
                 </li>
                 <li>
                   Extraction runs in hybrid mode by default (OCR first, then OpenAI vision fallback when needed), then
@@ -1164,9 +1224,7 @@ export default function HomePage() {
             workflowPhase === "edit"
               ? "h-[min(88svh,680px)] grid-rows-[minmax(0,1fr)_auto] sm:h-[min(90svh,720px)]"
               : workflowPhase === "results"
-                ? successPayload
-                  ? "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-h-[min(92svh,880px)]"
-                  : "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)] sm:max-h-[min(92svh,880px)]"
+                ? "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)] sm:max-h-[min(92svh,880px)]"
                 : "h-[min(88svh,680px)] grid-rows-[auto_minmax(0,1fr)_auto] sm:h-[min(90svh,720px)]"
           }`}
         >
@@ -1181,12 +1239,12 @@ export default function HomePage() {
               </p>
             </div>
           ) : workflowPhase === "results" ? (
-            <div className="flex shrink-0 flex-col gap-2 border-b border-stone-100 bg-stone-50/70 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+            <div className="sticky top-0 z-20 flex shrink-0 flex-col gap-2 border-b border-stone-200 bg-stone-50/95 px-3 py-2.5 shadow-sm backdrop-blur-sm sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:px-4">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <span className="text-sm font-semibold text-stone-900">Outcome &amp; field review</span>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                <div className="flex flex-wrap items-stretch gap-2 sm:justify-end">
+              <div className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setWorkflowPhase("edit")}
@@ -1202,9 +1260,16 @@ export default function HomePage() {
                   >
                     Verify again
                   </button>
+                  {successPayload ? (
+                    <ReviewDispositionControls
+                      disposition={reviewDisposition}
+                      onDisposition={setReviewDisposition}
+                      compact
+                    />
+                  ) : null}
                 </div>
                 {!canSubmit && primaryActionDisabledReason ? (
-                  <p className="max-w-[20rem] text-right text-[11px] text-stone-500">
+                  <p className="text-[11px] text-stone-500 sm:text-right">
                     {primaryActionDisabledReason}
                   </p>
                 ) : null}
@@ -2073,19 +2138,9 @@ export default function HomePage() {
             )}
           </div>
 
-          {workflowPhase !== "results" || successPayload ? (
-            <div
-              className={`shrink-0 border-t border-stone-200 bg-stone-50 px-3 sm:px-4 ${
-                workflowPhase === "results" ? "py-2" : "py-3"
-              }`}
-            >
-              <div
-                className={`mx-auto w-full ${
-                  workflowPhase === "results"
-                    ? "flex flex-col"
-                    : "flex max-w-lg flex-col gap-2 sm:flex-row sm:justify-center sm:gap-3"
-                }`}
-              >
+          {workflowPhase !== "results" ? (
+            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-3 sm:px-4">
+              <div className="mx-auto flex w-full max-w-lg flex-col gap-2 sm:flex-row sm:justify-center sm:gap-3">
                 {workflowPhase === "edit" ? (
                   <>
                     <button
@@ -2138,57 +2193,6 @@ export default function HomePage() {
                   <p className="w-full py-2 text-center text-sm font-medium text-stone-600 sm:max-w-md">
                     Verification in progress…
                   </p>
-                ) : successPayload ? (
-                  <div
-                    className="flex w-full flex-col items-center justify-center gap-2"
-                    role="group"
-                    aria-label="Review disposition"
-                  >
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setReviewDisposition("approved")}
-                        aria-pressed={reviewDisposition === "approved"}
-                        className={`min-w-[5.5rem] cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                          reviewDisposition === "approved"
-                            ? "bg-emerald-600 text-white ring-1 ring-emerald-700 hover:bg-emerald-700"
-                            : "border border-emerald-600 bg-white text-emerald-900 hover:bg-emerald-50"
-                        }`}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviewDisposition("rejected")}
-                        aria-pressed={reviewDisposition === "rejected"}
-                        className={`min-w-[5.5rem] cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                          reviewDisposition === "rejected"
-                            ? "bg-red-600 text-white ring-1 ring-red-800 hover:bg-red-700"
-                            : "border border-red-600 bg-white text-red-900 hover:bg-red-50"
-                        }`}
-                      >
-                        Reject
-                      </button>
-                      {reviewDisposition ? (
-                        <button
-                          type="button"
-                          onClick={() => setReviewDisposition(null)}
-                          className="cursor-pointer text-xs font-medium text-stone-600 underline decoration-stone-400 underline-offset-2 hover:text-stone-900"
-                        >
-                          Clear
-                        </button>
-                      ) : null}
-                    </div>
-                    {reviewDisposition ? (
-                      <p
-                        className="text-center text-[11px] text-stone-500"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        {reviewDisposition === "approved" ? "Approved" : "Rejected"} — not saved.
-                      </p>
-                    ) : null}
-                  </div>
                 ) : null}
               </div>
             </div>
