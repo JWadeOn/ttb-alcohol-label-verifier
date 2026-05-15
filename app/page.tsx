@@ -1084,8 +1084,8 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-3 px-4 pt-2 pb-5 sm:gap-3 sm:px-6 sm:pt-3 sm:pb-6">
-      <header className="pointer-events-none relative z-20 grid grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] sm:items-center sm:gap-y-0">
+    <main className="mx-auto flex h-dvh max-h-dvh min-h-0 max-w-7xl flex-col gap-2 overflow-hidden px-4 pt-2 pb-2 sm:gap-3 sm:px-6 sm:pt-3">
+      <header className="pointer-events-none relative z-20 grid shrink-0 grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] sm:items-center sm:gap-y-0">
         <div className="pointer-events-auto flex min-w-0 items-center gap-2 justify-self-start">
           <span className="inline-flex shrink-0 items-center rounded-md border border-ttb-200 bg-ttb-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-ttb-800">
             Phase 1
@@ -1218,14 +1218,14 @@ export default function HomePage() {
         </div>
       </header>
 
-      <form onSubmit={onSubmit} className="relative z-10 flex flex-col gap-2">
+      <form onSubmit={onSubmit} className="relative z-10 flex min-h-0 flex-1 flex-col gap-2">
         <div
-          className={`grid min-h-0 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ${
+          className={`grid min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ${
             workflowPhase === "edit"
-              ? "h-[min(88svh,680px)] grid-rows-[minmax(0,1fr)_auto] sm:h-[min(90svh,720px)]"
+              ? "grid-rows-[minmax(0,1fr)_auto]"
               : workflowPhase === "results"
-                ? "max-h-[min(92svh,900px)] grid-rows-[auto_minmax(0,1fr)] sm:max-h-[min(92svh,880px)]"
-                : "h-[min(88svh,680px)] grid-rows-[auto_minmax(0,1fr)_auto] sm:h-[min(90svh,720px)]"
+                ? "grid-rows-[auto_minmax(0,1fr)]"
+                : "grid-rows-[auto_minmax(0,1fr)_auto]"
           }`}
         >
           {workflowPhase === "verify" ? (
@@ -2142,8 +2142,8 @@ export default function HomePage() {
           </div>
 
           {workflowPhase !== "results" ? (
-            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-3 sm:px-4">
-              <div className="mx-auto flex w-full max-w-lg flex-col gap-2 sm:flex-row sm:justify-center sm:gap-3">
+            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.08)] sm:px-4">
+              <div className="mx-auto flex w-full max-w-lg flex-col items-stretch gap-2">
                 {workflowPhase === "edit" ? (
                   <>
                     <button
@@ -2158,7 +2158,7 @@ export default function HomePage() {
                             ? primaryActionDisabledReason ?? "Complete required inputs to continue."
                             : undefined
                       }
-                      className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300 sm:max-w-md"
+                      className="w-full cursor-pointer rounded-lg bg-ttb-600 px-6 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300"
                     >
                       {uploadMode === "batch"
                         ? batchLoading
@@ -2183,7 +2183,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setWorkflowPhase("results")}
-                      className="w-full cursor-pointer rounded-lg bg-ttb-600 px-8 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 sm:max-w-md"
+                      className="w-full cursor-pointer rounded-lg bg-ttb-600 px-6 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700"
                     >
                       View results
                     </button>
