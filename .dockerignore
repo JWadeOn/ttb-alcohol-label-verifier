@@ -17,7 +17,6 @@ out
 coverage
 tests
 docs
-fixtures
 evals
 scripts
 vitest.config.ts

@@ -1,4 +1,4 @@
-# Production image for Next.js (standalone output). Render-first per README.
+# Production image for Next.js (standalone output). Railway deployment per README.
 # Build: docker build -t ttb-label-verifier:local .
 # Run:   docker run --rm -p 3000:3000 -e OPENAI_API_KEY=... ttb-label-verifier:local
 
@@ -17,9 +17,9 @@ ENV npm_config_fetch_retries=5 \
     npm_config_maxsockets=1 \
     npm_config_audit=false \
     npm_config_fund=false
-# No BuildKit `RUN --mount=type=cache` here: Render's Metal builder rejects generic
-# cache `id=` values (requires a platform cacheKey prefix tied to the service). Layer
-# cache still speeds rebuilds when package manifests are unchanged.
+# No BuildKit `RUN --mount=type=cache` here: keep npm install portable across Railway
+# and local Docker builds. Layer cache still speeds rebuilds when package manifests
+# are unchanged.
 RUN npm ci --no-audit --no-fund
 
 FROM base AS builder
@@ -38,6 +38,8 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Demo-case picker reads committed fixtures at runtime (`/api/demo-cases/*`).
+COPY --from=builder --chown=nextjs:nodejs /app/fixtures ./fixtures
 
 USER nextjs
 EXPOSE 3000
