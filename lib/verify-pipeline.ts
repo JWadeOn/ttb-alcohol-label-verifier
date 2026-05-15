@@ -17,6 +17,10 @@ import {
 import { validateLabelFields } from "@/lib/validator";
 
 const MAX_EXTRACT_TIMEOUT_MS = 120_000;
+/** Caps Tesseract so Railway/proxy request budgets are not consumed by a hung OCR leg. */
+const DEFAULT_OCR_TIMEOUT_MS = 90_000;
+const DEFAULT_EXTRACT_SOFT_TIMEOUT_MS = 8_000;
+const DEFAULT_EXTRACT_HARD_TIMEOUT_MS = 20_000;
 const DEFAULT_EXTRACTION_MODE: ExtractionMode = "hybrid";
 const DEFAULT_OCR_MIN_CRITICAL_FIELDS_PRESENT = 3;
 const DEFAULT_OCR_MIN_MEAN_CONFIDENCE = 0.58;
@@ -42,10 +46,45 @@ function readExtractTimeoutMs(envKey: string): number | undefined {
   return Math.min(Math.floor(n), MAX_EXTRACT_TIMEOUT_MS);
 }
 
-/** Env overrides for extraction budgets (`VERIFY_EXTRACT_*`). Unset means "no forced timeout". */
+function readOcrTimeoutMs(): number {
+  const raw = process.env.VERIFY_OCR_TIMEOUT_MS?.trim();
+  if (raw === "0" || raw?.toLowerCase() === "false" || raw?.toLowerCase() === "off") {
+    return 0;
+  }
+  const fromEnv = readExtractTimeoutMs("VERIFY_OCR_TIMEOUT_MS");
+  return fromEnv ?? DEFAULT_OCR_TIMEOUT_MS;
+}
+
+async function extractWithOcrTimeout(
+  imageBytes: Buffer,
+  ocrProvider: ReturnType<typeof createTesseractProvider>,
+  timeoutMs: number,
+): Promise<ExtractionResult | undefined> {
+  if (timeoutMs <= 0) {
+    return ocrProvider.extract(imageBytes);
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      ocrProvider.extract(imageBytes),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`OCR extraction exceeded ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+/** Env overrides for extraction budgets (`VERIFY_EXTRACT_*`). Defaults keep hybrid under proxy limits. */
 function resolveExtractFailoverTimeouts(): { softTimeoutMs?: number; hardTimeoutMs?: number } {
-  const soft = readExtractTimeoutMs("VERIFY_EXTRACT_SOFT_TIMEOUT_MS");
-  let hard = readExtractTimeoutMs("VERIFY_EXTRACT_HARD_TIMEOUT_MS");
+  const soft =
+    readExtractTimeoutMs("VERIFY_EXTRACT_SOFT_TIMEOUT_MS") ?? DEFAULT_EXTRACT_SOFT_TIMEOUT_MS;
+  let hard =
+    readExtractTimeoutMs("VERIFY_EXTRACT_HARD_TIMEOUT_MS") ?? DEFAULT_EXTRACT_HARD_TIMEOUT_MS;
 
   if (soft !== undefined && hard !== undefined && hard <= soft) {
     const adjusted = soft + 500;
@@ -57,14 +96,14 @@ function resolveExtractFailoverTimeouts(): { softTimeoutMs?: number; hardTimeout
     hard = adjusted;
   }
 
-  const softRaw = process.env.VERIFY_EXTRACT_SOFT_TIMEOUT_MS?.trim() ?? "";
-  const hardRaw = process.env.VERIFY_EXTRACT_HARD_TIMEOUT_MS?.trim() ?? "";
-  if (softRaw !== "" || hardRaw !== "") {
-    console.info("[verify-pipeline] VERIFY_EXTRACT_* timeout overrides active", {
-      softTimeoutMs: soft ?? null,
-      hardTimeoutMs: hard ?? null,
-    });
-  }
+  console.info("[verify-pipeline] extraction failover timeouts", {
+    softTimeoutMs: soft,
+    hardTimeoutMs: hard,
+    fromEnv: {
+      soft: process.env.VERIFY_EXTRACT_SOFT_TIMEOUT_MS?.trim() ?? null,
+      hard: process.env.VERIFY_EXTRACT_HARD_TIMEOUT_MS?.trim() ?? null,
+    },
+  });
 
   return { softTimeoutMs: soft, hardTimeoutMs: hard };
 }
@@ -128,6 +167,7 @@ export async function runExtractionStage(params: {
 }): Promise<VerifyExtractionStageResult> {
   const { requestId, imageBytes, openAiApiKey } = params;
   const { softTimeoutMs, hardTimeoutMs } = resolveExtractFailoverTimeouts();
+  const ocrTimeoutMs = readOcrTimeoutMs();
   const extractionMode = resolveExtractionMode();
   const minCriticalFieldsPresent = resolveMinCriticalFieldsPresent();
   const minMeanCriticalConfidence = resolveMinMeanCriticalConfidence();
@@ -170,11 +210,19 @@ export async function runExtractionStage(params: {
       let ocrExtraction;
       const ocrStarted = Date.now();
       try {
-        ocrExtraction = await ocrProvider.extract(iq.processedBuffer);
+        ocrExtraction = await extractWithOcrTimeout(
+          iq.processedBuffer,
+          ocrProvider,
+          ocrTimeoutMs,
+        );
       } catch (ocrErr) {
         const message =
           ocrErr instanceof Error ? ocrErr.message : typeof ocrErr === "string" ? ocrErr : String(ocrErr);
-        console.warn("[verify-pipeline] OCR extraction failed", { requestId, message });
+        console.warn("[verify-pipeline] OCR extraction failed", {
+          requestId,
+          message,
+          ocrTimeoutMs: ocrTimeoutMs > 0 ? ocrTimeoutMs : null,
+        });
       } finally {
         ocrMs += Date.now() - ocrStarted;
       }

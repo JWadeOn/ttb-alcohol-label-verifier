@@ -150,8 +150,13 @@ The dev server logs **`[verify-pipeline] pipeline completed`** (`pipelineMs`, ac
 
 ## Deployment
 
-- Prototype is deployed on Railway.
-- Public URL: [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
+- **Host:** [Railway](https://railway.app) — service builds from this repo’s `Dockerfile` (Next.js standalone).
+- **Public URL:** [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
+- **Deploy flow:** push to the connected branch (typically `main`); Railway rebuilds and redeploys automatically.
+- **Required service variable:** `OPENAI_API_KEY` — without it, `POST /api/verify` returns 503 (see `lib/verify-handler.ts`).
+- **Request budget:** Railway terminates requests at ~**300s** (HTTP **499** if the client/proxy closes first). Hybrid mode defaults to **90s OCR cap** plus **8s / 20s** LLM soft/hard failover — override via `VERIFY_OCR_TIMEOUT_MS`, `VERIFY_EXTRACT_SOFT_TIMEOUT_MS`, `VERIFY_EXTRACT_HARD_TIMEOUT_MS` if needed.
+- **Production evals:** `npm run eval:fixture-verify:prod` defaults `BASE_URL` to the Railway URL above; override with `BASE_URL=...` when testing another environment. Run `EVAL_FIXTURE_SET=synthetic_eval` (20 fixtures) serially; expect several minutes total, not one long request.
+- **Container details:** [`docs/modules/dockerfile.md`](docs/modules/dockerfile.md)
 
 ## Repository Deliverables
 
