@@ -507,14 +507,16 @@ export async function handleVerifyBatchPost(
     }
 
     const concurrency = resolveBatchConcurrency();
-    const items: Array<{
+    type BatchItemDraft = {
       index: number;
       fileName: string;
       ok: boolean;
       status: number;
+      durationMs: number;
       result?: unknown;
       error?: { code: string; message: string };
-    }> = new Array(images.length);
+    };
+    const items: Array<BatchItemDraft | undefined> = new Array(images.length);
 
     let cursor = 0;
     const runOne = async () => {
@@ -524,6 +526,7 @@ export async function handleVerifyBatchPost(
         const image = images[index]!;
         const fileName = image instanceof File && image.name ? image.name : `image-${index + 1}`;
         const itemRequestId = crypto.randomUUID();
+        const itemStartedAt = Date.now();
 
         if (isVerifyDevStubEnabled()) {
           const stub = buildStubVerifyResponse(itemRequestId, appResult.data);
@@ -532,6 +535,7 @@ export async function handleVerifyBatchPost(
             fileName,
             ok: true,
             status: 200,
+            durationMs: Date.now() - itemStartedAt,
             result: stub,
           };
           continue;
@@ -550,6 +554,7 @@ export async function handleVerifyBatchPost(
             fileName,
             ok: true,
             status: 200,
+            durationMs: Date.now() - itemStartedAt,
             result,
           };
         } catch (e) {
@@ -559,6 +564,7 @@ export async function handleVerifyBatchPost(
               fileName,
               ok: false,
               status: e.httpStatus,
+              durationMs: Date.now() - itemStartedAt,
               error: {
                 code: e.code,
                 message: e.message,
@@ -572,6 +578,7 @@ export async function handleVerifyBatchPost(
             fileName,
             ok: false,
             status: 500,
+            durationMs: Date.now() - itemStartedAt,
             error: {
               code: "INTERNAL_ERROR",
               message: "Unexpected server error.",

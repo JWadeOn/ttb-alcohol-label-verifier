@@ -6,6 +6,27 @@ This project is intentionally scoped as a take-home evaluation build: working co
 
 Evaluator quick path: [`docs/EVALUATOR_START_HERE.md`](docs/EVALUATOR_START_HERE.md)
 
+## Known limitations
+
+- Prototype scope only: not a full 27 CFR / COLA rule engine; deterministic checks live in `lib/validator.ts`.
+- Distilled-spirits-first field set; wine/beer verticals deferred.
+- Batch verify is **synchronous** (max 20 images per request, bounded concurrency); no background job queue yet.
+- Extraction depends on hybrid OCR + vision LLM; low-confidence rows route to **manual review** (government warning can still fail when clearly inconsistent).
+- Real-photo evidence is growing; see [`docs/evals/REAL_PHOTO_PACK.md`](docs/evals/REAL_PHOTO_PACK.md) and committed eval JSON under `docs/evals/`.
+
+## Evaluator repro (local)
+
+```bash
+npm ci
+npm run test:e2e:install   # first time only (Playwright Chromium)
+npm test
+npm run test:e2e           # browser workflow (starts dev server with VERIFY_DEV_STUB)
+npm run dev                # in another terminal if not using test:e2e webServer
+open http://localhost:3000
+```
+
+Set `OPENAI_API_KEY` in `.env.local` for non-stub verify runs. See [`docs/EVALUATOR_START_HERE.md`](docs/EVALUATOR_START_HERE.md).
+
 ## Project Objective
 
 Help TTB compliance agents reduce repetitive manual matching work by:
@@ -40,7 +61,7 @@ The MVP implements common cross-beverage fields most critical to review throughp
 - Name/address of bottler or producer
 - Country of origin for imports (conditional on application import flag)
 
-Comparison logic is deterministic (fuzzy normalization where appropriate, strict matching where required).
+Comparison logic is deterministic (fuzzy normalization where appropriate; government warning uses exact auto-pass with similarity triage for non-exact text).
 
 ### Vertical Rollout Strategy
 

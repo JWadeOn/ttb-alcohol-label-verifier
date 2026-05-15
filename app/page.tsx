@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApplicationEditor } from "@/components/ApplicationEditor";
 import { LabelImageMagnifier } from "@/components/LabelImageMagnifier";
 import {
-  ApplicationJsonSchema,
   VERIFY_FORM_FIELDS,
   type FieldId,
   type FieldStatus,
@@ -19,72 +18,33 @@ import {
 import { VerifyRunStepsPanel } from "@/components/VerifyRunStepsPanel";
 import { WorkflowProcessTabs, type WorkflowPhase } from "@/components/WorkflowProcessTabs";
 import { buildVerifyUiStepsFromResponse, buildVerifyUiStepsLoading, verifyResponseIndicatesPipelineFailure } from "@/lib/verify-ui-steps";
-import { MAX_LABEL_UPLOAD_BYTES } from "@/lib/upload-limits";
-import { DEMO_CASES, type DemoCaseId } from "@/lib/demo-cases";
+import type { DemoCaseId } from "@/lib/demo-cases";
 import {
   ABV_TOLERANCE,
   BRAND_SIMILARITY,
   CLASS_SIMILARITY,
   CONFIDENCE_MANUAL_REVIEW,
+  GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW,
   NAME_SIMILARITY,
   ORIGIN_SIMILARITY,
   VOLUME_TOLERANCE_ML,
   VOLUME_TOLERANCE_RATIO,
 } from "@/lib/validator";
 import { verifyErrorUserHeadline } from "@/lib/verify-error-messages";
-
-const DEFAULT_APPLICATION = JSON.stringify(
-  {
-    productClass: "",
-    isImport: false,
-    brandName: "",
-    classType: "",
-    alcoholContent: "",
-    netContents: "",
-    governmentWarning: "",
-    nameAddress: "",
-    countryOfOrigin: "",
-  },
-  null,
-  2,
-);
-
-const FIELD_LABELS: Record<FieldId, string> = {
-  brandName: "Brand name",
-  classType: "Class / type",
-  alcoholContent: "Alcohol content",
-  netContents: "Net contents",
-  governmentWarning: "Government warning",
-  nameAddress: "Name & address",
-  countryOfOrigin: "Country of origin",
-};
-
-/**
- * UI-only blurbs for “How this field is checked” — must stay aligned with `lib/validator.ts`.
- * Authoritative logic: validator; evaluator map: `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`.
- */
-const FIELD_REQUIREMENTS: Record<FieldId, string> = {
-  brandName:
-    "Fuzzy match: normalized label text vs application brand, above a minimum similarity score.",
-  classType:
-    "Fuzzy match: normalized label text vs application class/type line.",
-  alcoholContent:
-    "Parsed strength (percent ABV or proof) must agree within a small tolerance.",
-  netContents:
-    "Parsed volume (mL, L, fl oz, etc.) must agree within tolerance after unit conversion.",
-  governmentWarning:
-    "Exact match: label warning text must equal the application string (case-sensitive).",
-  nameAddress:
-    "Compared when application includes text; if application omits it, the row is manual review even when the label is blank.",
-  countryOfOrigin:
-    "Not applicable when import is unchecked. For imports, fuzzy match when both sides include text.",
-};
-
-const CLIENT_UPLOAD_MAX_DIMENSION = 1800;
-const CLIENT_UPLOAD_MIN_BYTES = 1_000_000;
-const CLIENT_UPLOAD_JPEG_QUALITY = 0.82;
-const CLIENT_UPLOAD_MAX_BYTES = MAX_LABEL_UPLOAD_BYTES;
-const CLIENT_BATCH_MAX_IMAGES = 20;
+import { BatchPanel } from "@/app/components/verify/BatchPanel";
+import { FixtureLoader } from "@/app/components/verify/FixtureLoader";
+import { UploadPanel } from "@/app/components/verify/UploadPanel";
+import {
+  CLIENT_BATCH_MAX_IMAGES,
+  CLIENT_UPLOAD_JPEG_QUALITY,
+  CLIENT_UPLOAD_MAX_BYTES,
+  CLIENT_UPLOAD_MAX_DIMENSION,
+  CLIENT_UPLOAD_MIN_BYTES,
+  DEFAULT_APPLICATION,
+  FIELD_LABELS,
+  FIELD_REQUIREMENTS,
+} from "@/app/components/verify/constants";
+import { formatBytes, getApplicationInputState } from "@/app/components/verify/format";
 
 type PreparedUpload = {
   file: File;
@@ -93,31 +53,6 @@ type PreparedUpload = {
   uploadBytes: number;
   compressed: boolean;
 };
-
-function getApplicationInputState(raw: string): { ok: true } | { ok: false; reason: string } {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { ok: false, reason: "Application JSON is invalid. Switch to JSON view to fix it." };
-  }
-
-  const checked = ApplicationJsonSchema.safeParse(parsed);
-  if (!checked.success) {
-    return {
-      ok: false,
-      reason: "Application data does not match the expected fields yet. Fix it before verifying.",
-    };
-  }
-
-  return { ok: true };
-}
-
-function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
-}
 
 function base64ToFile(base64: string, fileName: string, mimeType: string): File {
   const binary = atob(base64);
@@ -616,7 +551,6 @@ export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
   const fileSelectionTokenRef = useRef(0);
-  const demoMenuRef = useRef<HTMLDetailsElement>(null);
   const [applicationJson, setApplicationJson] = useState(DEFAULT_APPLICATION);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -882,7 +816,6 @@ export default function HomePage() {
       resetLoadedRunState();
       setApplicationJson(payload.applicationJson);
       setApplicationFieldPage(0);
-      demoMenuRef.current?.removeAttribute("open");
       await loadSelectedFile(
         base64ToFile(payload.image.base64, payload.image.fileName, payload.image.mimeType),
       );
@@ -1028,7 +961,14 @@ export default function HomePage() {
       const raw: unknown = await res.json();
       const parsed = VerifyBatchResponseSchema.safeParse(raw);
       if (!res.ok) {
-        setBatchErrorText(`Batch request failed (HTTP ${res.status}).`);
+        const errParsed = VerifyErrorResponseSchema.safeParse(raw);
+        setBatchErrorText(
+          verifyErrorUserHeadline(
+            res.status,
+            errParsed.success ? errParsed.data : null,
+            `Batch request failed (HTTP ${res.status}).`,
+          ),
+        );
         return;
       }
       if (!parsed.success) {
@@ -1105,71 +1045,11 @@ export default function HomePage() {
           <p className="text-center text-[11px] font-medium text-stone-500">{workflowStatusText}</p>
         </div>
         <div className="pointer-events-auto flex w-full min-w-0 flex-wrap justify-self-stretch gap-2 sm:w-auto sm:justify-self-end">
-          <details
-            ref={demoMenuRef}
-            className="relative w-full min-w-0 sm:w-auto sm:max-w-[30rem]"
-          >
-            <summary className="flex h-7 cursor-pointer list-none items-center justify-center rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold leading-none text-stone-800 shadow-sm outline-none ring-stone-400/20 transition hover:bg-stone-50 hover:ring-2 focus-visible:ring-2 [&::-webkit-details-marker]:hidden open:bg-stone-50 open:ring-2 sm:inline-flex sm:w-max sm:justify-center">
-              Demo runs
-            </summary>
-            <div
-              className="absolute right-0 top-full z-50 mt-1.5 w-[min(calc(100vw-2rem),32rem)] rounded-xl border border-stone-200 bg-white p-3 text-stone-700 shadow-xl sm:left-auto sm:right-0 sm:p-4"
-              role="region"
-              aria-label="Demo runs"
-            >
-              <p className="text-sm font-semibold text-stone-900">Load an existing eval fixture</p>
-              <p className="mt-1 text-xs leading-relaxed text-stone-600">
-                Presets include synthetic eval fixtures and on-bottle photos, each paired with committed application
-                JSON.
-              </p>
-              <div className="mt-3 max-h-[min(58vh,34rem)] space-y-2 overflow-y-auto pr-1">
-                {DEMO_CASES.map((demoCase) => {
-                  const loadingThisCase = demoLoadingCaseId === demoCase.id;
-                  return (
-                    <button
-                      key={demoCase.id}
-                      type="button"
-                      onClick={() => void onSelectDemoCase(demoCase.id)}
-                      disabled={demoLoadingCaseId !== null}
-                      className="flex w-full cursor-pointer gap-3 rounded-xl border border-stone-200 bg-stone-50/80 px-3 py-2.5 text-left transition hover:border-ttb-300 hover:bg-ttb-50/60 disabled:cursor-wait disabled:opacity-70"
-                    >
-                      <img
-                        src={`/api/demo-cases/${demoCase.id}/image`}
-                        alt={`${demoCase.title} thumbnail`}
-                        className="h-16 w-24 shrink-0 rounded-md border border-stone-200 bg-white object-cover"
-                        loading="lazy"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-semibold text-stone-900">{demoCase.title}</span>
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                              demoCase.outcomeTone === "pass"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {demoCase.outcomeTone === "pass" ? "Pass case" : "Stress case"}
-                          </span>
-                        </div>
-                        <span className="mt-1 block text-xs leading-relaxed text-stone-600">
-                          {demoCase.subtitle}
-                        </span>
-                        <span className="mt-2 block text-[11px] font-medium text-stone-500">
-                          {loadingThisCase ? "Loading fixture..." : demoCase.outcomeSummary}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {demoLoadErrorText ? (
-                <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-2.5 py-2 text-xs text-red-900">
-                  {demoLoadErrorText}
-                </p>
-              ) : null}
-            </div>
-          </details>
+          <FixtureLoader
+            demoLoadingCaseId={demoLoadingCaseId}
+            demoLoadErrorText={demoLoadErrorText}
+            onSelectDemoCase={onSelectDemoCase}
+          />
           <details className="relative w-full min-w-0 sm:w-auto sm:max-w-[30rem]">
             <summary className="flex h-7 cursor-pointer list-none items-center justify-center rounded-lg border-2 border-ttb-600 bg-ttb-50 px-3 text-xs font-semibold leading-none text-ttb-900 shadow-sm outline-none ring-ttb-600/25 transition hover:bg-ttb-100 hover:ring-2 focus-visible:ring-2 [&::-webkit-details-marker]:hidden open:bg-ttb-100 open:ring-2 sm:inline-flex sm:w-max sm:justify-center">
               How this works
@@ -1218,11 +1098,11 @@ export default function HomePage() {
         </div>
       </header>
 
-      <form onSubmit={onSubmit} className="relative z-10 flex min-h-0 flex-1 flex-col gap-2">
+      <form onSubmit={onSubmit} className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5">
         <div
           className={`grid min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ${
             workflowPhase === "edit"
-              ? "grid-rows-[minmax(0,1fr)_auto]"
+              ? "grid-rows-[auto_auto]"
               : workflowPhase === "results"
                 ? "grid-rows-[auto_minmax(0,1fr)]"
                 : "grid-rows-[auto_minmax(0,1fr)_auto]"
@@ -1280,10 +1160,14 @@ export default function HomePage() {
             </div>
           ) : null}
 
-          <div className="min-h-0 overflow-y-auto px-2.5 pb-2 pt-0 lg:px-3">
+          <div
+            className={`min-h-0 px-2.5 pt-0 lg:px-3 ${
+              workflowPhase === "edit" ? "overflow-visible pb-1" : "overflow-y-auto pb-2"
+            }`}
+          >
             {workflowPhase === "edit" ? (
           <>
-          <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:gap-3">
+          <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:items-start lg:gap-3">
             <section
               aria-labelledby="workbench-label-heading"
               className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
@@ -1375,169 +1259,22 @@ export default function HomePage() {
             </div>
 
             {uploadMode === "single" ? (
-              <>
-                {!file ? (
-                  <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
-                    Single-label verify starts here: choose one image, then run verification before reviewing results.
-                  </p>
-                ) : preparingFile ? (
-                  <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
-                    Preparing an optimized upload for faster verification…
-                  </p>
-                ) : uploadPreparation?.compressed ? (
-                  <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
-                    Upload optimized before submit: {formatBytes(uploadPreparation.originalBytes)} to{" "}
-                    {formatBytes(uploadPreparation.uploadBytes)}.
-                  </p>
-                ) : null}
-                {file && !preparingFile ? (
-                  <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
-                    {prefetchState === "prefetching"
-                      ? "Prefetching extraction in the background…"
-                      : prefetchState === "ready"
-                        ? "Extraction prefetched. Verify can reuse cached results."
-                        : prefetchState === "error"
-                          ? "Background prefetch unavailable; verify will run full extraction."
-                          : null}
-                  </p>
-                ) : null}
-
-                <div className="flex min-h-0 flex-1 flex-col">
-                  {previewUrl ? (
-                    <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-stone-200 bg-stone-50">
-                      <div className="absolute inset-0 flex items-start justify-center p-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={previewUrl}
-                          alt={file?.name ? `Label preview: ${file.name}` : "Label preview"}
-                          className="max-h-full max-w-full object-contain object-top"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ttb-200 bg-gradient-to-b from-ttb-50/80 to-white px-3 py-4 text-center">
-                      <p className="text-xs font-semibold text-stone-800">1. Choose a label image</p>
-                      <p className="max-w-[18rem] text-[11px] leading-relaxed text-stone-500">
-                        2. Run verification, then review field outcomes in Results.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="cursor-pointer rounded-lg border-2 border-ttb-600 bg-ttb-50 px-3 py-2 text-xs font-semibold text-ttb-900 transition hover:bg-ttb-100 sm:text-sm"
-                      >
-                        Choose label image
-                      </button>
-                      <p className="text-[10px] text-stone-500">JPEG or PNG · single-label path</p>
-                    </div>
-                  )}
-                </div>
-                {uploadGuardrailErrorText ? (
-                  <p className="mt-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
-                    {uploadGuardrailErrorText}
-                  </p>
-                ) : null}
-              </>
+              <UploadPanel
+                file={file}
+                previewUrl={previewUrl}
+                preparingFile={preparingFile}
+                prefetchState={prefetchState}
+                uploadPreparation={uploadPreparation}
+                uploadGuardrailErrorText={uploadGuardrailErrorText}
+                onChooseFile={() => fileInputRef.current?.click()}
+              />
             ) : (
-              <>
-                <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
-                  Batch mode reuses the same application JSON across up to {CLIENT_BATCH_MAX_IMAGES} images.
-                </p>
-                <div className="flex min-h-0 flex-1 flex-col">
-                  {batchFiles.length > 0 || batchResponse ? (
-                    <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-stone-200 bg-stone-50/70 p-3">
-                      <div className="space-y-3">
-                        <div className="rounded-lg border border-stone-200 bg-white px-3 py-2">
-                          <p className="text-xs font-semibold text-stone-900">
-                            Selected files ({batchFiles.length})
-                          </p>
-                          <div className="mt-2 max-h-32 space-y-1 overflow-y-auto pr-1">
-                            {batchFiles.length > 0 ? (
-                              batchFiles.map((batchFile) => (
-                                <div
-                                  key={`${batchFile.name}-${batchFile.size}`}
-                                  className="flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] text-stone-700"
-                                >
-                                  <span className="min-w-0 truncate font-mono">{batchFile.name}</span>
-                                  <span className="shrink-0 text-stone-500">{formatBytes(batchFile.size)}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-[11px] text-stone-500">No files selected yet.</p>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => batchFileInputRef.current?.click()}
-                            className="mt-2 cursor-pointer rounded-lg border border-ttb-300 bg-ttb-50 px-2.5 py-1 text-xs font-semibold text-ttb-900 transition hover:bg-ttb-100"
-                          >
-                            {batchFiles.length > 0 ? "Choose different images" : "Choose batch images"}
-                          </button>
-                        </div>
-                        {batchResponse ? (
-                          <div className="space-y-2">
-                            <div className="rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-700">
-                              total {batchResponse.summary.total} · success {batchResponse.summary.success} · error{" "}
-                              {batchResponse.summary.error} · pass {batchResponse.summary.pass} · fail{" "}
-                              {batchResponse.summary.fail} · manual review {batchResponse.summary.manualReview} ·{" "}
-                              {batchResponse.summary.totalMs} ms
-                            </div>
-                            <div className="max-h-48 overflow-y-auto rounded-md border border-stone-200 bg-white">
-                              <table className="w-full text-left text-xs">
-                                <thead className="bg-stone-50 text-stone-600">
-                                  <tr>
-                                    <th className="px-2 py-1">File</th>
-                                    <th className="px-2 py-1">Status</th>
-                                    <th className="px-2 py-1">Result</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {batchResponse.items.map((item) => (
-                                    <tr key={`${item.index}-${item.fileName}`} className="border-t border-stone-100">
-                                      <td className="px-2 py-1 font-mono text-[11px] text-stone-800">{item.fileName}</td>
-                                      <td className="px-2 py-1 text-stone-700">{item.status}</td>
-                                      <td className="px-2 py-1 text-stone-700">
-                                        {item.ok
-                                          ? item.result?.validation?.fields?.some((f) => f.status === "fail")
-                                            ? "fail"
-                                            : item.result?.validation?.fields?.some((f) => f.status === "manual_review")
-                                              ? "manual_review"
-                                              : "pass"
-                                          : item.error?.code ?? "error"}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ttb-200 bg-gradient-to-b from-ttb-50/80 to-white px-3 py-4 text-center">
-                      <p className="text-xs font-semibold text-stone-800">1. Choose batch images</p>
-                      <p className="max-w-[18rem] text-[11px] leading-relaxed text-stone-500">
-                        2. Run batch verification with the current application data applied to every image.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => batchFileInputRef.current?.click()}
-                        className="cursor-pointer rounded-lg border-2 border-ttb-600 bg-ttb-50 px-3 py-2 text-xs font-semibold text-ttb-900 transition hover:bg-ttb-100 sm:text-sm"
-                      >
-                        Choose batch images
-                      </button>
-                      <p className="text-[10px] text-stone-500">
-                        JPEG or PNG · up to {CLIENT_BATCH_MAX_IMAGES} files
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {batchErrorText ? (
-                  <p className="mt-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
-                    {batchErrorText}
-                  </p>
-                ) : null}
-              </>
+              <BatchPanel
+                batchFiles={batchFiles}
+                batchResponse={batchResponse}
+                batchErrorText={batchErrorText}
+                onChooseBatchFiles={() => batchFileInputRef.current?.click()}
+              />
             )}
           </section>
 
@@ -1830,16 +1567,21 @@ export default function HomePage() {
                                   <dd className="mt-0.5 text-stone-700">
                                     If the model reports confidence below{" "}
                                     <strong className="font-mono text-stone-900">{CONFIDENCE_MANUAL_REVIEW}</strong>{" "}
-                                    (0–1 scale), the row is <strong className="text-stone-800">manual review</strong> —
-                                    no automatic pass or fail.
+                                    (0–1 scale), most fields route to <strong className="text-stone-800">manual review</strong>{" "}
+                                    without automatic pass or fail. <strong className="text-stone-800">Government warning</strong>{" "}
+                                    is an exception: low-confidence extractions still use similarity triage and can{" "}
+                                    <strong className="text-stone-800">fail</strong> when clearly inconsistent with application text.
                                   </dd>
                                 </div>
                                 <div className="rounded-lg border border-stone-100 bg-stone-50/80 px-3 py-2">
                                   <dt className="font-semibold text-stone-900">Government warning</dt>
                                   <dd className="mt-0.5 text-stone-700">
-                                    <strong className="text-stone-800">Exact</strong>, case-sensitive string equality
-                                    between extracted label text and the warning string in your application JSON (see
-                                    canonical text in <code className="font-mono text-[10px]">lib/canonical-warning.ts</code>).
+                                    <strong className="text-stone-800">Auto-pass</strong> only on exact, case-sensitive equality
+                                    with application JSON (see <code className="font-mono text-[10px]">lib/canonical-warning.ts</code>).
+                                    Non-exact: similarity ≥{" "}
+                                    <strong className="font-mono text-stone-900">{GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW}</strong>{" "}
+                                    → <strong className="text-stone-800">manual review</strong>; below that threshold →{" "}
+                                    <strong className="text-stone-800">fail</strong> (material mismatch).
                                   </dd>
                                 </div>
                                 <div className="rounded-lg border border-stone-100 bg-stone-50/80 px-3 py-2">
@@ -2142,7 +1884,7 @@ export default function HomePage() {
           </div>
 
           {workflowPhase !== "results" ? (
-            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.08)] sm:px-4">
+            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.08)] sm:px-4">
               <div className="mx-auto flex w-full max-w-lg flex-col items-stretch gap-2">
                 {workflowPhase === "edit" ? (
                   <>

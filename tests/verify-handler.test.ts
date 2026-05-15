@@ -284,6 +284,9 @@ describe("handleVerifyPost", () => {
       expect(parsed.data.summary.total).toBe(2);
       expect(parsed.data.summary.success).toBe(2);
       expect(parsed.data.items).toHaveLength(2);
+      for (const item of parsed.data.items) {
+        expect(item.durationMs).toBeGreaterThanOrEqual(0);
+      }
     }
   });
 

@@ -28,6 +28,8 @@ export const ABV_TOLERANCE = 0.25;
 export const VOLUME_TOLERANCE_RATIO = 0.03;
 /** Net contents: absolute floor tolerance in ml (used with ratio). */
 export const VOLUME_TOLERANCE_ML = 5;
+/** Government warning: below this fuzzy similarity → fail; at or above → manual_review when not exact. */
+export const GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW = 0.55;
 
 const BASE_SPIRIT_TOKENS = [
   "rum",
@@ -172,7 +174,7 @@ export function validateLabelFields(
         continue;
       }
       const ratio = fuzzyRatio(ev, av);
-      if (ratio < 0.55) {
+      if (ratio < GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW) {
         push({
           fieldId,
           status: "fail",
@@ -236,7 +238,7 @@ export function validateLabelFields(
         });
       } else {
         const ratio = fuzzyRatio(ev, av);
-        if (ratio < 0.55) {
+        if (ratio < GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW) {
           push({
             fieldId,
             status: "fail",

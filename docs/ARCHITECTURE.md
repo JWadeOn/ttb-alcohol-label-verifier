@@ -77,6 +77,33 @@ Further rationale lives next to the code in each **module doc**.
 
 ---
 
+## Phase 2: async batch jobs (planned)
+
+Current MVP batch (`POST /api/verify/batch`) processes images **synchronously** in the request with bounded concurrency and returns a full per-item payload when complete. Phase 2 adds durable job orchestration for larger operational batches:
+
+```mermaid
+flowchart TD
+  client[ClientUI] -->|POST /api/jobs| jobCreate[CreateBatchJob]
+  jobCreate --> queue[WorkQueue]
+  queue --> worker[BatchWorker]
+  worker --> resultStore[ResultStore]
+  client -->|GET /api/jobs/:id| jobStatus[JobStatusAPI]
+  jobStatus --> resultStore
+  resultStore --> partials[PartialItemResults]
+  partials --> client
+```
+
+| Step | Behavior |
+|------|----------|
+| **Job create** | Client uploads manifest + application JSON; server returns `jobId`, accepted file count, and limits. |
+| **Poll status** | `GET /api/jobs/:id` returns `queued`, `running`, `partial`, `completed`, or `failed` with progress counts. |
+| **Partial completion** | Completed items appear incrementally (`items[]` with `durationMs`, `error.message`, validation summary) while work continues. |
+| **Terminal states** | `completed` (all items processed), `failed` (unrecoverable job error), `cancelled` (optional operator abort). |
+
+Until Phase 2 ships, the UI documents synchronous limits (max files, per-file size, expected runtime) and surfaces per-item timing and failure reasons in the batch results table.
+
+---
+
 ## Environment and operations
 
 - **Local / deploy / secrets:** `README.md`, `.env.example`

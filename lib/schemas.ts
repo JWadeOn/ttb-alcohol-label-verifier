@@ -121,6 +121,7 @@ export const VerifyBatchItemSchema = z.object({
   fileName: z.string(),
   ok: z.boolean(),
   status: z.number().int().min(100).max(599),
+  durationMs: z.number().nonnegative(),
   result: VerifySuccessResponseSchema.optional(),
   error: z
     .object({

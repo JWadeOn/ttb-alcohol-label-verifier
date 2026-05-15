@@ -13,7 +13,7 @@
 | **Product scope & intent** | [`README.md`](../README.md), [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md) | What the take-home is supposed to demonstrate; P0 vs P1 fields; non-goals (no full 27 CFR, no COLA). |
 | **Per-field pass/fail / manual_review / not_applicable** | **`lib/validator.ts`** (`validateLabelFields`) | **Single implementation source** for deterministic comparison after extraction. Exported numeric thresholds (`CONFIDENCE_MANUAL_REVIEW`, `BRAND_SIMILARITY`, etc.) match this file. |
 | **What appears on the label (primary path)** | **`lib/extraction/openai-provider.ts`** (system + user prompts, Zod shape) | Model instructions and structured fields — not the same as “legal requirements,” but they define what gets extracted for comparison. |
-| **Government warning string used in fixtures/UI defaults** | **`lib/canonical-warning.ts`** | Canonical text for demos and default application JSON; validator compares **exact** (case-sensitive) to **application-supplied** warning text for that run. |
+| **Government warning string used in fixtures/UI defaults** | **`lib/canonical-warning.ts`** | Canonical text for demos and default application JSON; validator compares extracted text to **application-supplied** warning for that run (see decision table below). |
 | **Human-readable rule blurbs in the UI** | **`app/page.tsx`** (`FIELD_REQUIREMENTS`) | **Explanatory copy only** — should describe the same logic as `validator.ts`; if they diverge, **trust the code** and fix the copy. |
 
 There is **no** separate “regulations database” or TTB API in this repository.
@@ -30,11 +30,27 @@ Use this when mapping “what the UI shows” to “what actually runs.”
 | Class / type | Same | P0 / F-6 | Same as above. |
 | Alcohol content | Same — parsed ABV, tolerance | P0 / F-6 | Numeric tolerance is **coded**, not copied from a specific CFR table row. |
 | Net contents | Same — parsed ml, tolerance | P0 / F-6 | Same. |
-| Government warning | Same — **exact** string compare to application JSON | P0 / F-8 | PRD asks for strict warning matching **as a product behavior**; production would still use a versioned regulatory store (see PRD). |
+| Government warning | Same — **exact for auto-pass**; fuzzy triage for non-exact (`GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW` in `lib/validator.ts`) | P0 / F-8 | PRD asks for strict warning sensitivity **as product behavior**: exact pass, near-match manual review, material mismatch fail. |
 | Name & address | Same — fuzzy when both sides present | P1 / F-17 | Explicitly defers strict COLA address rules in messages. |
 | Country of origin | Same — `not_applicable` if not import; else fuzzy | P1 / F-18 | Conditional on `isImport` in application JSON. |
 
 **Extraction** for each of the above (values read from the image) is assembled in **`lib/verify-pipeline.ts`** calling **`lib/extraction/*`** before `validateLabelFields` runs.
+
+### Government warning decision table
+
+Authoritative logic: `validateLabelFields` in **`lib/validator.ts`**. Threshold: **`GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW`** (currently `0.55`). Confidence gate: **`CONFIDENCE_MANUAL_REVIEW`** (currently `0.65`).
+
+| Application warning present | Extracted empty | Confidence vs gate | Exact match | Fuzzy similarity vs threshold | Status |
+|-----------------------------|-----------------|--------------------|-------------|-------------------------------|--------|
+| No | * | * | * | * | `manual_review` |
+| Yes | Yes | * | * | * | `manual_review` |
+| Yes | No | Low | n/a | &lt; threshold | `fail` |
+| Yes | No | Low | n/a | ≥ threshold | `manual_review` |
+| Yes | No | High | Yes | * | `pass` |
+| Yes | No | High | No | &lt; threshold | `fail` |
+| Yes | No | High | No | ≥ threshold | `manual_review` |
+
+**Evaluator takeaway:** Only **exact** text auto-passes. **Near** matches (above threshold but not exact) route to **manual review**, not automatic fail. **Material** mismatches (below threshold) **fail**. Low-confidence warning extractions still use this triage (they do not skip comparison).
 
 ---
 
