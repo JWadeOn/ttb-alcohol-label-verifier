@@ -7,9 +7,10 @@
 **Deterministic** comparison of model extraction vs submitted application JSON:
 
 - Per-field **`FieldValidationRow`**: `status` (`pass` | `fail` | `manual_review` | `not_applicable`), message, extracted/application values, evidence.
-- **Confidence gate** — below `CONFIDENCE_MANUAL_REVIEW` (exported, **0.65**) ⇒ `manual_review` (do not auto-pass/fail on noisy reads).
-- **Government warning** — **exact** string equality vs application (case-sensitive); regulatory text is treated strictly (`validator.test.ts` “Jenny” case for wrong heading casing).
+- **Confidence gate** — below `CONFIDENCE_MANUAL_REVIEW` (exported, **0.65**) generally routes to `manual_review`; **exception:** government warning can still return `fail` when a low-confidence extraction is materially contradictory to the submitted warning text.
+- **Government warning** — exact text still passes immediately, but non-exact matches now use fuzzy similarity triage: near matches go to `manual_review` and only materially different text is marked `fail` (applies at both normal and low confidence, with low confidence retaining explicit review messaging).
 - **Brand, class, name, origin** — fuzzy match via `fuzzyRatio` + `levenshteinDistance` on normalized alphanumeric keys; thresholds **`BRAND_SIMILARITY`**, **`CLASS_SIMILARITY`**, **`NAME_SIMILARITY`**, **`ORIGIN_SIMILARITY`** are exported for UI parity with code.
+- **Class/type modifier policy** — when extracted and application class/type share the same base spirit token (`rum`, `vodka`, `gin`, etc.) but modifiers differ (for example `Rum` vs `Spiced Rum`), validator returns `manual_review` instead of hard fail; contradictory base spirits still fail.
 - **Alcohol** — parse approximate ABV from label and application; compare within **`ABV_TOLERANCE`** (% points; exported).
 - **Net contents** — parse approximate ml; compare within max of **`VOLUME_TOLERANCE_ML`** and **`VOLUME_TOLERANCE_RATIO`** of the larger volume (both exported).
 - **`countryOfOrigin`** — `not_applicable` when `isImport` is not true; otherwise fuzzy vs application when present.
@@ -27,7 +28,7 @@
 
 ## Related tests
 
-- `tests/validator.test.ts` — unit cases (fuzzy brand, strict warning, confidence gate, import `not_applicable`).
+- `tests/validator.test.ts` — unit cases (fuzzy brand, warning triage, confidence gate, import `not_applicable`).
 - `tests/golden-default-application.test.ts` — **golden path** against committed **`fixtures/default-application.json`** + synthetic matching extraction (no OpenAI).
 
 ## See also

@@ -8,6 +8,7 @@ type CachedExtraction = {
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_MAX_ENTRIES = 200;
+const EXTRACTION_CACHE_SCHEMA_VERSION = "v2";
 
 const cache = new Map<string, CachedExtraction>();
 
@@ -46,10 +47,18 @@ function prune(nowMs: number): void {
 }
 
 export function cacheKeyFromImageBytes(imageBytes: Buffer): string {
-  return createHash("sha256").update(imageBytes).digest("hex");
+  const digest = createHash("sha256")
+    .update(EXTRACTION_CACHE_SCHEMA_VERSION)
+    .update(":")
+    .update(imageBytes)
+    .digest("hex");
+  return `${EXTRACTION_CACHE_SCHEMA_VERSION}:${digest}`;
 }
 
 export function getCachedExtraction(cacheKey: string): ExtractionResult | null {
+  if (!cacheKey.startsWith(`${EXTRACTION_CACHE_SCHEMA_VERSION}:`)) {
+    return null;
+  }
   const now = Date.now();
   const hit = cache.get(cacheKey);
   if (!hit) return null;

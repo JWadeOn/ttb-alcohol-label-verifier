@@ -56,7 +56,7 @@ describe("golden path vs fixtures/default-application.json", () => {
     expect(byId.countryOfOrigin?.status).toBe("not_applicable");
   });
 
-  it("fails government warning when label text differs from application (strict)", async () => {
+  it("routes warning near-matches to manual review", async () => {
     const raw = await readFile(path.join(root, "fixtures", "default-application.json"), "utf8");
     const app = ApplicationJsonSchema.parse(JSON.parse(raw));
 
@@ -67,6 +67,6 @@ describe("golden path vs fixtures/default-application.json", () => {
 
     const rows = validateLabelFields(extraction, app);
     const warn = rows.find((r) => r.fieldId === "governmentWarning");
-    expect(warn?.status).toBe("fail");
+    expect(warn?.status).toBe("manual_review");
   });
 });
