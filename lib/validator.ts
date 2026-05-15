@@ -29,6 +29,18 @@ export const VOLUME_TOLERANCE_RATIO = 0.03;
 /** Net contents: absolute floor tolerance in ml (used with ratio). */
 export const VOLUME_TOLERANCE_ML = 5;
 
+const BASE_SPIRIT_TOKENS = [
+  "rum",
+  "vodka",
+  "gin",
+  "tequila",
+  "whiskey",
+  "whisky",
+  "brandy",
+  "liqueur",
+  "spirit",
+] as const;
+
 function normalizeAlphanumericKey(s: string): string {
   return s
     .normalize("NFKD")
@@ -45,6 +57,24 @@ function fuzzyRatio(a: string, b: string): number {
   const d = levenshteinDistance(A, B);
   const maxLen = Math.max(A.length, B.length);
   return 1 - d / maxLen;
+}
+
+function normalizeClassTokens(s: string): string[] {
+  return s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function detectBaseSpirit(tokens: string[]): string | null {
+  for (const base of BASE_SPIRIT_TOKENS) {
+    if (tokens.includes(base)) return base;
+  }
+  return null;
 }
 
 export function parseApproxAbvPct(text: string): number | null {
@@ -133,6 +163,36 @@ export function validateLabelFields(
   for (const fieldId of mvpFields) {
     const extracted = extraction.fields[fieldId];
     const applicationValue = appString(application, fieldId);
+    const av = applicationValue?.trim() ?? "";
+
+    if (fieldId === "governmentWarning" && extracted.confidence < CONFIDENCE_MANUAL_REVIEW) {
+      const ev = extracted.value?.trim() ?? "";
+      if (!ev || !av) {
+        push(lowConfidenceRow(fieldId, extracted, applicationValue));
+        continue;
+      }
+      const ratio = fuzzyRatio(ev, av);
+      if (ratio < 0.55) {
+        push({
+          fieldId,
+          status: "fail",
+          message: `Government warning appears materially different from submitted text (similarity ${ratio.toFixed(2)}), even with low extraction confidence.`,
+          extractedValue: ev,
+          applicationValue: av,
+          evidence: extracted.reason ?? null,
+        });
+      } else {
+        push({
+          fieldId,
+          status: "manual_review",
+          message: `Government warning extraction is low confidence (similarity ${ratio.toFixed(2)}); human review recommended before final disposition.`,
+          extractedValue: ev,
+          applicationValue: av,
+          evidence: extracted.reason ?? null,
+        });
+      }
+      continue;
+    }
 
     if (extracted.confidence < CONFIDENCE_MANUAL_REVIEW) {
       push(lowConfidenceRow(fieldId, extracted, applicationValue));
@@ -152,8 +212,6 @@ export function validateLabelFields(
     }
 
     const ev = extracted.value.trim();
-    const av = applicationValue?.trim() ?? "";
-
     if (fieldId === "governmentWarning") {
       if (!av) {
         push({
@@ -177,15 +235,26 @@ export function validateLabelFields(
           evidence: null,
         });
       } else {
-        push({
-          fieldId,
-          status: "fail",
-          message:
-            "Government warning differs from submitted application text (comparison is exact and case-sensitive).",
-          extractedValue: ev,
-          applicationValue: av,
-          evidence: null,
-        });
+        const ratio = fuzzyRatio(ev, av);
+        if (ratio < 0.55) {
+          push({
+            fieldId,
+            status: "fail",
+            message: `Government warning appears materially different from submitted text (similarity ${ratio.toFixed(2)}).`,
+            extractedValue: ev,
+            applicationValue: av,
+            evidence: null,
+          });
+        } else {
+          push({
+            fieldId,
+            status: "manual_review",
+            message: `Government warning is not an exact match (similarity ${ratio.toFixed(2)}); human review recommended before final disposition.`,
+            extractedValue: ev,
+            applicationValue: av,
+            evidence: null,
+          });
+        }
       }
       continue;
     }
@@ -240,11 +309,31 @@ export function validateLabelFields(
         });
         continue;
       }
+      const extractedTokens = normalizeClassTokens(ev);
+      const applicationTokens = normalizeClassTokens(av);
+      const extractedBase = detectBaseSpirit(extractedTokens);
+      const applicationBase = detectBaseSpirit(applicationTokens);
+      const sameBaseSpirit =
+        extractedBase !== null &&
+        applicationBase !== null &&
+        extractedBase === applicationBase;
+      const exactTokenMatch =
+        extractedTokens.length === applicationTokens.length &&
+        extractedTokens.every((tok, i) => tok === applicationTokens[i]);
       if (ratio >= CLASS_SIMILARITY) {
         push({
           fieldId,
           status: "pass",
           message: `Class/type similarity ${ratio.toFixed(2)} meets threshold.`,
+          extractedValue: ev,
+          applicationValue: av,
+          evidence: null,
+        });
+      } else if (sameBaseSpirit && !exactTokenMatch) {
+        push({
+          fieldId,
+          status: "manual_review",
+          message: `Class/type shares base spirit "${extractedBase}" but modifiers differ (similarity ${ratio.toFixed(2)}); manual review required.`,
           extractedValue: ev,
           applicationValue: av,
           evidence: null,
