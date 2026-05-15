@@ -21,6 +21,7 @@
  *   - off_bottle       => fixtures stored under `labels/synthetic_eval_`
  *   - seed_textures    => ids starting with `seed-texture-`
  *   - llm_smoke        => representative low-cost subset for quick iteration
+ *   - real_photo_curated => 15 on-bottle real captures (angle, glare, blur, low light, crop)
  *   - all_manifest     => all manifest fixture ids
  * Default when both are unset: `all_manifest` (all fixtures in manifest).
  * EVAL_EXPECTATIONS: optional JSON path for fixture correctness scoring
@@ -179,6 +180,23 @@ function resolveFixtureIds(manifestFixtures, idsRaw, setRaw) {
       "edge-synthetic-blur-label",
       "seed-texture-01",
       "st_petersburg_whiskey_label_dark_baseline",
+    ].filter((id) => manifestIds.includes(id)),
+    real_photo_curated: [
+      "st_petersburg_whiskey_baseline",
+      "st_petersburg_whiskey_angle_28",
+      "st_petersburg_whiskey_glare_brand",
+      "st_petersburg_whiskey_glare_warning_harsh",
+      "st_petersburg_whiskey_blur_moderate",
+      "st_petersburg_whiskey_blur_strong",
+      "st_petersburg_whiskey_low_light_grain",
+      "st_petersburg_whiskey_distance_crop_warning",
+      "st_petersburg_whiskey_crop_missing_warning",
+      "st_petersburg_vodka_baseline",
+      "st_petersburg_vodka_angle_45",
+      "st_petersburg_vodka_glare_brand",
+      "st_petersburg_whiskey_label_dark_baseline",
+      "smirnoff_vodka_happy_path",
+      "difficult-synthetic-label-photo",
     ].filter((id) => manifestIds.includes(id)),
     all_manifest: manifestIds,
   };

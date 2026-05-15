@@ -11,7 +11,7 @@ HTTP-level handling for verify requests:
 - Optional **`OPENAI_DISABLED`** (`true` / `1` / `yes`) — respond **503** / `OPENAI_DISABLED` before reading image bytes or calling OpenAI (saves credits when you need the API to reject rather than return a success stub).
 - Convert image `Blob` to `Buffer`, call `runVerifyPipeline` (injectable for tests).
 - Map `VerifyFailedError` to JSON error responses; catch unexpected errors as `500` / `INTERNAL_ERROR`.
-- Expose `POST /api/verify/batch` handling: accept `images[]` + single `application`, enforce max batch size (default **20**, env `VERIFY_BATCH_MAX_IMAGES`, clamped to 1..50), run bounded-concurrency verification (default 2, env `VERIFY_BATCH_CONCURRENCY`), and return per-item outcomes with aggregate summary counts.
+- Expose `POST /api/verify/batch` handling: accept `images[]` + single `application`, enforce max batch size (default **20**, env `VERIFY_BATCH_MAX_IMAGES`, clamped to 1..50), run bounded-concurrency verification (default 2, env `VERIFY_BATCH_CONCURRENCY`), and return per-item outcomes with **`durationMs`**, optional **`error.message`**, and aggregate summary counts (`totalMs` wall clock for the batch).
 
 ## HTTP and error contract
 

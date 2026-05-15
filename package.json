@@ -11,6 +11,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:install": "playwright install chromium",
     "fixtures:generate": "node scripts/generate-fixture-pngs.mjs",
     "fixtures:edge-labels": "node scripts/generate-edge-label-fixtures.mjs",
     "fixtures:synthetic-eval": "node scripts/generate-synthetic-eval-fixtures-gemini.mjs",
@@ -32,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4.1.7",
     "@types/node": "^22.15.17",
     "@types/react": "^19.1.4",
