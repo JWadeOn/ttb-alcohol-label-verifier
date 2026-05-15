@@ -138,20 +138,22 @@ function buildGeminiPrompt(family, warningText) {
     `Style texture hint: ${family.textureHint}.`,
     "",
     "Layout:",
-    "- Left panel: Brand, class/type, alcohol content, net contents.",
-    "- Right panel: bottler/address at top and full GOVERNMENT WARNING block below.",
+    "- Single centered vertical flow in one field of view; do not split into left/right columns.",
+    "- Top section: brand name (largest text), then class/type, then alcohol content and net contents.",
+    "- Middle section: bottler/address line, then country of origin line when provided.",
+    "- Bottom section: full GOVERNMENT WARNING paragraph block, clearly readable and fully inside the frame.",
     "",
     "Use text exactly as provided:",
-    "LEFT PANEL:",
+    "TOP SECTION:",
     `${family.brandName}`,
     `${family.classType}`,
     `${family.alcoholContent}`,
     `${family.netContents}`,
     "",
-    "RIGHT PANEL TOP:",
+    "MIDDLE SECTION:",
     `${family.nameAddress}${countryLine}`,
     "",
-    "RIGHT PANEL WARNING:",
+    "BOTTOM WARNING SECTION:",
     collapseWhitespace(warningText),
     "",
     "No logos, icons, medallions, badges, or 3D effects.",
@@ -260,7 +262,7 @@ async function buildVariant(baseBuffer, variant) {
             <stop offset="100%" stop-color="white" stop-opacity="0.0"/>
           </linearGradient>
         </defs>
-        <ellipse cx="280" cy="160" rx="260" ry="90" fill="url(#brandGlare)" transform="rotate(-10 280 160)"/>
+        <ellipse cx="450" cy="170" rx="320" ry="100" fill="url(#brandGlare)" transform="rotate(-6 450 170)"/>
       </svg>`);
     return sharp(baseBuffer).composite([{ input: glare, blend: "screen" }]).toBuffer();
   }
@@ -285,7 +287,7 @@ async function buildVariant(baseBuffer, variant) {
   if (variant === "crop_warning_partial") {
     const cover = Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-        <rect x="480" y="360" width="${WIDTH - 480}" height="${HEIGHT - 360}" fill="#eee8d9"/>
+        <rect x="0" y="452" width="${WIDTH}" height="${HEIGHT - 452}" fill="#eee8d9"/>
       </svg>`);
     return sharp(baseBuffer).composite([{ input: cover, blend: "over" }]).toBuffer();
   }
