@@ -13,6 +13,7 @@ const STEP_LABEL: Record<VerifyUiStepId, string> = {
 function StepIcon({ state, compact }: { state: VerifyUiStepState; compact?: boolean }) {
   const ring = compact ? "h-6 w-6" : "h-7 w-7";
   const icon = compact ? "h-3 w-3" : "h-3.5 w-3.5";
+  const glyphSize = compact ? "text-[9px]" : "text-[11px]";
 
   if (state === "upstream") {
     return (
@@ -56,7 +57,7 @@ function StepIcon({ state, compact }: { state: VerifyUiStepState; compact?: bool
         className={`flex ${ring} shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-500 ring-1 ring-stone-300/50`}
         aria-hidden
       >
-        <span className="text-[9px] font-bold">—</span>
+        <span className={`${glyphSize} font-bold`}>—</span>
       </span>
     );
   }
@@ -67,7 +68,7 @@ function StepIcon({ state, compact }: { state: VerifyUiStepState; compact?: bool
         aria-hidden
       >
         <span className="absolute inset-0.5 animate-pulse rounded-full bg-ttb-200/40" />
-        <span className="relative text-[9px] font-bold">…</span>
+        <span className={`relative ${glyphSize} font-bold`}>…</span>
       </span>
     );
   }
@@ -76,7 +77,7 @@ function StepIcon({ state, compact }: { state: VerifyUiStepState; compact?: bool
       className={`flex ${ring} shrink-0 items-center justify-center rounded-full bg-stone-50 text-stone-400 ring-1 ring-stone-200`}
       aria-hidden
     >
-      <span className="text-[9px] font-semibold">○</span>
+      <span className={`${glyphSize} font-semibold`}>○</span>
     </span>
   );
 }
@@ -124,19 +125,29 @@ export function VerifyRunStepsPanel({
 }) {
   const busy = steps.some((s) => s.state === "running");
   const caption = captionLine(steps);
-  const sm = compact;
+  const isCompact = compact;
 
   return (
     <div
-      className={compact ? "space-y-2" : "space-y-3"}
+      className={compact ? "space-y-2" : "space-y-4"}
       aria-live="polite"
       aria-busy={busy}
     >
       {heading ? (
-        <div className="space-y-0.5">
-          <h3 className="text-xs font-semibold text-stone-900 sm:text-sm">{heading}</h3>
+        <div className={compact ? "space-y-0.5" : "space-y-1"}>
+          <h3 className={compact ? "text-xs font-semibold text-stone-900 sm:text-sm" : "text-lg font-semibold text-stone-900"}>
+            {heading}
+          </h3>
           {subheading ? (
-            <p className="text-[11px] leading-snug text-stone-500 sm:text-xs">{subheading}</p>
+            <p
+              className={
+                compact
+                  ? "text-[11px] leading-snug text-stone-500 sm:text-xs"
+                  : "text-sm leading-relaxed text-stone-600"
+              }
+            >
+              {subheading}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -149,17 +160,30 @@ export function VerifyRunStepsPanel({
         {steps.map((step, i) => (
           <Fragment key={step.id}>
             {i > 0 ? (
-              <span aria-hidden className="mx-0.5 flex min-w-[0.25rem] flex-1 items-center px-0.5 sm:mx-1">
-                <span className="h-px w-full rounded-full bg-stone-200" />
+              <span
+                aria-hidden
+                className={compact ? "mx-0.5 flex min-w-[0.25rem] flex-1 items-center px-0.5 sm:mx-1" : "mx-1 flex min-w-[0.25rem] flex-1 items-center px-1"}
+              >
+                <span className={compact ? "h-px w-full rounded-full bg-stone-200" : "h-0.5 w-full rounded-full bg-stone-200"} />
               </span>
             ) : null}
             <div
-              className="flex min-w-0 max-w-[24%] shrink-0 flex-col items-center gap-1 sm:max-w-none sm:flex-1"
+              className={
+                compact
+                  ? "flex min-w-0 max-w-[24%] shrink-0 flex-col items-center gap-1 sm:max-w-none sm:flex-1"
+                  : "flex min-w-0 max-w-[24%] shrink-0 flex-col items-center gap-2 sm:max-w-none sm:flex-1"
+              }
               aria-current={step.state === "running" ? "step" : undefined}
               title={`${step.title}. ${step.detail}`}
             >
-              <StepIcon state={step.state} compact={sm} />
-              <span className="w-full truncate text-center text-[10px] font-semibold leading-tight text-stone-800 sm:text-[11px]">
+              <StepIcon state={step.state} compact={isCompact} />
+              <span
+                className={
+                  compact
+                    ? "w-full truncate text-center text-[10px] font-semibold leading-tight text-stone-800 sm:text-[11px]"
+                    : "w-full text-center text-sm font-semibold leading-tight text-stone-800 sm:text-base"
+                }
+              >
                 {STEP_LABEL[step.id]}
               </span>
               <span className="sr-only">
@@ -172,7 +196,15 @@ export function VerifyRunStepsPanel({
       </div>
 
       {caption ? (
-        <p className="text-center text-[11px] leading-snug text-stone-600 sm:text-left sm:text-xs">{caption}</p>
+        <p
+          className={
+            compact
+              ? "text-center text-[11px] leading-snug text-stone-600 sm:text-left sm:text-xs"
+              : "text-center text-sm leading-relaxed text-stone-700 sm:text-left sm:text-base"
+          }
+        >
+          {caption}
+        </p>
       ) : null}
     </div>
   );
