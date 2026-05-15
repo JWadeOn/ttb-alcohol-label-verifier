@@ -38,17 +38,24 @@ const APPLICATION_FIELDS: {
   { key: "countryOfOrigin", label: "Country of origin", kind: "string" },
 ];
 
+const PRODUCT_CLASS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "Select product class" },
+  { value: "distilled_spirits", label: "Distilled spirits" },
+  { value: "wine", label: "Wine" },
+  { value: "beer", label: "Beer / malt beverage" },
+];
+
 export const APPLICATION_FORMATTED_PAGE_NAV = [
   {
     shortLabel: "Basics",
     title: "Product, import & quantity",
-    hint: "Brand line, class/type, alcohol statement, and net contents on the label.",
+    hint: "Brand line, class/type, alcohol statement, and net contents.",
     fields: ["Product class", "Import", "Brand name", "Class / type", "Alcohol", "Net contents"],
   },
   {
     shortLabel: "Statements",
     title: "Warning & responsible party",
-    hint: "Government warning must match exactly; name/address and origin when applicable.",
+    hint: "Warning text, responsible party, and origin when needed.",
     fields: ["Government warning", "Name & address", "Country of origin"],
   },
 ] as const;
@@ -126,8 +133,6 @@ export function ApplicationEditor({
     : "w-full rounded-md border border-stone-300 bg-white px-2.5 py-2 text-sm text-stone-900 outline-none focus:border-ttb-500 focus:ring-1 focus:ring-ttb-500/35";
   const textareaClass = inputClass;
   const fieldGap = compact ? "gap-1 border-b border-stone-200/80 pb-2.5 last:border-0 last:pb-0" : "gap-1.5 border-b border-stone-200/80 pb-4 last:border-0 last:pb-0";
-  const jsonRows = compact ? 10 : 18;
-  const jsonMinH = compact ? "min-h-[140px]" : "min-h-[280px]";
 
   const showPagePager =
     mode === "formatted" &&
@@ -135,17 +140,18 @@ export function ApplicationEditor({
     typeof onFormattedPageChange === "function";
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col gap-1.5">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-        <div
-          className="inline-flex rounded-lg border border-stone-200 bg-stone-100 p-0.5"
-          role="group"
-          aria-label="Application data editor mode"
-        >
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-1">
+      <div className="flex shrink-0 flex-col gap-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div
+            className="inline-flex rounded-xl border border-stone-200 bg-stone-100/90 p-0.5 shadow-inner"
+            role="group"
+            aria-label="Application data editor mode"
+          >
             <button
               type="button"
               onClick={() => setMode("formatted")}
-              className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+              className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
                 mode === "formatted"
                   ? "bg-ttb-600 text-white shadow-sm"
                   : "text-stone-600 hover:text-stone-900"
@@ -156,7 +162,7 @@ export function ApplicationEditor({
             <button
               type="button"
               onClick={() => setMode("json")}
-              className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+              className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
                 mode === "json"
                   ? "bg-ttb-600 text-white shadow-sm"
                   : "text-stone-600 hover:text-stone-900"
@@ -165,9 +171,17 @@ export function ApplicationEditor({
               JSON
             </button>
           </div>
-          {showPagePager ? (
+          {mode === "json" ? (
+            <span className="text-[10px] text-stone-500">Raw input editing view</span>
+          ) : (
+            <span className="text-[10px] text-stone-500">Expected schema</span>
+          )}
+        </div>
+        {showPagePager ? (
+          <div className="flex items-center gap-1.5 pl-0.5">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-stone-400">Page</span>
             <div
-              className="flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-100/90 p-0.5 shadow-inner"
+              className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white p-0.5"
               role="group"
               aria-label="Application field pages"
             >
@@ -188,8 +202,8 @@ export function ApplicationEditor({
                     aria-pressed={active}
                     className={`cursor-pointer rounded-md px-2 py-1 text-[11px] font-semibold transition sm:px-2.5 ${
                       active
-                        ? "bg-ttb-600 text-white shadow-sm"
-                        : "text-stone-600 hover:bg-white/90 hover:text-stone-900"
+                        ? "bg-stone-900 text-white"
+                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                     }`}
                   >
                     {pg.shortLabel}
@@ -197,22 +211,24 @@ export function ApplicationEditor({
                 );
               })}
             </div>
-          ) : mode === "json" ? (
-            <span className="text-[10px] text-stone-500">Raw multipart field</span>
-          ) : (
-            <span className="text-[10px] text-stone-500">Strict schema</span>
-          )}
-        </div>
+          </div>
+        ) : null}
+      </div>
 
       {mode === "json" ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          spellCheck={false}
-          rows={jsonRows}
-          aria-label="Application JSON"
-          className={`w-full min-h-0 flex-1 resize-y rounded-lg border border-stone-300 bg-stone-50/80 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-stone-900 outline-none focus:border-ttb-500 focus:ring-2 focus:ring-ttb-500/30 lg:min-h-0 ${jsonMinH}`}
-        />
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+          <p className="rounded-md border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-stone-600">
+            Edit the submitted application JSON here. Use <span className="font-semibold text-stone-800">Results</span>{" "}
+            after verification for field-by-field review.
+          </p>
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            spellCheck={false}
+            aria-label="Application JSON"
+            className="w-full min-h-[18rem] flex-1 resize-none rounded-lg border border-stone-300 bg-stone-50/80 px-3 py-2.5 font-mono text-xs leading-6 text-stone-900 outline-none focus:border-ttb-500 focus:ring-2 focus:ring-ttb-500/30 sm:min-h-[22rem] sm:text-[13px]"
+          />
+        </div>
       ) : parsed.ok ? (
         <div
           className={`min-h-0 flex-1 overflow-y-auto rounded-lg border border-stone-200 bg-stone-50/50 px-2.5 py-2 sm:px-3 ${
@@ -263,6 +279,19 @@ export function ApplicationEditor({
                     spellCheck={false}
                     className={textareaClass}
                   />
+                ) : f.key === "productClass" ? (
+                  <select
+                    value={strVal}
+                    onChange={(e) => patch({ [f.key]: e.target.value })}
+                    className={inputClass}
+                    aria-label="Product class"
+                  >
+                    {PRODUCT_CLASS_OPTIONS.map((option) => (
+                      <option key={option.value || "__empty"} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <input
                     type="text"
