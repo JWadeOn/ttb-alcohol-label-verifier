@@ -11,6 +11,7 @@ Use this short path to review the submission without internal planning noise.
 
 - Public prototype URL: [https://ttb-alcohol-label-verifier-production.up.railway.app](https://ttb-alcohol-label-verifier-production.up.railway.app)
 - Main flow: upload label image + application JSON, then review per-field `pass`/`fail`/`manual_review` outcomes.
+- **Demo fixtures:** use **Load an existing eval fixture** (preset pass/stress cases with thumbnails) to load paired image + application JSON without uploading files.
 
 ## 2) Understand scope and boundaries
 
@@ -31,7 +32,9 @@ Use this short path to review the submission without internal planning noise.
 - `docs/evals/README.md` - canonical eval artifact index.
 - `docs/evals/fixture-correctness-production-2026-05-13.json` - full production fixture correctness + latency run.
 - `docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json` - focused difficult-label subset run.
-- `docs/evals/fixture-correctness-synthetic-eval-full-2026-05-14.json` - full scripted `off_bottle` synthetic correctness + latency run.
+- `docs/evals/fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json` - latest full `synthetic_eval` Railway run (recommended).
+- `docs/evals/fixture-correctness-synthetic-eval-full-2026-05-15.json` - local hybrid `synthetic_eval` run for comparison.
+- `docs/evals/fixture-correctness-synthetic-eval-llm-only-2026-05-15.json` - local `llm_only` `synthetic_eval` run.
 - `docs/evals/CORRECTNESS_THRESHOLDS.md` - thresholds used to interpret eval outputs.
 
 ## Notes

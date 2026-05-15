@@ -16,7 +16,7 @@
 | **UI** | Single client page with single-label verify (`POST /api/verify`) and MVP batch verify (`POST /api/verify/batch`). Layout and spot-check UX: [`docs/modules/app-page.md`](./modules/app-page.md). |
 | **Requirements traceability** | Not CFR/COLA — see [`REQUIREMENTS_SOURCE_OF_TRUTH.md`](./REQUIREMENTS_SOURCE_OF_TRUTH.md); deterministic checks in [`validator.md`](./modules/validator.md) (`lib/validator.ts`). |
 | **Persistence** | None; in-memory per request. |
-| **Container** | `Dockerfile` (Next **standalone**); `npm run docker:build`. Includes dependencies for hybrid extraction path. |
+| **Container** | `Dockerfile` (Next **standalone**); `npm run docker:build`. Built and run on **Railway** for the public prototype. |
 | **Fixtures / eval** | `fixtures/manifest.json`; canonical production evidence via `npm run eval:fixture-verify:prod` (see `docs/evals/README.md`). |
 | **Public deploy** | **Railway (live URL)** — see [`README.md`](../README.md) deployment section; set **`OPENAI_API_KEY`** on the service for working verify endpoints (`POST /api/verify`, `POST /api/verify/batch`). |
 

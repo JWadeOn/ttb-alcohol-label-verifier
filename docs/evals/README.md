@@ -8,7 +8,10 @@ This folder contains committed evidence for correctness and latency in the proto
 |---|---|
 | [`fixture-correctness-production-2026-05-13.json`](./fixture-correctness-production-2026-05-13.json) | Full `on_bottle` production fixture run with correctness scoring and latency summary. |
 | [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) | Focused difficult-label fixture run (St. Petersburg subset). |
-| [`fixture-correctness-synthetic-eval-full-2026-05-14.json`](./fixture-correctness-synthetic-eval-full-2026-05-14.json) | Full `off_bottle` scripted synthetic run (4 families x 5 stress variants) with per-fixture correctness and latency. |
+| [`fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json`](./fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json) | **Latest** full `synthetic_eval` run on Railway (post timeout-cap deploy): 20/20 HTTP 200, thresholds pass. |
+| [`fixture-correctness-synthetic-eval-full-2026-05-15.json`](./fixture-correctness-synthetic-eval-full-2026-05-15.json) | Full `synthetic_eval` local hybrid run (`BASE_URL` localhost). |
+| [`fixture-correctness-synthetic-eval-llm-only-2026-05-15.json`](./fixture-correctness-synthetic-eval-llm-only-2026-05-15.json) | Full `synthetic_eval` local run with `VERIFY_EXTRACTION_MODE=llm_only` for latency/correctness comparison. |
+| [`fixture-correctness-synthetic-eval-full-2026-05-14.json`](./fixture-correctness-synthetic-eval-full-2026-05-14.json) | Earlier full `synthetic_eval` production run (pre–PR #2 hybrid tuning; OpenAI-only providers). |
 | [`fixture-correctness-expectations-synthetic-eval.json`](./fixture-correctness-expectations-synthetic-eval.json) | Dedicated expectations profile for the synthetic batch so top-level thresholds reflect that subset only. |
 | [`CORRECTNESS_THRESHOLDS.md`](./CORRECTNESS_THRESHOLDS.md) | Threshold definitions used to interpret eval outputs. |
 | [`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md) | Chronological index of production latency snapshots. |

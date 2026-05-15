@@ -21,7 +21,7 @@ This file defines how coding agents should work in this repository.
 - Implement only what is required for current PRD/eval goals.
 - Distilled spirits first, then wine, then beer.
 - Keep fallback policy evidence-based (Tesseract-first with go/no-go pivot).
-- Preserve Render-first deployment strategy unless blocked.
+- Preserve Railway deployment strategy unless blocked (see `README.md` deployment section).
 
 ## Quality and Testing
 
