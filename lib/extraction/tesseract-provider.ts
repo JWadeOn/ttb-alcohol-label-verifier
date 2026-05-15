@@ -425,49 +425,59 @@ function brandConfidenceFromScore(score: number): number {
   return 0.58;
 }
 
+type BrandFallbackCandidate = { value: string; score: number };
+
+function scoreBrandFallbackCandidate(
+  line: string,
+  index: number,
+  anchoredWindow: boolean,
+): BrandFallbackCandidate | null {
+  const cleaned = cleanBrandValue(line);
+  if (!cleaned) return null;
+  const value = cleaned;
+  if (value.length < 3 || value.length > 72) return null;
+  if (!looksLikeReadableBrandPhrase(value)) return null;
+
+  const lower = value.toLowerCase();
+  if (/(?:^|\s)(?:alc|abv|proof|ml|l|oz)(?:\s|$)/i.test(lower)) return null;
+
+  const stats = lineStats(value);
+  const printable = stats.letters + stats.digits + stats.symbols;
+  if (printable === 0 || stats.letters < 2) return null;
+
+  const alphaRatio = stats.letters / printable;
+  const symbolRatio = stats.symbols / printable;
+  const positionBonus = index <= 2 ? 0.08 : index <= 6 ? 0.04 : 0;
+  const anchorBonus = anchoredWindow ? 0.12 : 0;
+  const warningPenalty = looksLikeNonBrandLine(lower) ? 0.35 : 0;
+  const addressPenalty = looksLikeAddressFragment(value) ? 0.22 : 0;
+
+  const score =
+    alphaRatio * 0.7 - symbolRatio * 0.3 + positionBonus + anchorBonus - warningPenalty - addressPenalty;
+  return { value, score };
+}
+
 function extractTentativeBrandCandidate(lines: string[], classLineIndex: number): string | null {
   const maxScan = Math.min(lines.length, 18);
   const preferredStart = classLineIndex > 0 ? Math.max(0, classLineIndex - 4) : 0;
   const preferredEnd = classLineIndex > 0 ? classLineIndex : maxScan;
 
-  type FallbackCandidate = { value: string; score: number };
-  let best: FallbackCandidate | null = null;
-
-  const consider = (line: string, index: number, anchoredWindow: boolean) => {
-    const cleaned = cleanBrandValue(line);
-    if (!cleaned) return;
-    const value = cleaned;
-    if (value.length < 3 || value.length > 72) return;
-    if (!looksLikeReadableBrandPhrase(value)) return;
-
-    const lower = value.toLowerCase();
-    if (/(?:^|\s)(?:alc|abv|proof|ml|l|oz)(?:\s|$)/i.test(lower)) return;
-
-    const stats = lineStats(value);
-    const printable = stats.letters + stats.digits + stats.symbols;
-    if (printable === 0 || stats.letters < 2) return;
-
-    const alphaRatio = stats.letters / printable;
-    const symbolRatio = stats.symbols / printable;
-    const positionBonus = index <= 2 ? 0.08 : index <= 6 ? 0.04 : 0;
-    const anchorBonus = anchoredWindow ? 0.12 : 0;
-    const warningPenalty = looksLikeNonBrandLine(lower) ? 0.35 : 0;
-    const addressPenalty = looksLikeAddressFragment(value) ? 0.22 : 0;
-
-    const score = alphaRatio * 0.7 - symbolRatio * 0.3 + positionBonus + anchorBonus - warningPenalty - addressPenalty;
-    if (!best || score > best.score) {
-      best = { value, score };
-    }
-  };
+  let best: BrandFallbackCandidate | null = null;
 
   for (let i = preferredStart; i < preferredEnd; i += 1) {
-    consider(lines[i]!, i, true);
+    const candidate = scoreBrandFallbackCandidate(lines[i]!, i, true);
+    if (candidate && (!best || candidate.score > best.score)) {
+      best = candidate;
+    }
   }
   for (let i = 0; i < maxScan; i += 1) {
-    consider(lines[i]!, i, false);
+    const candidate = scoreBrandFallbackCandidate(lines[i]!, i, false);
+    if (candidate && (!best || candidate.score > best.score)) {
+      best = candidate;
+    }
   }
 
-  if (!best || best.score < 0.15) return null;
+  if (best === null || best.score < 0.15) return null;
   return best.value;
 }
 
