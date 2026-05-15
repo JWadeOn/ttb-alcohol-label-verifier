@@ -557,57 +557,57 @@ type ReviewDisposition = "approved" | "rejected" | null;
 function ReviewDispositionControls({
   disposition,
   onDisposition,
-  compact = false,
 }: {
   disposition: ReviewDisposition;
   onDisposition: (next: ReviewDisposition) => void;
-  compact?: boolean;
 }) {
-  const btnPad = compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm";
   return (
-    <div
-      className="flex flex-wrap items-center gap-2 border-stone-200 sm:border-l sm:pl-2"
-      role="group"
-      aria-label="Review disposition"
-    >
-      <button
-        type="button"
-        onClick={() => onDisposition("approved")}
-        aria-pressed={disposition === "approved"}
-        className={`min-w-[5rem] cursor-pointer rounded-lg font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${btnPad} ${
-          disposition === "approved"
-            ? "bg-emerald-600 text-white ring-1 ring-emerald-700 hover:bg-emerald-700"
-            : "border border-emerald-600 bg-white text-emerald-900 hover:bg-emerald-50"
-        }`}
-      >
-        Approve
-      </button>
-      <button
-        type="button"
-        onClick={() => onDisposition("rejected")}
-        aria-pressed={disposition === "rejected"}
-        className={`min-w-[5rem] cursor-pointer rounded-lg font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${btnPad} ${
-          disposition === "rejected"
-            ? "bg-red-600 text-white ring-1 ring-red-800 hover:bg-red-700"
-            : "border border-red-600 bg-white text-red-900 hover:bg-red-50"
-        }`}
-      >
-        Reject
-      </button>
-      {disposition ? (
+    <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end" role="group" aria-label="Review disposition">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+        Your review
+      </span>
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => onDisposition(null)}
-          className="cursor-pointer text-xs font-medium text-stone-600 underline decoration-stone-400 underline-offset-2 hover:text-stone-900"
+          onClick={() => onDisposition("approved")}
+          aria-pressed={disposition === "approved"}
+          className={`min-w-[6.5rem] cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
+            disposition === "approved"
+              ? "bg-emerald-700 text-white ring-2 ring-emerald-800 ring-offset-1 hover:bg-emerald-800"
+              : "bg-emerald-600 text-white hover:bg-emerald-700"
+          }`}
         >
-          Clear
+          Approve
         </button>
-      ) : null}
+        <button
+          type="button"
+          onClick={() => onDisposition("rejected")}
+          aria-pressed={disposition === "rejected"}
+          className={`min-w-[6.5rem] cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 ${
+            disposition === "rejected"
+              ? "bg-red-700 text-white ring-2 ring-red-900 ring-offset-1 hover:bg-red-800"
+              : "bg-red-600 text-white hover:bg-red-700"
+          }`}
+        >
+          Reject
+        </button>
+        {disposition ? (
+          <button
+            type="button"
+            onClick={() => onDisposition(null)}
+            className="cursor-pointer px-1 text-xs font-medium text-stone-600 underline decoration-stone-400 underline-offset-2 hover:text-stone-900"
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
       {disposition ? (
-        <span className="w-full text-[11px] text-stone-500 sm:w-auto" role="status" aria-live="polite">
+        <span className="text-[11px] text-stone-500" role="status" aria-live="polite">
           {disposition === "approved" ? "Approved" : "Rejected"} — not saved.
         </span>
-      ) : null}
+      ) : (
+        <span className="text-[11px] text-stone-500">Optional — records locally only.</span>
+      )}
     </div>
   );
 }
@@ -1239,39 +1239,42 @@ export default function HomePage() {
               </p>
             </div>
           ) : workflowPhase === "results" ? (
-            <div className="sticky top-0 z-20 flex shrink-0 flex-col gap-2 border-b border-stone-200 bg-stone-50/95 px-3 py-2.5 shadow-sm backdrop-blur-sm sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:px-4">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold text-stone-900">Outcome &amp; field review</span>
-              </div>
-              <div className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setWorkflowPhase("edit")}
-                    className="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-2 text-center text-xs font-semibold text-stone-800 shadow-sm transition hover:bg-stone-50 sm:px-4 sm:text-sm"
-                  >
-                    Edit inputs
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="cursor-pointer rounded-lg border-2 border-ttb-600 bg-white px-3 py-2 text-center text-xs font-semibold text-ttb-800 shadow-sm transition hover:bg-ttb-50 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-100 disabled:text-stone-500 disabled:shadow-none sm:px-4 sm:text-sm"
-                    title={!canSubmit ? primaryActionDisabledReason ?? "Complete required inputs to run again." : undefined}
-                  >
-                    Verify again
-                  </button>
-                  {successPayload ? (
-                    <ReviewDispositionControls
-                      disposition={reviewDisposition}
-                      onDisposition={setReviewDisposition}
-                      compact
-                    />
+            <div className="sticky top-0 z-20 shrink-0 border-b border-stone-200 bg-stone-50/95 px-3 py-3 shadow-sm backdrop-blur-sm sm:px-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-stone-900">Outcome &amp; field review</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-600">
+                    <span className="font-medium text-stone-500">Change inputs:</span>
+                    <button
+                      type="button"
+                      onClick={() => setWorkflowPhase("edit")}
+                      className="cursor-pointer font-medium text-stone-700 underline decoration-stone-400 underline-offset-2 transition hover:text-stone-900"
+                    >
+                      Edit
+                    </button>
+                    <span className="text-stone-300" aria-hidden>
+                      ·
+                    </span>
+                    <button
+                      type="submit"
+                      disabled={!canSubmit}
+                      className="cursor-pointer font-medium text-ttb-800 underline decoration-ttb-300 underline-offset-2 transition hover:text-ttb-950 disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
+                      title={
+                        !canSubmit ? primaryActionDisabledReason ?? "Complete required inputs to run again." : undefined
+                      }
+                    >
+                      Verify again
+                    </button>
+                  </div>
+                  {!canSubmit && primaryActionDisabledReason ? (
+                    <p className="mt-1 text-[11px] text-stone-500">{primaryActionDisabledReason}</p>
                   ) : null}
                 </div>
-                {!canSubmit && primaryActionDisabledReason ? (
-                  <p className="text-[11px] text-stone-500 sm:text-right">
-                    {primaryActionDisabledReason}
-                  </p>
+                {successPayload ? (
+                  <ReviewDispositionControls
+                    disposition={reviewDisposition}
+                    onDisposition={setReviewDisposition}
+                  />
                 ) : null}
               </div>
             </div>
