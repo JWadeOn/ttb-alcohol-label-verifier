@@ -89,6 +89,8 @@ When comparison behavior changes:
 
 ## See also
 
+- [`docs/evals/suite-plan.json`](./evals/suite-plan.json) — tiered eval suite and stakeholder coverage matrix (obvious pass/fail, tricky pass, manual_review, routing)  
+- [`docs/evals/README.md`](./evals/README.md) — how to run L0/L1/L2 and interpret correctness evidence  
 - [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) — pipeline diagram and module index  
 - [`docs/modules/validator.md`](./modules/validator.md) — validator responsibilities  
 - [`docs/modules/extraction.md`](./modules/extraction.md) — providers and failover  

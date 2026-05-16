@@ -4,7 +4,7 @@ Evaluator-facing snapshot of **correctness** and **completeness** for the AI-pow
 
 This maps directly to the take-home rubric and stakeholder interview expectations (speed, usable UX, routine field matching, strict warning handling, image adversity).
 
-**Last updated:** 2026-05-13
+**Last updated:** 2026-05-15
 
 ---
 
@@ -31,7 +31,7 @@ Prototype scope still applies: this is a standalone POC, not a full COLA integra
 | **Latency practical for agent workflow** (Sarah: ~5s target pressure) | **Done** | Production eval harness + committed snapshots; explicit correctness thresholds doc; latest full production fixture run records per-fixture and summary latency | `evals/run-fixture-verify.mjs`, `docs/evals/fixture-correctness-production-2026-05-13.json`, `docs/evals/PRIMARY_LATENCY_RUNS.md`, [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) | Optional: scheduled P95 bench runs as model/deploy drift |
 | **Usable UX for mixed tech comfort** ("my mother could use it") | **Partial** | Results-first flow, obvious actions, expandable guidance, improved review controls, clearer API error and run-metadata copy | `app/page.tsx`, `lib/verify-error-messages.ts`, `docs/modules/app-page.md` | Lightweight usability pass on remaining edge cases |
 | **Handles non-ideal images** (glare, angle, blur) | **Partial** | Image-quality gate, difficult stress fixture set, and targeted difficult-label production eval evidence | `lib/image-quality.ts`, `fixtures/labels/`, `docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json`, [`docs/evals/CORRECTNESS_THRESHOLDS.md`](./evals/CORRECTNESS_THRESHOLDS.md) | Add more **real-photo** edge cases beyond synthetic derivatives |
-| **Programmatic eval + logged evidence over time** | **Done** | Append-only latency timeline + dated artifacts; scored fixture correctness JSON + expectations profile | `docs/evals/PRIMARY_LATENCY_RUNS.md`, `docs/evals/README.md`, `docs/evals/fixture-correctness-*.json`, `evals/run-fixture-verify.mjs` | Optional: correctness timeline index (mirror latency table style) |
+| **Programmatic eval + logged evidence over time** | **Done** | Tiered suite (L0/L1/L2) with stakeholder coverage matrix (obvious pass/fail, tricky pass, manual_review, routing); L1 blocks on correctness thresholds; drift validation against `suite-plan.json` | [`docs/evals/suite-plan.json`](./evals/suite-plan.json), [`docs/evals/README.md`](./evals/README.md), `npm run eval:l1`, `npm run eval:validate-suite-plan`, `evals/run-suite-tier.mjs` | Optional: correctness timeline index (mirror latency table style) |
 | **Error handling and fail-safe behavior** | **Done** | Typed error codes, timeout failover path, disabled/missing key behavior, structured logs | `lib/verify-handler.ts`, `lib/extraction/provider.ts`, `tests/verify-handler.test.ts`, `README.md` | Add evaluator-facing "known failure modes" checklist in one place |
 | **Code quality / organization for scope** | **Done** | Thin route, deep modules, test coverage on deterministic core, documented architecture/modules | `docs/ARCHITECTURE.md`, `docs/modules/*.md`, `tests/*`, `AGENTS.md` | Continue small focused increments; keep docs synchronized with behavior changes |
 | **Creative but scoped problem-solving** (prototype discipline) | **Done** | Standalone deploy, no premature COLA integration, and explicit prototype boundaries | `README.md`, `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md` | Optional polish only |

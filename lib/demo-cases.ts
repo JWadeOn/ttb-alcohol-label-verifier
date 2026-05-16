@@ -1,9 +1,9 @@
 export type DemoCaseId =
+  | "on-bottle-happy-path-pass"
   | "happy-path-perfect-pass"
   | "difficult-impressive-pass"
   | "obvious-failure-mode"
   | "tricky-failure-mode"
-  | "on-bottle-smirnoff-pass"
   | "on-bottle-edge-glare"
   | "on-bottle-whiskey-glare";
 
@@ -19,6 +19,16 @@ export type DemoCase = {
 };
 
 export const DEMO_CASES: DemoCase[] = [
+  {
+    id: "on-bottle-happy-path-pass",
+    title: "On-bottle happy path",
+    subtitle: "Classic synthetic bottle label with clean readability for a quick pass check.",
+    fixtureId: "happy-path-synthetic-label",
+    imageRelativePath: "labels/curated/on-bottle/liquor_label_happy_path.png",
+    applicationRelativePath: "default-application.json",
+    outcomeSummary: "Happy-path fixture: expected to pass all applicable checks.",
+    outcomeTone: "pass",
+  },
   {
     id: "happy-path-perfect-pass",
     title: "Full pass",
@@ -60,31 +70,21 @@ export const DEMO_CASES: DemoCase[] = [
     outcomeTone: "fail",
   },
   {
-    id: "on-bottle-smirnoff-pass",
-    title: "On-bottle vodka pass",
-    subtitle: "Real bottle photo aligned with its paired Smirnoff application fixture.",
-    fixtureId: "smirnoff_vodka_happy_path",
-    imageRelativePath: "labels/on-bottle/smirnoff_vodka_happy_path.png",
-    applicationRelativePath: "applications/smirnoff_vodka_happy_path.json",
-    outcomeSummary: "On-bottle fixture: expected to pass across applicable checks.",
-    outcomeTone: "pass",
-  },
-  {
     id: "on-bottle-edge-glare",
     title: "On-bottle glare stress",
     subtitle: "Strong glare + perspective noise; useful for a manual-review stress run.",
-    fixtureId: "edge-synthetic-glare",
-    imageRelativePath: "labels/on-bottle/edge-synthetic-glare.png",
+    fixtureId: "name_address_candidate_st_petersburg_vodka_glare_brand",
+    imageRelativePath: "labels/curated/on-bottle/st_petersburg_vodka_glare_brand.png",
     applicationRelativePath: "applications/synthetic_eval_spiced_rum.json",
     outcomeSummary: "On-bottle stress case: expect one or more fail/manual-review outcomes.",
     outcomeTone: "fail",
   },
   {
     id: "on-bottle-whiskey-glare",
-    title: "On-bottle whiskey glare",
-    subtitle: "Whiskey label with glare over text to test extraction resilience.",
-    fixtureId: "st_petersburg_whiskey_glare_warning_harsh",
-    imageRelativePath: "labels/on-bottle/st_petersburg_whiskey_glare_warning_harsh.png",
+    title: "On-bottle vodka glare",
+    subtitle: "Vodka label with glare over text to test extraction resilience.",
+    fixtureId: "name_address_candidate_st_petersburg_vodka_glare_brand",
+    imageRelativePath: "labels/curated/on-bottle/st_petersburg_vodka_glare_brand.png",
     applicationRelativePath: "applications/synthetic_eval_whiskey_dark.json",
     outcomeSummary: "On-bottle stress case: typically includes fail/manual-review fields.",
     outcomeTone: "fail",

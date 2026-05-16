@@ -7,25 +7,26 @@
  * Without OPENAI_API_KEY: prints skip JSON and exits 0 (CI-friendly).
  *
  * Usage:
- *   EVAL_FIXTURE_IDS=difficult-synthetic-label-photo OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-fixture-verify.mjs
- *   EVAL_FIXTURE_SET=st_petersburg OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-fixture-verify.mjs
+ *   EVAL_FIXTURE_IDS=synthetic_eval_vodka_import_baseline_front OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-fixture-verify.mjs
+ *   EVAL_FIXTURE_SET=synthetic_eval OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 node evals/run-fixture-verify.mjs
  *   # same + write copy to disk:
  *   EVAL_OUT=docs/evals/fixture-verify-difficult-local.json ... node evals/run-fixture-verify.mjs
  *
  * EVAL_FIXTURE_IDS: comma-separated manifest `id` values (exact selection).
  * EVAL_FIXTURE_SET: comma-separated fixture presets (when EVAL_FIXTURE_IDS is unset):
- *   - st_petersburg    => ids starting with `st_petersburg_`
- *   - edge_synthetic   => ids starting with `edge-synthetic-`
+ *   - st_petersburg    => legacy ids starting with `st_petersburg_` (may be empty if removed)
+ *   - edge_synthetic   => legacy ids starting with `edge-synthetic-` (may be empty if removed)
  *   - synthetic_eval   => ids starting with `synthetic_eval_`
- *   - on_bottle        => fixtures stored under `labels/on-bottle/`
+ *   - on_bottle        => fixtures under `labels/curated/on-bottle/` or legacy `labels/on-bottle/`
  *   - off_bottle       => fixtures stored under `labels/synthetic_eval_`
  *   - seed_textures    => ids starting with `seed-texture-`
  *   - llm_smoke        => representative low-cost subset for quick iteration
- *   - real_photo_curated => 15 on-bottle real captures (angle, glare, blur, low light, crop)
+ *   - real_photo_curated => curated/manual on-bottle QA lane (non-gating)
+ *   - name_address_candidates => curated on-bottle candidate IDs (QA-only)
  *   - all_manifest     => all manifest fixture ids
  * Default when both are unset: `all_manifest` (all fixtures in manifest).
  * EVAL_EXPECTATIONS: optional JSON path for fixture correctness scoring
- *   (default: docs/evals/fixture-correctness-expectations.json).
+ *   (default: docs/evals/fixture-correctness-expectations-synthetic-eval.json).
  *
  * EVAL_OUT: optional path (repo-relative or absolute) for output file.
  *   - If unset, output is auto-written to:
@@ -34,6 +35,8 @@
  * Writes the same JSON object as stdout.
  * EVAL_EXIT_ON_HTTP_ERROR: if `0`/`false`/`no`, exit 0 even when any response has HTTP >= 400
  *   (still records status in JSON). Default: exit 1 on any HTTP >= 400 or transport error.
+ * EVAL_FAIL_ON_CORRECTNESS: if `1`/`true`/`yes`, exit 1 when correctness thresholds fail
+ *   (`correctness.thresholdsPass !== true`). Used by `npm run eval:l1` via run-suite-tier.mjs.
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -152,18 +155,24 @@ function resolveOutputPathRaw(ids, idsRaw, setRaw) {
  */
 function resolveFixtureIds(manifestFixtures, idsRaw, setRaw) {
   const manifestIds = manifestFixtures.map((f) => f.id);
+  const defaultIds = manifestIds.filter((id) => !id.startsWith("name_address_candidate_"));
   const explicitIds = parseCsv(idsRaw);
   if (explicitIds.length > 0) return { ids: explicitIds, unknownSets: [] };
 
   const requestedSets = parseCsv(setRaw).map((x) => x.toLowerCase());
-  if (requestedSets.length === 0) return { ids: [...manifestIds], unknownSets: [] };
+  if (requestedSets.length === 0) return { ids: [...defaultIds], unknownSets: [] };
 
   const buckets = {
     st_petersburg: manifestIds.filter((id) => id.startsWith("st_petersburg_")),
     edge_synthetic: manifestIds.filter((id) => id.startsWith("edge-synthetic-")),
     synthetic_eval: manifestIds.filter((id) => id.startsWith("synthetic_eval_")),
     on_bottle: manifestFixtures
-      .filter((f) => typeof f.relativePath === "string" && f.relativePath.startsWith("labels/on-bottle/"))
+      .filter(
+        (f) =>
+          typeof f.relativePath === "string" &&
+          (f.relativePath.startsWith("labels/curated/on-bottle/") ||
+            f.relativePath.startsWith("labels/on-bottle/")),
+      )
       .map((f) => f.id),
     off_bottle: manifestFixtures
       .filter(
@@ -174,31 +183,19 @@ function resolveFixtureIds(manifestFixtures, idsRaw, setRaw) {
       .map((f) => f.id),
     seed_textures: manifestIds.filter((id) => id.startsWith("seed-texture-")),
     llm_smoke: [
-      "happy-path-synthetic-label",
-      "difficult-synthetic-label-photo",
-      "edge-synthetic-glare-label",
-      "edge-synthetic-blur-label",
+      "synthetic_eval_vodka_import_baseline_front",
+      "synthetic_eval_whiskey_cream_baseline_front",
+      "synthetic_eval_spiced_rum_baseline_front",
       "seed-texture-01",
-      "st_petersburg_whiskey_label_dark_baseline",
+      "happy-path-synthetic-label",
     ].filter((id) => manifestIds.includes(id)),
     real_photo_curated: [
-      "st_petersburg_whiskey_baseline",
-      "st_petersburg_whiskey_angle_28",
-      "st_petersburg_whiskey_glare_brand",
-      "st_petersburg_whiskey_glare_warning_harsh",
-      "st_petersburg_whiskey_blur_moderate",
-      "st_petersburg_whiskey_blur_strong",
-      "st_petersburg_whiskey_low_light_grain",
-      "st_petersburg_whiskey_distance_crop_warning",
-      "st_petersburg_whiskey_crop_missing_warning",
-      "st_petersburg_vodka_baseline",
-      "st_petersburg_vodka_angle_45",
-      "st_petersburg_vodka_glare_brand",
-      "st_petersburg_whiskey_label_dark_baseline",
-      "smirnoff_vodka_happy_path",
-      "difficult-synthetic-label-photo",
+      "happy-path-synthetic-label",
+      "name_address_candidate_liquor_label_happy_path",
+      "name_address_candidate_st_petersburg_vodka_glare_brand",
     ].filter((id) => manifestIds.includes(id)),
-    all_manifest: manifestIds,
+    name_address_candidates: manifestIds.filter((id) => id.startsWith("name_address_candidate_")),
+    all_manifest: defaultIds,
   };
 
   const unknownSets = requestedSets.filter((name) => !(name in buckets));
@@ -468,8 +465,9 @@ async function main() {
 
   const base = (process.env.BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
   const exitOnHttpError = !falsyEnv("EVAL_EXIT_ON_HTTP_ERROR");
+  const failOnCorrectness = truthyEnv("EVAL_FAIL_ON_CORRECTNESS");
   const expectationsPathRaw =
-    process.env.EVAL_EXPECTATIONS?.trim() || "docs/evals/fixture-correctness-expectations.json";
+    process.env.EVAL_EXPECTATIONS?.trim() || "docs/evals/fixture-correctness-expectations-synthetic-eval.json";
 
   const manifest = JSON.parse(await readFile(path.join(root, "fixtures", "manifest.json"), "utf8"));
   const defaultApplication = await readFile(
@@ -497,6 +495,8 @@ async function main() {
             "off_bottle",
             "seed_textures",
             "llm_smoke",
+            "real_photo_curated",
+            "name_address_candidates",
             "all_manifest",
           ],
         },
@@ -606,6 +606,18 @@ async function main() {
   const httpFail = results.some((x) => typeof x.httpStatus === "number" && x.httpStatus >= 400);
   if (exitOnHttpError && (transportFail || httpFail)) {
     process.exit(1);
+  }
+  if (failOnCorrectness) {
+    if (!expectations) {
+      console.error(
+        "[fixture-verify] EVAL_FAIL_ON_CORRECTNESS is set but expectations file could not be loaded.",
+      );
+      process.exit(1);
+    }
+    if (correctness?.thresholdsPass !== true) {
+      console.error("[fixture-verify] correctness thresholds failed (EVAL_FAIL_ON_CORRECTNESS).");
+      process.exit(1);
+    }
   }
   process.exit(0);
 }
