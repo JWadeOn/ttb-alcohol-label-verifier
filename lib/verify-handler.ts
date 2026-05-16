@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveApplicationForVerify } from "@/lib/application-compliance";
+import { ensureApplicationCompliance } from "@/lib/application-compliance";
 import {
   ApplicationJsonSchema,
   type ApplicationJson,
@@ -122,21 +122,7 @@ function parseApplicationPayload(
     };
   }
 
-  const resolved = resolveApplicationForVerify(appResult.data);
-  if (!resolved.ok) {
-    return {
-      ok: false,
-      response: jsonError(
-        requestId,
-        400,
-        resolved.code,
-        resolved.message,
-        { missingFields: resolved.missingFields },
-      ),
-    };
-  }
-
-  return { ok: true, application: resolved.application };
+  return { ok: true, application: ensureApplicationCompliance(appResult.data) };
 }
 
 export async function handleVerifyPost(

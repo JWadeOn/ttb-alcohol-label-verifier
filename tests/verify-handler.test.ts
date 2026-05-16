@@ -96,19 +96,6 @@ describe("handleVerifyPost", () => {
     expect(json.code).toBe("INVALID_APPLICATION_JSON");
   });
 
-  it("returns 400 when required application fields are missing", async () => {
-    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const req = multipartRequest(
-      new Blob([png], { type: "image/png" }),
-      validApplicationJson({ nameAddress: "" }),
-    );
-    const res = await handleVerifyPost(req);
-    expect(res.status).toBe(400);
-    const json = (await res.json()) as { code?: string; message?: string };
-    expect(json.code).toBe("MISSING_REQUIRED_APPLICATION_FIELDS");
-    expect(json.message).toContain("Name & address");
-  });
-
   it("returns 413 when image exceeds upload limit", async () => {
     const req = multipartRequest(oversizedPngBlob(), JSON.stringify({ brandName: "Example Distillery" }));
     const res = await handleVerifyPost(req);

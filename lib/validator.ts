@@ -440,14 +440,15 @@ export function validateLabelFields(
       evidence: extractedNa.reason ?? null,
     });
   } else {
-    const ratio = fuzzyRatio(extractedNa.value.trim(), appNa.trim());
+    const appNaNormalized = appNa?.trim() ?? "";
+    const ratio = fuzzyRatio(extractedNa.value.trim(), appNaNormalized);
     if (ratio >= NAME_SIMILARITY) {
       push({
         fieldId: "nameAddress",
         status: "pass",
         message: `Name/address similarity ${ratio.toFixed(2)} meets threshold.`,
         extractedValue: extractedNa.value.trim(),
-        applicationValue: appNa.trim(),
+        applicationValue: appNaNormalized,
         evidence: null,
       });
     } else {
@@ -456,7 +457,7 @@ export function validateLabelFields(
         status: "fail",
         message: `Name/address mismatch (similarity ${ratio.toFixed(2)}).`,
         extractedValue: extractedNa.value.trim(),
-        applicationValue: appNa.trim(),
+        applicationValue: appNaNormalized,
         evidence: null,
       });
     }
