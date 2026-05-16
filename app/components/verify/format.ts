@@ -1,22 +1,7 @@
-import { ApplicationJsonSchema } from "@/lib/schemas";
+import { checkApplicationReadyForVerify } from "@/lib/application-compliance";
 
 export function getApplicationInputState(raw: string): { ok: true } | { ok: false; reason: string } {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { ok: false, reason: "Application JSON is invalid. Switch to JSON view to fix it." };
-  }
-
-  const checked = ApplicationJsonSchema.safeParse(parsed);
-  if (!checked.success) {
-    return {
-      ok: false,
-      reason: "Application data does not match the expected fields yet. Fix it before verifying.",
-    };
-  }
-
-  return { ok: true };
+  return checkApplicationReadyForVerify(raw);
 }
 
 export function formatBytes(bytes: number): string {

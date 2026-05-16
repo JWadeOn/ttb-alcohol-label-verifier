@@ -31,4 +31,24 @@ describe("fixtures manifest", () => {
     const parsed = ApplicationJsonSchema.safeParse(JSON.parse(raw));
     expect(parsed.success).toBe(true);
   });
+
+  it("happy-path fixture applications satisfy mandatory-field readiness", async () => {
+    const { checkApplicationReadyForVerify } = await import("@/lib/application-compliance");
+    const raw = await readFile(path.join(root, "fixtures", "manifest.json"), "utf8");
+    const manifest = JSON.parse(raw) as {
+      fixtures: { id: string; applicationPath?: string }[];
+    };
+
+    const skipPattern = /obvious_fail|missing_/;
+
+    for (const fixture of manifest.fixtures) {
+      if (!fixture.applicationPath || skipPattern.test(fixture.id)) continue;
+      const applicationRaw = await readFile(
+        path.join(root, "fixtures", fixture.applicationPath),
+        "utf8",
+      );
+      const state = checkApplicationReadyForVerify(applicationRaw);
+      expect(state.ok, `fixture ${fixture.id} should be verify-ready`).toBe(true);
+    }
+  });
 });

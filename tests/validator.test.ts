@@ -34,7 +34,7 @@ describe("validateLabelFields", () => {
     alcoholContent: "45% ALC/VOL",
     netContents: "750 mL",
     governmentWarning: CANONICAL_GOVERNMENT_WARNING,
-    nameAddress: "",
+    nameAddress: "Stone's Throw Distilling Co, Louisville, KY",
     countryOfOrigin: "",
   };
 
@@ -168,6 +168,49 @@ describe("validateLabelFields", () => {
     const classType = rows.find((r) => r.fieldId === "classType");
     expect(classType?.status).toBe("manual_review");
     expect(classType?.message).toContain("modifiers differ");
+  });
+
+  it("missing mandatory application name/address fails before fuzzy comparison", () => {
+    const app: ApplicationJson = {
+      ...baseApp,
+      nameAddress: "",
+    };
+    const extraction = baseExtraction({
+      brandName: confident(baseApp.brandName ?? ""),
+      classType: confident(baseApp.classType ?? ""),
+      alcoholContent: confident(baseApp.alcoholContent ?? ""),
+      netContents: confident(baseApp.netContents ?? ""),
+      governmentWarning: confident(CANONICAL_GOVERNMENT_WARNING),
+      nameAddress: confident("Stone's Throw Distilling Co, Louisville, KY"),
+      countryOfOrigin: { value: null, confidence: 0 },
+    });
+
+    const rows = validateLabelFields(extraction, app);
+    const nameAddress = rows.find((r) => r.fieldId === "nameAddress");
+    expect(nameAddress?.status).toBe("fail");
+    expect(nameAddress?.message).toContain("Required application value missing");
+  });
+
+  it("import missing country of origin fails as mandatory", () => {
+    const app: ApplicationJson = {
+      ...baseApp,
+      isImport: true,
+      countryOfOrigin: "",
+    };
+    const extraction = baseExtraction({
+      brandName: confident(baseApp.brandName ?? ""),
+      classType: confident(baseApp.classType ?? ""),
+      alcoholContent: confident(baseApp.alcoholContent ?? ""),
+      netContents: confident(baseApp.netContents ?? ""),
+      governmentWarning: confident(CANONICAL_GOVERNMENT_WARNING),
+      nameAddress: confident(baseApp.nameAddress ?? ""),
+      countryOfOrigin: confident("Product of Poland"),
+    });
+
+    const rows = validateLabelFields(extraction, app);
+    const origin = rows.find((r) => r.fieldId === "countryOfOrigin");
+    expect(origin?.status).toBe("fail");
+    expect(origin?.message).toContain("Required application value missing");
   });
 
   it("class/type contradictory base spirit still fails", () => {

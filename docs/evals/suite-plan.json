@@ -1,0 +1,122 @@
+{
+  "version": 2,
+  "lastUpdated": "2026-05-16",
+  "purpose": "Canonical eval suite definition: tiers, stakeholder coverage classes, and promotion rules.",
+  "canonicalSource": true,
+  "policy": {
+    "maxCoreFixtures": 17,
+    "maxCoreFixturesRationale": "L1 includes 12 image-stress fixtures, 4 obvious-fail contradiction cases, and 1 mandatory-field-missing case; routing proof uses existing crop-stress fixtures.",
+    "promotionRule": "Only promote a fixture into L1 if it catches regressions not already covered by existing L1 fixtures.",
+    "demotionRule": "Demote fixtures that have redundant behavior with another L1 fixture for two consecutive weekly reviews.",
+    "experimentsRule": "name_address_candidate_* and backup/regenerated assets are L3 only and never PR-gating.",
+    "strictCorrectnessGate": {
+      "mandatoryFor": ["CI", "merge gate", "npm run eval:l1"],
+      "optionalFor": ["local iteration", "npm run eval:l0", "npm run eval:l2"]
+    },
+    "maintenance": {
+      "owner": "eval-suite-maintainer",
+      "cadence": "weekly",
+      "durationMinutes": 20,
+      "checklist": [
+        "Run npm run eval:validate-suite-plan",
+        "Review L1 pass/fail/manual_review distribution",
+        "Promote or demote at most one fixture per week"
+      ]
+    }
+  },
+  "coverageMatrix": {
+    "description": "Maps stakeholder decision classes to executable fixture IDs. See docs/CORE_REQUIREMENTS_SCORECARD.md and docs/REQUIREMENTS_SOURCE_OF_TRUTH.md.",
+    "obvious_pass": [
+      "synthetic_eval_vodka_import_baseline_front",
+      "synthetic_eval_whiskey_cream_baseline_front",
+      "synthetic_eval_spiced_rum_baseline_front"
+    ],
+    "obvious_fail": [
+      "synthetic_eval_vodka_import_obvious_fail_brand",
+      "synthetic_eval_vodka_import_obvious_fail_alcohol",
+      "synthetic_eval_vodka_import_obvious_fail_net_contents",
+      "synthetic_eval_vodka_import_obvious_fail_country_of_origin"
+    ],
+    "mandatory_field_missing": [
+      "synthetic_eval_vodka_import_missing_name_address"
+    ],
+    "tricky_pass": [
+      "synthetic_eval_vodka_import_glare_brand",
+      "synthetic_eval_vodka_import_angle_30",
+      "synthetic_eval_whiskey_cream_glare_brand",
+      "synthetic_eval_whiskey_cream_angle_30",
+      "synthetic_eval_spiced_rum_glare_brand",
+      "synthetic_eval_spiced_rum_angle_30"
+    ],
+    "tricky_fail_manual_review": [
+      "synthetic_eval_vodka_import_crop_warning_partial",
+      "synthetic_eval_whiskey_cream_crop_warning_partial",
+      "synthetic_eval_spiced_rum_crop_warning_partial"
+    ],
+    "routing_fallback_safety": [
+      "synthetic_eval_vodka_import_crop_warning_partial",
+      "synthetic_eval_whiskey_cream_crop_warning_partial",
+      "synthetic_eval_spiced_rum_crop_warning_partial"
+    ]
+  },
+  "tiers": {
+    "L0_sanity": {
+      "goal": "Fast smoke check for pipeline health and obvious routing regressions.",
+      "fixtureIds": [
+        "synthetic_eval_vodka_import_baseline_front",
+        "synthetic_eval_whiskey_cream_baseline_front",
+        "synthetic_eval_spiced_rum_baseline_front"
+      ],
+      "expectationsProfile": "docs/evals/fixture-correctness-expectations-l0.json",
+      "failOnCorrectness": false
+    },
+    "L1_core_gate": {
+      "goal": "PR-gating correctness coverage: pass, fail, tricky, and manual_review routing.",
+      "fixtureIds": [
+        "synthetic_eval_vodka_import_baseline_front",
+        "synthetic_eval_vodka_import_glare_brand",
+        "synthetic_eval_vodka_import_angle_30",
+        "synthetic_eval_vodka_import_crop_warning_partial",
+        "synthetic_eval_vodka_import_obvious_fail_brand",
+        "synthetic_eval_vodka_import_obvious_fail_alcohol",
+        "synthetic_eval_vodka_import_obvious_fail_net_contents",
+        "synthetic_eval_vodka_import_obvious_fail_country_of_origin",
+        "synthetic_eval_vodka_import_missing_name_address",
+        "synthetic_eval_whiskey_cream_baseline_front",
+        "synthetic_eval_whiskey_cream_glare_brand",
+        "synthetic_eval_whiskey_cream_angle_30",
+        "synthetic_eval_whiskey_cream_crop_warning_partial",
+        "synthetic_eval_spiced_rum_baseline_front",
+        "synthetic_eval_spiced_rum_glare_brand",
+        "synthetic_eval_spiced_rum_angle_30",
+        "synthetic_eval_spiced_rum_crop_warning_partial"
+      ],
+      "expectationsProfile": "docs/evals/fixture-correctness-expectations-l1.json",
+      "failOnCorrectness": true
+    },
+    "L2_extended_diagnostics": {
+      "goal": "Full synthetic stress pack for trend tracking, run nightly or before major release merges.",
+      "fixtureSets": ["synthetic_eval"],
+      "explicitFixtureIds": [
+        "synthetic_eval_vodka_import_low_light_grain",
+        "synthetic_eval_whiskey_cream_low_light_grain",
+        "synthetic_eval_whiskey_dark_baseline_front",
+        "synthetic_eval_whiskey_dark_glare_brand",
+        "synthetic_eval_whiskey_dark_angle_30",
+        "synthetic_eval_whiskey_dark_low_light_grain",
+        "synthetic_eval_whiskey_dark_crop_warning_partial",
+        "synthetic_eval_spiced_rum_low_light_grain"
+      ],
+      "expectationsProfile": "docs/evals/fixture-correctness-expectations-synthetic-eval.json",
+      "failOnCorrectness": false
+    },
+    "L3_experiments_only": {
+      "goal": "On-bottle candidates and prompt iteration; no blocking decisions.",
+      "fixtureSet": "name_address_candidates",
+      "notes": [
+        "On-bottle fixtures are temporarily excluded from L0/L1/L2 until handpicked curation is ready.",
+        "Never include L3 artifacts in PR-gating suites."
+      ]
+    }
+  }
+}

@@ -18,8 +18,8 @@ export function BatchPanel({
   onChooseBatchFiles,
 }: BatchPanelProps) {
   return (
-    <>
-      <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+    <div className="flex min-h-0 flex-col gap-1 lg:flex-1">
+      <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
         Batch mode reuses the same application JSON across up to {CLIENT_BATCH_MAX_IMAGES} images (
         {formatBytes(CLIENT_UPLOAD_MAX_BYTES)} max per file). Processing is synchronous in this MVP: expect roughly a
         few seconds per image, running with bounded server concurrency (typically 2 at a time).
@@ -103,11 +103,20 @@ export function BatchPanel({
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ttb-200 bg-gradient-to-b from-ttb-50/80 to-white px-3 py-4 text-center">
-            <p className="text-xs font-semibold text-stone-800">1. Choose batch images</p>
-            <p className="max-w-[18rem] text-[11px] leading-relaxed text-stone-500">
-              2. Run batch verification with the current application data applied to every image.
-            </p>
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-ttb-200 bg-gradient-to-b from-ttb-50/80 to-white px-3 py-4 text-center">
+            <details className="relative">
+              <summary className="cursor-pointer list-none text-[11px] font-semibold text-stone-600 underline decoration-stone-400 underline-offset-2 transition hover:text-stone-800 [&::-webkit-details-marker]:hidden">
+                Click here for instructions on how to use this.
+              </summary>
+              <div className="absolute left-1/2 top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-lg border border-stone-200 bg-white p-3 text-left shadow-lg">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Quick start</p>
+                <ol className="mt-2 space-y-1.5 text-xs text-stone-700">
+                  <li>1. Choose batch images</li>
+                  <li>2. Enter application data</li>
+                  <li>3. Run batch verification</li>
+                </ol>
+              </div>
+            </details>
             <button
               type="button"
               onClick={onChooseBatchFiles}
@@ -126,6 +135,6 @@ export function BatchPanel({
           {batchErrorText}
         </p>
       ) : null}
-    </>
+    </div>
   );
 }

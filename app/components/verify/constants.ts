@@ -3,7 +3,7 @@ import { MAX_LABEL_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 export const DEFAULT_APPLICATION = JSON.stringify(
   {
-    productClass: "",
+    productClass: "distilled_spirits",
     isImport: false,
     brandName: "",
     classType: "",
@@ -38,11 +38,11 @@ export const FIELD_REQUIREMENTS: Record<FieldId, string> = {
   netContents:
     "Parsed volume (mL, L, fl oz, etc.) must agree within tolerance after unit conversion.",
   governmentWarning:
-    "Auto-pass only on exact, case-sensitive equality. Non-exact text is triaged by similarity: close → manual review; materially different → fail.",
+    "Required on the application (auto-filled from canonical text when hidden in formatted mode). Auto-pass only on exact, case-sensitive equality; near matches → manual review; material mismatch → fail.",
   nameAddress:
-    "Compared when application includes text; if application omits it, the row is manual review even when the label is blank.",
+    "Required on the application. Fuzzy match when label text is read confidently; blank application value → fail before comparison.",
   countryOfOrigin:
-    "Not applicable when import is unchecked. For imports, fuzzy match when both sides include text.",
+    "Required when import is checked; not applicable otherwise. Fuzzy match when both sides include text.",
 };
 
 export const CLIENT_UPLOAD_MAX_DIMENSION = 1800;

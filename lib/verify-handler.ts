@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { ensureApplicationCompliance } from "@/lib/application-compliance";
 import {
   ApplicationJsonSchema,
+  type ApplicationJson,
   VerifyBatchResponseSchema,
   VERIFY_FORM_FIELDS,
   VerifyExtractOnlyResponseSchema,
@@ -83,6 +85,46 @@ function imageTooLargeError(
   return jsonError(requestId, 413, "IMAGE_TOO_LARGE", message);
 }
 
+type ParsedApplicationPayload =
+  | { ok: true; application: ApplicationJson }
+  | { ok: false; response: Response };
+
+function parseApplicationPayload(
+  requestId: string,
+  applicationRaw: string,
+): ParsedApplicationPayload {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(applicationRaw);
+  } catch {
+    return {
+      ok: false,
+      response: jsonError(
+        requestId,
+        400,
+        "INVALID_APPLICATION_JSON",
+        "Application JSON could not be parsed.",
+      ),
+    };
+  }
+
+  const appResult = ApplicationJsonSchema.safeParse(parsed);
+  if (!appResult.success) {
+    return {
+      ok: false,
+      response: jsonError(
+        requestId,
+        400,
+        "INVALID_APPLICATION_SCHEMA",
+        "Application JSON failed validation.",
+        appResult.error.flatten(),
+      ),
+    };
+  }
+
+  return { ok: true, application: ensureApplicationCompliance(appResult.data) };
+}
+
 export async function handleVerifyPost(
   req: Request,
   deps: VerifyHandlerDeps = {},
@@ -140,31 +182,14 @@ export async function handleVerifyPost(
       );
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(applicationRaw);
-    } catch {
-      return jsonError(
-        requestId,
-        400,
-        "INVALID_APPLICATION_JSON",
-        "Application JSON could not be parsed.",
-      );
+    const parsedApplication = parseApplicationPayload(requestId, applicationRaw);
+    if (!parsedApplication.ok) {
+      return parsedApplication.response;
     }
-
-    const appResult = ApplicationJsonSchema.safeParse(parsed);
-    if (!appResult.success) {
-      return jsonError(
-        requestId,
-        400,
-        "INVALID_APPLICATION_SCHEMA",
-        "Application JSON failed validation.",
-        appResult.error.flatten(),
-      );
-    }
+    const application = parsedApplication.application;
 
     if (isVerifyDevStubEnabled()) {
-      const body = buildStubVerifyResponse(requestId, appResult.data);
+      const body = buildStubVerifyResponse(requestId, application);
       console.info("[verify] VERIFY_DEV_STUB: returning typed stub (no OpenAI, no pipeline)", {
         requestId,
         totalMs: Date.now() - verifyWallStarted,
@@ -213,7 +238,7 @@ export async function handleVerifyPost(
         if (hit) {
           body = resolvedDeps.buildVerifySuccessResponse({
             requestId,
-            application: appResult.data,
+            application,
             extraction: hit,
             imageQuality: { ok: true },
             extractionTimings: {
@@ -236,7 +261,7 @@ export async function handleVerifyPost(
         body = await resolvedDeps.runVerifyPipeline({
           requestId,
           imageBytes,
-          application: appResult.data,
+          application,
           openAiApiKey: apiKey,
         });
       }
@@ -462,28 +487,11 @@ export async function handleVerifyBatchPost(
       );
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(applicationRaw);
-    } catch {
-      return jsonError(
-        requestId,
-        400,
-        "INVALID_APPLICATION_JSON",
-        "Application JSON could not be parsed.",
-      );
+    const parsedApplication = parseApplicationPayload(requestId, applicationRaw);
+    if (!parsedApplication.ok) {
+      return parsedApplication.response;
     }
-
-    const appResult = ApplicationJsonSchema.safeParse(parsed);
-    if (!appResult.success) {
-      return jsonError(
-        requestId,
-        400,
-        "INVALID_APPLICATION_SCHEMA",
-        "Application JSON failed validation.",
-        appResult.error.flatten(),
-      );
-    }
+    const application = parsedApplication.application;
 
     const extractionMode = resolveVerifyExtractionMode();
     const requiresApiKey = extractionMode !== "ocr_only";
@@ -529,7 +537,7 @@ export async function handleVerifyBatchPost(
         const itemStartedAt = Date.now();
 
         if (isVerifyDevStubEnabled()) {
-          const stub = buildStubVerifyResponse(itemRequestId, appResult.data);
+          const stub = buildStubVerifyResponse(itemRequestId, application);
           items[index] = {
             index,
             fileName,
@@ -546,7 +554,7 @@ export async function handleVerifyBatchPost(
           const result = await resolvedDeps.runVerifyPipeline({
             requestId: itemRequestId,
             imageBytes,
-            application: appResult.data,
+            application,
             openAiApiKey: apiKey,
           });
           items[index] = {

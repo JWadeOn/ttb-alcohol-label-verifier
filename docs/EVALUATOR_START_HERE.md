@@ -29,6 +29,7 @@ Use this short path to review the submission without internal planning noise.
 
 ## 5) Review measured evidence
 
+- `docs/evals/suite-plan.json` - tiered eval suite (L0/L1/L2/L3) and stakeholder coverage matrix.
 - `docs/evals/README.md` - canonical eval artifact index.
 - `docs/evals/fixture-correctness-production-2026-05-13.json` - full production fixture correctness + latency run.
 - `docs/evals/fixture-correctness-st-petersburg-production-2026-05-13.json` - focused difficult-label subset run.

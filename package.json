@@ -21,6 +21,12 @@
     "eval:primary-latency:bench": "EVAL_ITERATIONS=5 EVAL_COOLDOWN_MS=400 node evals/run-primary-latency.mjs",
     "eval:fixture-verify": "node evals/run-fixture-verify.mjs",
     "eval:fixture-verify:subset": "EVAL_FIXTURE_SET=llm_smoke node evals/run-fixture-verify.mjs",
+    "eval:l0": "node evals/run-suite-tier.mjs L0_sanity",
+    "eval:l1": "node evals/run-suite-tier.mjs L1_core_gate",
+    "eval:l2": "node evals/run-suite-tier.mjs L2_extended_diagnostics",
+    "eval:validate-suite-plan": "node scripts/validate-eval-suite-plan.mjs",
+    "eval:build-tier-expectations": "node scripts/build-tier-expectations.mjs",
+    "eval:on-bottle:candidates": "EVAL_FIXTURE_SET=name_address_candidates node evals/run-fixture-verify.mjs",
     "eval:fixture-verify:prod": "sh -ac 'CLI_BASE_URL=\"${BASE_URL-}\"; CLI_EVAL_OUT=\"${EVAL_OUT-}\"; set -a; . ./.env; set +a; OPENAI_DISABLED= VERIFY_DEV_STUB= BASE_URL=\"${CLI_BASE_URL:-${BASE_URL:-https://ttb-alcohol-label-verifier-production.up.railway.app}}\" EVAL_OUT=\"${CLI_EVAL_OUT:-${EVAL_OUT:-docs/evals/fixture-correctness-production-$(date +%F).json}}\" node evals/run-fixture-verify.mjs'",
     "docker:build": "docker build -t ttb-label-verifier:local ."
   },

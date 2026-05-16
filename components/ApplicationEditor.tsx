@@ -23,40 +23,33 @@ const APPLICATION_FIELDS: {
   kind: "string" | "boolean";
 }[] = [
   { key: "productClass", label: "Product class", kind: "string" },
-  { key: "isImport", label: "Import product", hint: "If checked, country of origin may apply.", kind: "boolean" },
   { key: "brandName", label: "Brand name", kind: "string" },
   { key: "classType", label: "Class / type", kind: "string" },
   { key: "alcoholContent", label: "Alcohol content", hint: "% ABV/VOL or proof", kind: "string" },
   { key: "netContents", label: "Net contents", hint: "Volume with unit (mL, L, fl oz)", kind: "string" },
-  {
-    key: "governmentWarning",
-    label: "Government warning",
-    kind: "string",
-    multiline: true,
-  },
+  { key: "isImport", label: "Import product", hint: "Turn on to enable country of origin.", kind: "boolean" },
+  { key: "countryOfOrigin", label: "Country of origin", hint: "Used when Import product is enabled.", kind: "string" },
   { key: "nameAddress", label: "Name & address", kind: "string", multiline: true },
-  { key: "countryOfOrigin", label: "Country of origin", kind: "string" },
 ];
 
-const PRODUCT_CLASS_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Select product class" },
-  { value: "distilled_spirits", label: "Distilled spirits" },
-  { value: "wine", label: "Wine" },
-  { value: "beer", label: "Beer / malt beverage" },
+const PRODUCT_CLASS_OPTIONS: Array<{ value: string; label: string; disabled?: boolean }> = [
+  { value: "distilled_spirits", label: "Distilled spirits (supported)" },
+  { value: "wine", label: "Wine (not yet supported)", disabled: true },
+  { value: "beer", label: "Beer / malt beverage (not yet supported)", disabled: true },
 ];
 
 export const APPLICATION_FORMATTED_PAGE_NAV = [
   {
-    shortLabel: "Basics",
+    shortLabel: "Core fields",
     title: "Product, import & quantity",
-    hint: "Brand line, class/type, alcohol statement, and net contents.",
+    hint: "Brand line, class/type, alcohol statement, and net contents for distilled spirits.",
     fields: ["Product class", "Import", "Brand name", "Class / type", "Alcohol", "Net contents"],
   },
   {
-    shortLabel: "Statements",
-    title: "Warning & responsible party",
-    hint: "Warning text, responsible party, and origin when needed.",
-    fields: ["Government warning", "Name & address", "Country of origin"],
+    shortLabel: "Supplemental",
+    title: "Responsible party & origin",
+    hint: "Name/address and country of origin (when import is enabled).",
+    fields: ["Name & address", "Country of origin"],
   },
 ] as const;
 
@@ -132,7 +125,7 @@ export function ApplicationEditor({
     ? "w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs text-stone-900 outline-none focus:border-ttb-500 focus:ring-1 focus:ring-ttb-500/35"
     : "w-full rounded-md border border-stone-300 bg-white px-2.5 py-2 text-sm text-stone-900 outline-none focus:border-ttb-500 focus:ring-1 focus:ring-ttb-500/35";
   const textareaClass = inputClass;
-  const fieldGap = compact ? "gap-1 border-b border-stone-200/80 pb-2.5 last:border-0 last:pb-0" : "gap-1.5 border-b border-stone-200/80 pb-4 last:border-0 last:pb-0";
+  const fieldGap = compact ? "gap-1" : "gap-1.5";
 
   const showPagePager =
     mode === "formatted" &&
@@ -178,12 +171,12 @@ export function ApplicationEditor({
           )}
         </div>
         {showPagePager ? (
-          <div className="flex items-center gap-1.5 pl-0.5">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-stone-400">Page</span>
+          <div className="flex flex-col items-start gap-1 pl-0.5">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-stone-400">Section</span>
             <div
               className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white p-0.5"
               role="group"
-              aria-label="Application field pages"
+              aria-label="Application field sections"
             >
               {APPLICATION_FORMATTED_PAGE_NAV.map((pg, i) => {
                 const active = formattedPageIndex === i;
@@ -196,8 +189,8 @@ export function ApplicationEditor({
                     }}
                     aria-label={
                       active
-                        ? `${pg.shortLabel} (page ${i + 1} of ${APPLICATION_FORMATTED_PAGE_COUNT}, selected)`
-                        : `Show ${pg.shortLabel} (page ${i + 1} of ${APPLICATION_FORMATTED_PAGE_COUNT})`
+                        ? `${pg.shortLabel} section selected`
+                        : `Show ${pg.shortLabel} section`
                     }
                     aria-pressed={active}
                     className={`cursor-pointer rounded-md px-2 py-1 text-[11px] font-semibold transition sm:px-2.5 ${
@@ -211,6 +204,9 @@ export function ApplicationEditor({
                 );
               })}
             </div>
+            <span className="text-[10px] text-stone-500">
+              Switch sections to edit all application fields.
+            </span>
           </div>
         ) : null}
       </div>
@@ -232,17 +228,20 @@ export function ApplicationEditor({
       ) : parsed.ok ? (
         <div
           className={`min-h-0 flex-1 overflow-y-auto rounded-lg border border-stone-200 bg-stone-50/50 px-2.5 py-2 sm:px-3 ${
-            compact ? "space-y-2" : "space-y-4 px-3 py-4 sm:px-4"
+            compact ? "grid grid-cols-1 gap-2 lg:grid-cols-2" : "grid grid-cols-1 gap-3 lg:grid-cols-2 px-3 py-4 sm:px-4"
           }`}
         >
           {fieldsForPage.map((f) => {
+            const spansFullWidth = f.multiline || f.key === "productClass";
+            const fieldColClass = spansFullWidth ? "lg:col-span-2" : "";
+
             if (f.kind === "boolean") {
               const checked = parsed.data[f.key] === true;
               const boolRow = compact
-                ? "flex cursor-pointer items-start gap-2.5 border-b border-stone-200/80 pb-2.5 last:border-0 last:pb-0"
-                : "flex cursor-pointer items-start gap-3 border-b border-stone-200/80 pb-4 last:border-0 last:pb-0";
+                ? "flex cursor-pointer items-start gap-2.5"
+                : "flex cursor-pointer items-start gap-3";
               return (
-                <label key={f.key} className={boolRow}>
+                <label key={f.key} className={`${boolRow} ${fieldColClass}`}>
                   <input
                     type="checkbox"
                     checked={checked}
@@ -263,14 +262,29 @@ export function ApplicationEditor({
                 : parsed.data[f.key] == null
                   ? ""
                   : String(parsed.data[f.key]);
+            const normalizedProductClass =
+              f.key === "productClass" &&
+              strVal !== "distilled_spirits" &&
+              strVal !== "wine" &&
+              strVal !== "beer"
+                ? "distilled_spirits"
+                : strVal;
+            const isCountryField = f.key === "countryOfOrigin";
+            const importEnabled = parsed.data.isImport === true;
+            const countryDisabled = isCountryField && !importEnabled;
 
             const warnRows = compact ? 3 : 6;
             const addrRows = compact ? 2 : 3;
 
             return (
-              <label key={f.key} className={`flex flex-col ${fieldGap}`}>
-                <span className={labelClass}>{f.label}</span>
-                {f.hint ? <span className={hintClass}>{f.hint}</span> : null}
+              <label
+                key={f.key}
+                className={`flex flex-col ${fieldGap} ${fieldColClass} ${countryDisabled ? "opacity-60" : ""}`}
+              >
+                <span className={`${labelClass} ${countryDisabled ? "text-stone-500" : ""}`}>{f.label}</span>
+                {f.hint ? (
+                  <span className={`${hintClass} ${countryDisabled ? "text-stone-400" : ""}`}>{f.hint}</span>
+                ) : null}
                 {f.multiline ? (
                   <textarea
                     value={strVal}
@@ -281,13 +295,13 @@ export function ApplicationEditor({
                   />
                 ) : f.key === "productClass" ? (
                   <select
-                    value={strVal}
+                    value={normalizedProductClass}
                     onChange={(e) => patch({ [f.key]: e.target.value })}
                     className={inputClass}
                     aria-label="Product class"
                   >
                     {PRODUCT_CLASS_OPTIONS.map((option) => (
-                      <option key={option.value || "__empty"} value={option.value}>
+                      <option key={option.value} value={option.value} disabled={option.disabled}>
                         {option.label}
                       </option>
                     ))}
@@ -298,9 +312,17 @@ export function ApplicationEditor({
                     value={strVal}
                     onChange={(e) => patch({ [f.key]: e.target.value })}
                     spellCheck={false}
-                    className={inputClass}
+                    disabled={countryDisabled}
+                    className={`${inputClass} ${
+                      countryDisabled
+                        ? "cursor-not-allowed border-stone-200 bg-stone-100 text-stone-400"
+                        : ""
+                    }`}
                   />
                 )}
+                {countryDisabled ? (
+                  <span className="text-[10px] text-stone-500">Enable Import product to edit this field.</span>
+                ) : null}
               </label>
             );
           })}

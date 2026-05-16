@@ -88,6 +88,7 @@ This prototype is decision support, not legal automation.
 - It rolls out vertical coverage in this order: distilled spirits, then wine, then beer.
 - Commodity-specific and conditional disclosures (for example age statements, additive disclosures, state-of-distillation details) are deferred unless explicitly implemented and tested.
 - Ambiguous or low-confidence extractions route to manual review.
+- Required application fields (brand, class, alcohol, net contents, name/address, government warning; country of origin when import) must be present — the UI blocks verify until they are filled, and validator policy returns **`fail`** for missing required values.
 
 ## Technical Approach
 

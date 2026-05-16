@@ -2,37 +2,57 @@
 
 This folder contains committed evidence for correctness and latency in the prototype.
 
-## Recommended evaluator files
+## Canonical suite (start here)
 
 | File | Purpose |
-|---|---|
-| [`fixture-correctness-production-2026-05-13.json`](./fixture-correctness-production-2026-05-13.json) | Full `on_bottle` production fixture run with correctness scoring and latency summary. |
-| [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) | Focused difficult-label fixture run (St. Petersburg subset). |
-| [`fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json`](./fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json) | **Latest** full `synthetic_eval` run on Railway (post timeout-cap deploy): 20/20 HTTP 200, thresholds pass. |
-| [`fixture-correctness-synthetic-eval-full-2026-05-15.json`](./fixture-correctness-synthetic-eval-full-2026-05-15.json) | Full `synthetic_eval` local hybrid run (`BASE_URL` localhost). |
-| [`fixture-correctness-synthetic-eval-llm-only-2026-05-15.json`](./fixture-correctness-synthetic-eval-llm-only-2026-05-15.json) | Full `synthetic_eval` local run with `VERIFY_EXTRACTION_MODE=llm_only` for latency/correctness comparison. |
-| [`fixture-correctness-synthetic-eval-full-2026-05-14.json`](./fixture-correctness-synthetic-eval-full-2026-05-14.json) | Earlier full `synthetic_eval` production run (pre–PR #2 hybrid tuning; OpenAI-only providers). |
-| [`fixture-correctness-expectations-synthetic-eval.json`](./fixture-correctness-expectations-synthetic-eval.json) | Dedicated expectations profile for the synthetic batch so top-level thresholds reflect that subset only. |
-| [`CORRECTNESS_THRESHOLDS.md`](./CORRECTNESS_THRESHOLDS.md) | Threshold definitions used to interpret eval outputs. |
-| [`fixture-correctness-expectations-real-photo-pack-v1.json`](./fixture-correctness-expectations-real-photo-pack-v1.json) | Expectations profile for curated on-bottle real-photo pack (`EVAL_FIXTURE_SET=real_photo_curated`). |
-| [`REAL_PHOTO_PACK.md`](./REAL_PHOTO_PACK.md) | Rationale per fixture adversity type and run command. |
-| [`PRIMARY_LATENCY_RUNS.md`](./PRIMARY_LATENCY_RUNS.md) | Chronological index of production latency snapshots. |
+|------|---------|
+| [`suite-plan.json`](./suite-plan.json) | **Source of truth** for L0/L1/L2/L3 tiers, coverage matrix, and gate policy |
+| [`fixture-correctness-expectations-l0.json`](./fixture-correctness-expectations-l0.json) | L0 sanity expectations |
+| [`fixture-correctness-expectations-l1.json`](./fixture-correctness-expectations-l1.json) | L1 core gate expectations (blocking) |
+| [`fixture-correctness-expectations-synthetic-eval.json`](./fixture-correctness-expectations-synthetic-eval.json) | L2 full synthetic pack expectations |
+| [`CORRECTNESS_THRESHOLDS.md`](./CORRECTNESS_THRESHOLDS.md) | How to interpret thresholds and run tiers |
 
-### Real-photo vs synthetic deltas (production snapshots)
+Cross-links: [`docs/CORE_REQUIREMENTS_SCORECARD.md`](../CORE_REQUIREMENTS_SCORECARD.md), [`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`](../REQUIREMENTS_SOURCE_OF_TRUTH.md), [`docs/EVALUATOR_START_HERE.md`](../EVALUATOR_START_HERE.md).
 
-| Artifact | Fixtures | `correctness.totals.overallScore` | `thresholdsPass` | Routing note |
-|----------|----------|-----------------------------------|------------------|--------------|
-| [`fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json`](./fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json) | 20 scripted `synthetic_eval_*` | 0.995 | true | Controlled left-to-right layouts; strong pass rates on applicable fields. |
-| [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) | 18 on-bottle St. Petersburg captures | 0.912 | false* | More `manual_review` / `fail` on angle, glare, blur, and crop stress; aligns with evaluator concern on real photos. |
+## Coverage matrix (L1)
 
-\*`thresholdsPass` false on the St. Petersburg subset run because the expectations file still lists global `requiredFixtureIds` from the full manifest; per-fixture scores pass. Use [`fixture-correctness-expectations-real-photo-pack-v1.json`](./fixture-correctness-expectations-real-photo-pack-v1.json) for curated-pack thresholds.
+| Class | Count | Role |
+|-------|-------|------|
+| Obvious pass | 3 | Baseline readability + match |
+| Obvious fail | 4 | Application contradiction on clean label |
+| Tricky pass | 6 | Glare + angle stress |
+| Tricky fail / manual_review | 3 | Partial warning crop |
+| Routing / fallback | 3 | Same crop fixtures; manual_review over auto-guess |
+
+Details and fixture IDs: [`suite-plan.json`](./suite-plan.json) → `coverageMatrix`.
+
+## Historical artifacts (archived reference)
+
+| File | Purpose |
+|------|---------|
+| [`fixture-correctness-production-2026-05-13.json`](./fixture-correctness-production-2026-05-13.json) | Historical full `on_bottle` production run |
+| [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) | Historical St. Petersburg subset |
+| [`fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json`](./fixture-correctness-synthetic-eval-full-2026-05-15-production-v2.json) | Latest full `synthetic_eval` production snapshot |
+| [`fixture-correctness-synthetic-eval-full-2026-05-15.json`](./fixture-correctness-synthetic-eval-full-2026-05-15.json) | Full `synthetic_eval` local hybrid run |
+| [`fixture-correctness-expectations-real-photo-pack-v1.json`](./fixture-correctness-expectations-real-photo-pack-v1.json) | Legacy real-photo expectations (inactive) |
+| [`REAL_PHOTO_PACK.md`](./REAL_PHOTO_PACK.md) | Archived real-photo pack rationale |
 
 ## Regenerating artifacts (manual only)
 
-- Full production fixture eval: `npm run eval:fixture-verify:prod`
-- Generic fixture eval: `npm run eval:fixture-verify`
-- `on_bottle` subset: `EVAL_FIXTURE_SET=on_bottle npm run eval:fixture-verify`
-- `off_bottle` synthetic subset: `EVAL_FIXTURE_SET=off_bottle EVAL_EXPECTATIONS=docs/evals/fixture-correctness-expectations-synthetic-eval.json npm run eval:fixture-verify`
-- Latency-only snapshot: `npm run eval:primary-latency`
+```bash
+npm run eval:validate-suite-plan   # drift check (no API)
+npm run eval:l0                    # 3 fixtures, non-blocking correctness
+npm run eval:l1                    # 16 fixtures, blocking correctness
+npm run eval:l2                    # full synthetic_eval, non-blocking
+npm run eval:on-bottle:candidates  # L3 manual lane
+npm run eval:fixture-verify:prod   # production BASE_URL
+npm run eval:primary-latency       # latency-only
+```
 
 Model-backed evals are intentionally run manually to avoid cost and drift from unattended scheduled jobs.
+
+## Pre-PR checklist
+
+1. `npm run eval:validate-suite-plan`
+2. `npm run eval:l1` (with app running and `OPENAI_API_KEY` set)
+3. Confirm `correctness.thresholdsPass` is true in output (or process exits 0 only when thresholds pass)

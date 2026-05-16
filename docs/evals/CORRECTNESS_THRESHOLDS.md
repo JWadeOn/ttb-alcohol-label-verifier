@@ -1,72 +1,71 @@
 # Fixture Correctness Thresholds
 
-This file defines the current correctness-evidence bar for `npm run eval:fixture-verify` when you are scoring the default `on_bottle` sign-off story. The same run also records latency (`durationMs`, `extractionDurationMs`, and a top-level latency summary), so a separate latency-only run is optional rather than required.
+This file defines the current correctness-evidence bar for synthetic-first eval runs (`eval:l0`, `eval:l1`, `eval:l2`). The same run also records latency (`durationMs`, `extractionDurationMs`, and a top-level latency summary), so a separate latency-only run is optional rather than required.
 
-For the dedicated `off_bottle` synthetic set, use `docs/evals/fixture-correctness-expectations-synthetic-eval.json` with `EVAL_FIXTURE_SET=off_bottle` or `EVAL_FIXTURE_SET=synthetic_eval`.
+Canonical tier membership and stakeholder coverage classes: [`suite-plan.json`](./suite-plan.json).
 
 ## Inputs
 
-- Expectations profile: `docs/evals/fixture-correctness-expectations.json`
+| Tier | Expectations profile | Blocking on correctness failure |
+|------|----------------------|----------------------------------|
+| L0 | `docs/evals/fixture-correctness-expectations-l0.json` | No |
+| L1 | `docs/evals/fixture-correctness-expectations-l1.json` | **Yes** (`EVAL_FAIL_ON_CORRECTNESS=true`) |
+| L2 | `docs/evals/fixture-correctness-expectations-synthetic-eval.json` | No (diagnostics) |
+
 - Default application: `fixtures/default-application.json`
-- Target fixtures for sign-off:
-  - `happy-path-synthetic-label`
-  - `difficult-synthetic-label-photo`
-  - `seed-texture-01`
-  - `seed-texture-02`
-  - `edge-synthetic-glare-label`
-  - `edge-synthetic-blur-label`
-  - `edge-synthetic-angle-label`
+- Per-fixture applications: `fixtures/applications/*` (including obvious-fail contradiction payloads)
 
-## Thresholds
+## Stakeholder coverage classes (L1)
 
-- `minOverallScore`: `0.70`
-  - Aggregate pass ratio across all scored checks in the run.
-- `minFixturePassRate`: `0.50`
-  - At least half of scored fixtures must meet their fixture-level `minScore`.
-- `requiredFixtureIds`
-  - All listed sign-off fixture ids must be present in the run output.
-- Per-fixture latency
-  - Each fixture rule may also require `durationMs <= maxDurationMs`; this is how the full eval enforces latency without a second API-burning run.
+| Class | Purpose | Example fixture IDs |
+|-------|---------|---------------------|
+| Obvious pass | Clean label matches application | `synthetic_eval_*_baseline_front` |
+| Obvious fail | Clear application contradiction | `synthetic_eval_vodka_import_obvious_fail_*` |
+| Mandatory field missing | Required application value blank → validator `fail` | `synthetic_eval_vodka_import_missing_name_address` |
+| Tricky pass | Image stress, still matchable | `*_glare_brand`, `*_angle_30` |
+| Tricky fail / manual_review | Ambiguous or partial evidence | `*_crop_warning_partial` |
+| Routing / fallback safety | Prefer manual_review over guessing | `*_crop_warning_partial` |
 
-## Fixture rules
+See also: [`docs/CORE_REQUIREMENTS_SCORECARD.md`](../CORE_REQUIREMENTS_SCORECARD.md), [`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`](../REQUIREMENTS_SOURCE_OF_TRUTH.md).
 
-- **Happy path fixture (`happy-path-synthetic-label`)**
-  - Allows provider `openai` or **`unavailable`** (honest failover when primary extraction does not return in time).
-  - Requires `imageQuality.ok = true`.
-  - Requires `durationMs <= 12000`.
-  - Requires `minScore >= 0.85`.
-  - Expects each MVP field as **`pass` or `manual_review`** (placeholder extraction is all `manual_review`), `countryOfOrigin = not_applicable`, and `nameAddress` as `manual_review` or `pass`.
+## Thresholds (per tier profile)
 
-- **Difficult fixture (`difficult-synthetic-label-photo`)**
-  - Allows provider `openai` or `unavailable`.
-  - Requires `imageQuality.ok = true`.
-  - Requires `durationMs <= 20000`.
-  - Requires at least 1 `manual_review` field.
-  - Requires `minScore >= 0.50`.
-  - Constrains `governmentWarning` to `manual_review` or an explicit decision (`fail`/`pass`) and `countryOfOrigin = not_applicable`.
+- `minOverallScore`: aggregate pass ratio across scored checks (typically `0.6` L0, `0.7` L1/L2).
+- `minFixturePassRate`: share of fixtures meeting fixture-level `minScore`.
+- `requiredFixtureIds`: must match that tier’s `fixtureIds` exactly (enforced by `npm run eval:validate-suite-plan`).
 
-- **Seed texture fixtures (`seed-texture-01`, `seed-texture-02`)**
-  - Allow provider `openai` or `unavailable`.
-  - Require `imageQuality.ok = true`.
-  - Require `durationMs <= 12000`.
-  - Require at least 5 `manual_review` fields.
-  - Require `minScore >= 0.85`.
-  - Expect all MVP/P1 comparison fields to stay `manual_review`, with `countryOfOrigin = not_applicable`.
+Per-fixture rules include provider allow-list, `imageQuality.ok`, `maxDurationMs`, `minScore`, and `expectedFieldStatuses` per field.
 
-- **Non-seed edge fixtures (`edge-synthetic-glare-label`, `edge-synthetic-blur-label`, `edge-synthetic-angle-label`)**
-  - Derived from `labels/on-bottle/liquor_label_happy_path.png` via `npm run fixtures:edge-labels` (glare overlay, moderate blur still above the Laplacian gate, ~22° tilt).
-  - Allow provider `openai` or `unavailable`.
-  - Require `imageQuality.ok = true`.
-  - Require `durationMs <= 20000`.
-  - Require `minScore >= 0.50`.
-  - Constrain `governmentWarning` to `manual_review`, `fail`, or `pass`, and `countryOfOrigin = not_applicable` (same default application as other fixtures).
-
-## Run command
+## Run commands
 
 ```bash
-set -a && source .env && set +a && EVAL_FIXTURE_IDS=happy-path-synthetic-label,difficult-synthetic-label-photo,seed-texture-01,seed-texture-02,edge-synthetic-glare-label,edge-synthetic-blur-label,edge-synthetic-angle-label EVAL_OUT=docs/evals/fixture-correctness-$(date +%F).json npm run eval:fixture-verify
+# Drift check (run before changing tiers or expectations)
+npm run eval:validate-suite-plan
+
+# Tier runs (require OPENAI_API_KEY and running app on BASE_URL)
+npm run eval:l0
+npm run eval:l1   # exits non-zero if correctness thresholds fail
+npm run eval:l2
 ```
 
-To run the full manifest suite instead, omit `EVAL_FIXTURE_IDS`; `eval:fixture-verify` now defaults to `all_manifest`.
+With environment loaded:
 
-If `OPENAI_API_KEY` is not present in the environment, the eval script intentionally prints a skip payload and exits `0`.
+```bash
+set -a && source .env && set +a && npm run eval:l1
+```
+
+## Strict gate policy
+
+- **Mandatory:** CI / merge gate / explicit `npm run eval:l1`
+- **Optional:** local iteration with `eval:l0` or `eval:l2` (HTTP errors still fail unless `EVAL_EXIT_ON_HTTP_ERROR=false`)
+
+If `OPENAI_API_KEY` is not present, the eval script prints a skip payload and exits `0`.
+
+## Regenerating tier expectations
+
+After changing `suite-plan.json` L0/L1 fixture lists:
+
+```bash
+npm run eval:build-tier-expectations
+npm run eval:validate-suite-plan
+```

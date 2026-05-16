@@ -11,15 +11,18 @@ Controlled editor for the **`application`** multipart string: **formatted** fiel
 - **`density="compact"`** — smaller labels, inputs, and multiline rows for a shorter workbench (used on the home page).
 - **Focus / chrome** — inputs and JSON textarea use **`ttb-*`** focus borders and rings from `globals.css`; **Formatted / JSON** active segment uses **`ttb-600`** fill; invalid-JSON panel uses **`ttb-*`** (not amber).
 - **JSON mode positioning** — JSON is labeled as a raw input editing view, with a lightweight reminder that field-by-field review happens in **Results** after verification rather than in the raw editor.
-- **`formattedPageIndex`** (optional, `0` … `APPLICATION_FORMATTED_PAGE_COUNT - 1`) — in **formatted** mode only, shows a **slice** of fields so the workbench fits the viewport; **JSON** mode always edits the full document. Page **0**: product class through net contents; page **1**: government warning, name/address, country of origin. Parent owns the active index (e.g. `useState` on the home page).
-- **`onFormattedPageChange`** (optional) — when provided with `formattedPageIndex`, the editor shows **Basics / Statements** segment buttons next to the Formatted/JSON toggle so users can switch pages without a separate section bar.
-- **Product class input** — formatted mode uses a fixed dropdown (`distilled_spirits`, `wine`, `beer`) with a placeholder option instead of a free-text field.
+- **Formatted layout density** — in compact mode the editor now uses a responsive two-column field grid so shorter fields share rows and the full application can stay visible without forcing section toggles. Longer text inputs (name/address) span full width for readability.
+- **Import/origin pairing** — `Import product` and `Country of origin` now sit next to each other in formatted mode, and `Country of origin` is disabled until import is checked so the dependency is explicit in the UI.
+- **Government warning input** — intentionally hidden from formatted mode to reduce visual noise; it remains available in raw JSON mode. **`app/page.tsx`** calls **`ensureApplicationComplianceJson`** before verify so the canonical warning from **`lib/canonical-warning.ts`** is injected when blank.
+- **Mandatory fields** — formatted mode collects brand, class, alcohol, net contents, name/address, and import/country; **`checkApplicationReadyForVerify`** blocks **Run verification** until required values are present (government warning satisfied via auto-inject).
+- **Product class input** — formatted mode uses a fixed dropdown (`distilled_spirits`, `wine`, `beer`) instead of a free-text field.
 - **Boolean fields** — checkbox **left**, label and optional hint **stacked to the right** on one row (`items-start`), matching common form patterns.
+- **Product class scope guardrail** — defaults to `distilled_spirits`; `wine` and `beer` remain visible but disabled in formatted mode to make unsupported scope explicit.
 
-## Exported constants (for parent state + labels)
+## Exported constants (optional segmented mode)
 
-- `APPLICATION_FORMATTED_PAGE_COUNT` — number of formatted pages (`2`).
-- **`APPLICATION_FORMATTED_PAGE_NAV`** — per-page **`shortLabel`**, **`title`**, **`hint`**, and **`fields`** (reference list for copy); used by the in-editor **Basics / Statements** pager and the home page **Application data** subtitle.
+- `APPLICATION_FORMATTED_PAGE_COUNT` — number of formatted pages (`2`) when segmented mode is used.
+- **`APPLICATION_FORMATTED_PAGE_NAV`** — per-section **`shortLabel`**, **`title`**, **`hint`**, and **`fields`** metadata for optional segmented UX.
 
 ## Dependencies
 

@@ -4,6 +4,10 @@
  * **Source of truth:** Match logic and exported thresholds in this file — not TTB/COLA/27 CFR.
  * Evaluator traceability: `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`.
  */
+import {
+  isRequiredApplicationFieldMissing,
+  missingRequiredApplicationFieldMessage,
+} from "@/lib/application-compliance";
 import type { ExtractionResult, ExtractedField } from "@/lib/extraction/types";
 import { levenshteinDistance } from "@/lib/levenshtein-distance";
 import type { ApplicationJson, FieldId, FieldValidationRow } from "@/lib/schemas";
@@ -129,6 +133,21 @@ function appString(application: ApplicationJson, field: FieldId): string | null 
   }
 }
 
+function missingRequiredApplicationRow(
+  fieldId: FieldId,
+  extracted: ExtractedField,
+  applicationValue: string | null,
+): FieldValidationRow {
+  return {
+    fieldId,
+    status: "fail",
+    message: missingRequiredApplicationFieldMessage(fieldId),
+    extractedValue: extracted.value,
+    applicationValue,
+    evidence: extracted.reason ?? null,
+  };
+}
+
 function lowConfidenceRow(
   fieldId: FieldId,
   extracted: ExtractedField,
@@ -166,6 +185,11 @@ export function validateLabelFields(
     const extracted = extraction.fields[fieldId];
     const applicationValue = appString(application, fieldId);
     const av = applicationValue?.trim() ?? "";
+
+    if (isRequiredApplicationFieldMissing(application, fieldId)) {
+      push(missingRequiredApplicationRow(fieldId, extracted, applicationValue));
+      continue;
+    }
 
     if (fieldId === "governmentWarning" && extracted.confidence < CONFIDENCE_MANUAL_REVIEW) {
       const ev = extracted.value?.trim() ?? "";
@@ -215,18 +239,6 @@ export function validateLabelFields(
 
     const ev = extracted.value.trim();
     if (fieldId === "governmentWarning") {
-      if (!av) {
-        push({
-          fieldId,
-          status: "manual_review",
-          message:
-            "Application JSON did not include government warning text to compare.",
-          extractedValue: ev,
-          applicationValue,
-          evidence: null,
-        });
-        continue;
-      }
       if (ev === av) {
         push({
           fieldId,
@@ -263,18 +275,6 @@ export function validateLabelFields(
 
     if (fieldId === "brandName") {
       const ratio = fuzzyRatio(ev, av);
-      if (!av) {
-        push({
-          fieldId,
-          status: "manual_review",
-          message:
-            "Application JSON omitted brand name; cannot compare automatically.",
-          extractedValue: ev,
-          applicationValue: av || null,
-          evidence: null,
-        });
-        continue;
-      }
       if (ratio >= BRAND_SIMILARITY) {
         push({
           fieldId,
@@ -299,18 +299,6 @@ export function validateLabelFields(
 
     if (fieldId === "classType") {
       const ratio = fuzzyRatio(ev, av);
-      if (!av) {
-        push({
-          fieldId,
-          status: "manual_review",
-          message:
-            "Application JSON omitted class/type; cannot compare automatically.",
-          extractedValue: ev,
-          applicationValue: av || null,
-          evidence: null,
-        });
-        continue;
-      }
       const extractedTokens = normalizeClassTokens(ev);
       const applicationTokens = normalizeClassTokens(av);
       const extractedBase = detectBaseSpirit(extractedTokens);
@@ -435,7 +423,9 @@ export function validateLabelFields(
   const extractedNa = extraction.fields.nameAddress;
   const appNa = appString(application, "nameAddress");
 
-  if (extractedNa.confidence < CONFIDENCE_MANUAL_REVIEW) {
+  if (isRequiredApplicationFieldMissing(application, "nameAddress")) {
+    push(missingRequiredApplicationRow("nameAddress", extractedNa, appNa));
+  } else if (extractedNa.confidence < CONFIDENCE_MANUAL_REVIEW) {
     push(lowConfidenceRow("nameAddress", extractedNa, appNa));
   } else if (
     extractedNa.value === null ||
@@ -449,25 +439,16 @@ export function validateLabelFields(
       applicationValue: appNa,
       evidence: extractedNa.reason ?? null,
     });
-  } else if (!appNa?.trim()) {
-    push({
-      fieldId: "nameAddress",
-      status: "manual_review",
-      message:
-        "Application omitted name/address; skipping automated comparison.",
-      extractedValue: extractedNa.value.trim(),
-      applicationValue: appNa,
-      evidence: null,
-    });
   } else {
-    const ratio = fuzzyRatio(extractedNa.value.trim(), appNa.trim());
+    const appNaNormalized = appNa?.trim() ?? "";
+    const ratio = fuzzyRatio(extractedNa.value.trim(), appNaNormalized);
     if (ratio >= NAME_SIMILARITY) {
       push({
         fieldId: "nameAddress",
         status: "pass",
         message: `Name/address similarity ${ratio.toFixed(2)} meets threshold.`,
         extractedValue: extractedNa.value.trim(),
-        applicationValue: appNa.trim(),
+        applicationValue: appNaNormalized,
         evidence: null,
       });
     } else {
@@ -476,7 +457,7 @@ export function validateLabelFields(
         status: "fail",
         message: `Name/address mismatch (similarity ${ratio.toFixed(2)}).`,
         extractedValue: extractedNa.value.trim(),
-        applicationValue: appNa.trim(),
+        applicationValue: appNaNormalized,
         evidence: null,
       });
     }
@@ -494,6 +475,14 @@ export function validateLabelFields(
       applicationValue: appString(application, "countryOfOrigin"),
       evidence: null,
     });
+  } else if (isRequiredApplicationFieldMissing(application, "countryOfOrigin")) {
+    push(
+      missingRequiredApplicationRow(
+        "countryOfOrigin",
+        extractedCo,
+        appString(application, "countryOfOrigin"),
+      ),
+    );
   } else if (extractedCo.confidence < CONFIDENCE_MANUAL_REVIEW) {
     push(lowConfidenceRow("countryOfOrigin", extractedCo, appString(application, "countryOfOrigin")));
   } else if (
@@ -511,37 +500,25 @@ export function validateLabelFields(
   } else {
     const av = appString(application, "countryOfOrigin")?.trim() ?? "";
     const ev = extractedCo.value.trim();
-    if (!av) {
+    const ratio = fuzzyRatio(ev, av);
+    if (ratio >= ORIGIN_SIMILARITY) {
       push({
         fieldId: "countryOfOrigin",
-        status: "manual_review",
-        message:
-          "Import product but application omitted country of origin text.",
+        status: "pass",
+        message: `Country of origin similarity ${ratio.toFixed(2)} meets threshold.`,
         extractedValue: ev,
-        applicationValue: null,
+        applicationValue: av,
         evidence: null,
       });
     } else {
-      const ratio = fuzzyRatio(ev, av);
-      if (ratio >= ORIGIN_SIMILARITY) {
-        push({
-          fieldId: "countryOfOrigin",
-          status: "pass",
-          message: `Country of origin similarity ${ratio.toFixed(2)} meets threshold.`,
-          extractedValue: ev,
-          applicationValue: av,
-          evidence: null,
-        });
-      } else {
-        push({
-          fieldId: "countryOfOrigin",
-          status: "fail",
-          message: `Country of origin mismatch (similarity ${ratio.toFixed(2)}).`,
-          extractedValue: ev,
-          applicationValue: av,
-          evidence: null,
-        });
-      }
+      push({
+        fieldId: "countryOfOrigin",
+        status: "fail",
+        message: `Country of origin mismatch (similarity ${ratio.toFixed(2)}).`,
+        extractedValue: ev,
+        applicationValue: av,
+        evidence: null,
+      });
     }
   }
 

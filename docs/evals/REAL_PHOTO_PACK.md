@@ -1,6 +1,8 @@
 # Real-photo curated pack (v1)
 
-Fifteen on-bottle captures under `fixtures/labels/on-bottle/` exercise realistic adversity: angle, glare, blur, low light, partial crop, and dark-label contrast. Expectations live in [`fixture-correctness-expectations-real-photo-pack-v1.json`](./fixture-correctness-expectations-real-photo-pack-v1.json).
+> Status: archived reference. Active evaluator tiers are synthetic-first; this pack is retained for historical context and possible future handpicked reintroduction.
+
+Fourteen curated captures under `fixtures/labels/on-bottle/` exercise realistic adversity: angle, glare, blur, low light, partial crop, and dark-label contrast. Expectations live in [`fixture-correctness-expectations-real-photo-pack-v1.json`](./fixture-correctness-expectations-real-photo-pack-v1.json).
 
 ## Fixture rationale
 
@@ -19,7 +21,6 @@ Fifteen on-bottle captures under `fixtures/labels/on-bottle/` exercise realistic
 | `st_petersburg_vodka_angle_45` | 45° vodka perspective | Angle stress on fuzzy fields |
 | `st_petersburg_vodka_glare_brand` | Glare on vodka brand | Brand stress |
 | `st_petersburg_whiskey_label_dark_baseline` | Dark label contrast | OCR/vision stress |
-| `smirnoff_vodka_happy_path` | Retail SKU photo | Closer to pass on several fields |
 | `difficult-synthetic-label-photo` | Dense warning + curvature | Warning and net contents stress |
 
 ## Run command
@@ -31,4 +32,4 @@ OPENAI_API_KEY=sk-... BASE_URL=http://127.0.0.1:3000 \
 npm run eval:fixture-verify
 ```
 
-Production snapshot for this subset: reuse [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) (18 St. Petersburg fixtures; overlaps 14/15 curated ids).
+Production snapshot for this subset: reuse [`fixture-correctness-st-petersburg-production-2026-05-13.json`](./fixture-correctness-st-petersburg-production-2026-05-13.json) (18 St. Petersburg fixtures; overlaps 13/14 curated ids).

@@ -50,6 +50,21 @@ function oversizedPngBlob(): Blob {
   return new Blob([new Uint8Array(MAX_LABEL_UPLOAD_BYTES + 1)], { type: "image/png" });
 }
 
+function validApplicationJson(overrides: Partial<ApplicationJson> = {}): string {
+  return JSON.stringify({
+    productClass: "distilled_spirits",
+    isImport: false,
+    brandName: "Example Distillery",
+    classType: "Straight Bourbon Whiskey",
+    alcoholContent: "45% ALC/VOL",
+    netContents: "750 mL",
+    governmentWarning: "",
+    nameAddress: "Example Distillery, Louisville, KY",
+    countryOfOrigin: "",
+    ...overrides,
+  });
+}
+
 describe("handleVerifyPost", () => {
   beforeEach(() => {
     // Host `.env` may set VERIFY_DEV_STUB / OPENAI_DISABLED; stub so branches stay deterministic.
@@ -96,11 +111,10 @@ describe("handleVerifyPost", () => {
     vi.stubEnv("OPENAI_API_KEY", "");
 
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = JSON.stringify({
-      brandName: "Example Distillery",
-    });
-
-    const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
+    const req = multipartRequest(
+      new Blob([png], { type: "image/png" }),
+      validApplicationJson(),
+    );
     const res = await handleVerifyPost(req);
     expect(res.status).toBe(503);
     const json = (await res.json()) as { code?: string };
@@ -118,7 +132,7 @@ describe("handleVerifyPost", () => {
     );
 
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = JSON.stringify({ brandName: "Example Distillery" });
+    const application = validApplicationJson();
 
     const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
     const res = await handleVerifyPost(req, { runVerifyPipeline: mockPipeline });
@@ -131,11 +145,10 @@ describe("handleVerifyPost", () => {
     const mockPipeline = vi.fn();
 
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = JSON.stringify({
-      brandName: "Example Distillery",
-    });
-
-    const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
+    const req = multipartRequest(
+      new Blob([png], { type: "image/png" }),
+      validApplicationJson(),
+    );
     const res = await handleVerifyPost(req, { runVerifyPipeline: mockPipeline });
     expect(mockPipeline).not.toHaveBeenCalled();
     expect(res.status).toBe(503);
@@ -149,11 +162,7 @@ describe("handleVerifyPost", () => {
     const mockPipeline = vi.fn();
 
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = JSON.stringify({
-      isImport: false,
-      brandName: "Example Distillery",
-      classType: "Straight Bourbon Whiskey",
-    });
+    const application = validApplicationJson();
 
     const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
     const res = await handleVerifyPost(req, { runVerifyPipeline: mockPipeline });
@@ -182,16 +191,8 @@ describe("handleVerifyPost", () => {
     );
 
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = JSON.stringify({
-      productClass: "distilled_spirits",
-      isImport: false,
-      brandName: "Example Distillery",
-      classType: "Straight Bourbon Whiskey",
-      alcoholContent: "45% ALC/VOL",
-      netContents: "750 mL",
+    const application = validApplicationJson({
       governmentWarning: "(government warning text from application)",
-      nameAddress: "",
-      countryOfOrigin: "",
     });
 
     const req = multipartRequest(new Blob([png], { type: "image/png" }), application);
@@ -268,7 +269,7 @@ describe("handleVerifyPost", () => {
         VerifySuccessResponseSchema.parse(buildStubVerifyResponse(params.requestId, params.application)),
     );
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = JSON.stringify({ brandName: "Example Distillery" });
+    const application = validApplicationJson();
     const req = multipartBatchRequest(
       [new Blob([png], { type: "image/png" }), new Blob([png], { type: "image/png" })],
       application,
