@@ -62,6 +62,21 @@ const OBVIOUS_FAIL_RULES = {
   },
 };
 
+const MANDATORY_MISSING_RULES = {
+  synthetic_eval_vodka_import_missing_name_address: {
+    expectedFieldStatuses: {
+      brandName: ["pass", "manual_review"],
+      classType: ["pass", "manual_review"],
+      alcoholContent: ["pass", "manual_review"],
+      netContents: ["pass", "manual_review"],
+      governmentWarning: ["pass", "manual_review", "fail"],
+      nameAddress: ["fail"],
+      countryOfOrigin: ["pass", "manual_review", "fail"],
+    },
+    minScore: 0.5,
+  },
+};
+
 function baseRuleFrom(sourceRule) {
   if (!sourceRule) {
     return {
@@ -100,7 +115,7 @@ async function buildTierExpectations(tierKey, profileName, outFile) {
   const ids = plan.tiers[tierKey].fixtureIds;
   const fixtures = {};
   for (const id of ids) {
-    const override = OBVIOUS_FAIL_RULES[id];
+    const override = OBVIOUS_FAIL_RULES[id] ?? MANDATORY_MISSING_RULES[id];
     if (override) {
       const source = base.fixtures.synthetic_eval_vodka_import_baseline_front;
       fixtures[id] = mergeRule(source, override);

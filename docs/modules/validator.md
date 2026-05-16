@@ -17,7 +17,8 @@
 
 ## Decisions
 
-- **`manual_review`** preferred over guessing when extraction is empty, low confidence, or parsing fails.
+- **Missing mandatory application values** — `fail` immediately via `lib/application-compliance.ts` helpers (always: brand, class, alcohol, net contents, name/address, government warning; `countryOfOrigin` when `isImport`). See **`docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`**.
+- **`manual_review`** preferred over guessing when extraction is empty, low confidence, or parsing fails (after mandatory application checks pass).
 - Fuzzy thresholds are **exported constants** (same values the UI “Coded match thresholds” panel reads) — tune with tests when changing behavior.
 
 ## Dependencies

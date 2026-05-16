@@ -43,6 +43,7 @@ import {
   FIELD_LABELS,
   FIELD_REQUIREMENTS,
 } from "@/app/components/verify/constants";
+import { ensureApplicationComplianceJson } from "@/lib/application-compliance";
 import { formatBytes, getApplicationInputState } from "@/app/components/verify/format";
 
 type PreparedUpload = {
@@ -582,7 +583,6 @@ export default function HomePage() {
   );
   const [errorPayload, setErrorPayload] = useState<VerifyErrorResponse | null>(null);
   const [rawResponseJson, setRawResponseJson] = useState<string | null>(null);
-  const [applicationFieldPage, setApplicationFieldPage] = useState(0);
   const [workflowPhase, setWorkflowPhase] = useState<WorkflowPhase>("edit");
   const [uploadMode, setUploadMode] = useState<"single" | "batch">("single");
   const [runGeneration, setRunGeneration] = useState(0);
@@ -599,7 +599,14 @@ export default function HomePage() {
   const [demoLoadErrorText, setDemoLoadErrorText] = useState<string | null>(null);
 
   const hasCompletedRun = runGeneration > 0;
-  const applicationInputState = useMemo(() => getApplicationInputState(applicationJson), [applicationJson]);
+  const applicationJsonForVerify = useMemo(
+    () => ensureApplicationComplianceJson(applicationJson),
+    [applicationJson],
+  );
+  const applicationInputState = useMemo(
+    () => getApplicationInputState(applicationJsonForVerify),
+    [applicationJsonForVerify],
+  );
   const canEnterVerify = useMemo(
     () => uploadMode === "single" && !!file && applicationInputState.ok && !preparingFile,
     [uploadMode, file, applicationInputState, preparingFile],
@@ -800,6 +807,24 @@ export default function HomePage() {
     setBatchResponse(null);
   }
 
+  function startFresh() {
+    // Invalidate any in-flight client-side image preparation before clearing state.
+    fileSelectionTokenRef.current += 1;
+    resetLoadedRunState();
+    setApplicationJson(DEFAULT_APPLICATION);
+    setFile(null);
+    setSelectedFileName(null);
+    setPreparingFile(false);
+    setUploadPreparation(null);
+    setUploadGuardrailErrorText(null);
+    setExtractionCacheKey(null);
+    setPrefetchState("idle");
+    setDemoLoadingCaseId(null);
+    setDemoLoadErrorText(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (batchFileInputRef.current) batchFileInputRef.current.value = "";
+  }
+
   async function onSelectDemoCase(caseId: DemoCaseId) {
     setDemoLoadingCaseId(caseId);
     setDemoLoadErrorText(null);
@@ -824,7 +849,6 @@ export default function HomePage() {
 
       resetLoadedRunState();
       setApplicationJson(payload.applicationJson);
-      setApplicationFieldPage(0);
       await loadSelectedFile(
         base64ToFile(payload.image.base64, payload.image.fileName, payload.image.mimeType),
       );
@@ -866,7 +890,7 @@ export default function HomePage() {
     try {
       const formData = new FormData();
       formData.append(VERIFY_FORM_FIELDS.image, file);
-      formData.append(VERIFY_FORM_FIELDS.application, applicationJson);
+      formData.append(VERIFY_FORM_FIELDS.application, applicationJsonForVerify);
       if (extractionCacheKey) {
         formData.append(VERIFY_FORM_FIELDS.extractionCacheKey, extractionCacheKey);
       }
@@ -962,7 +986,7 @@ export default function HomePage() {
       for (const batchFile of batchFiles) {
         formData.append(VERIFY_FORM_FIELDS.images, batchFile);
       }
-      formData.append(VERIFY_FORM_FIELDS.application, applicationJson);
+      formData.append(VERIFY_FORM_FIELDS.application, applicationJsonForVerify);
       const res = await fetch("/api/verify/batch", {
         method: "POST",
         body: formData,
@@ -1123,7 +1147,33 @@ export default function HomePage() {
             }`}
           >
             {workflowPhase === "edit" ? (
-              <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:items-stretch lg:gap-3">
+              <>
+                <div className="mb-2 flex justify-center">
+                  <div className="inline-flex rounded-xl border border-stone-200 bg-stone-100/90 p-0.5 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => setUploadMode("single")}
+                      aria-pressed={uploadMode === "single"}
+                      className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
+                        uploadMode === "single"
+                          ? "bg-ttb-600 text-white shadow-sm"
+                          : "text-stone-600 hover:text-stone-900"
+                      }`}
+                    >
+                      Single label
+                    </button>
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled
+                      title="Batch mode coming soon."
+                      className="cursor-not-allowed rounded-lg px-3 py-1 text-xs font-semibold text-stone-400"
+                    >
+                      Batch
+                    </button>
+                  </div>
+                </div>
+                <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:items-stretch lg:gap-3">
                 <section
                   aria-labelledby="workbench-label-heading"
                   className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
@@ -1186,32 +1236,6 @@ export default function HomePage() {
                   </button>
                 ) : null}
               </div>
-              <div className="mt-1.5 inline-flex rounded-xl border border-stone-200 bg-stone-100/90 p-0.5 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => setUploadMode("single")}
-                  aria-pressed={uploadMode === "single"}
-                  className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                    uploadMode === "single"
-                      ? "bg-ttb-600 text-white shadow-sm"
-                      : "text-stone-600 hover:text-stone-900"
-                  }`}
-                >
-                  Single label
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadMode("batch")}
-                  aria-pressed={uploadMode === "batch"}
-                  className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                    uploadMode === "batch"
-                      ? "bg-ttb-600 text-white shadow-sm"
-                      : "text-stone-600 hover:text-stone-900"
-                  }`}
-                >
-                  Batch
-                </button>
-              </div>
             </div>
 
             {uploadMode === "single" ? (
@@ -1248,12 +1272,11 @@ export default function HomePage() {
                 value={applicationJson}
                 onChange={setApplicationJson}
                 density="compact"
-                formattedPageIndex={applicationFieldPage}
-                onFormattedPageChange={setApplicationFieldPage}
               />
             </div>
                 </section>
-              </div>
+                </div>
+              </>
             ) : workflowPhase === "verify" ? (
               <div
                 className="mx-auto w-full max-w-4xl px-2 py-4 sm:py-6"
@@ -1848,30 +1871,39 @@ export default function HomePage() {
               <div className="mx-auto flex w-full max-w-lg flex-col items-stretch gap-2">
                 {workflowPhase === "edit" ? (
                   <>
-                    <button
-                      type="submit"
-                      disabled={uploadMode === "batch" ? !canRunBatch : !canSubmit}
-                      title={
-                        uploadMode === "batch"
-                          ? !canRunBatch
-                            ? batchActionDisabledReason ?? "Complete required inputs to continue."
-                            : undefined
-                          : !canSubmit
-                            ? primaryActionDisabledReason ?? "Complete required inputs to continue."
-                            : undefined
-                      }
-                      className="w-full cursor-pointer rounded-lg bg-ttb-600 px-6 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300"
-                    >
-                      {uploadMode === "batch"
-                        ? batchLoading
-                          ? "Running batch..."
-                          : "Run batch verification"
-                        : preparingFile
-                          ? "Preparing image…"
-                          : loading
-                            ? "Verifying…"
-                            : "Run verification"}
-                    </button>
+                    <div className="grid w-full grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={startFresh}
+                        className="w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50"
+                      >
+                        Start over
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={uploadMode === "batch" ? !canRunBatch : !canSubmit}
+                        title={
+                          uploadMode === "batch"
+                            ? !canRunBatch
+                              ? batchActionDisabledReason ?? "Complete required inputs to continue."
+                              : undefined
+                            : !canSubmit
+                              ? primaryActionDisabledReason ?? "Complete required inputs to continue."
+                              : undefined
+                        }
+                        className="w-full cursor-pointer rounded-lg bg-ttb-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300"
+                      >
+                        {uploadMode === "batch"
+                          ? batchLoading
+                            ? "Running batch..."
+                            : "Run batch verification"
+                          : preparingFile
+                            ? "Preparing image…"
+                            : loading
+                              ? "Verifying…"
+                              : "Run verification"}
+                      </button>
+                    </div>
                     {(uploadMode === "batch"
                       ? !canRunBatch && batchActionDisabledReason
                       : !canSubmit && primaryActionDisabledReason) ? (

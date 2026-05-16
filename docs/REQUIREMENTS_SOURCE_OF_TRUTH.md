@@ -13,7 +13,8 @@
 | **Product scope & intent** | [`README.md`](../README.md), [`docs/CORE_REQUIREMENTS_SCORECARD.md`](./CORE_REQUIREMENTS_SCORECARD.md) | What the take-home is supposed to demonstrate; P0 vs P1 fields; non-goals (no full 27 CFR, no COLA). |
 | **Per-field pass/fail / manual_review / not_applicable** | **`lib/validator.ts`** (`validateLabelFields`) | **Single implementation source** for deterministic comparison after extraction. Exported numeric thresholds (`CONFIDENCE_MANUAL_REVIEW`, `BRAND_SIMILARITY`, etc.) match this file. |
 | **What appears on the label (primary path)** | **`lib/extraction/openai-provider.ts`** (system + user prompts, Zod shape) | Model instructions and structured fields — not the same as “legal requirements,” but they define what gets extracted for comparison. |
-| **Government warning string used in fixtures/UI defaults** | **`lib/canonical-warning.ts`** | Canonical text for demos and default application JSON; validator compares extracted text to **application-supplied** warning for that run (see decision table below). |
+| **Government warning string used in fixtures/UI defaults** | **`lib/canonical-warning.ts`** | Canonical text for demos and default application JSON; the UI **auto-injects** this into the verify payload when formatted mode hides the field (`lib/application-compliance.ts`). Validator compares extracted text to **application-supplied** warning for that run (see decision table below). |
+| **Mandatory application fields (distilled spirits)** | **`lib/application-compliance.ts`** + **`lib/validator.ts`** | Client **Run verification** requires all mandatory values; server validator returns **`fail`** (not `manual_review`) when a required application value is blank before fuzzy comparison. |
 | **Human-readable rule blurbs in the UI** | **`app/page.tsx`** (`FIELD_REQUIREMENTS`) | **Explanatory copy only** — should describe the same logic as `validator.ts`; if they diverge, **trust the code** and fix the copy. |
 
 There is **no** separate “regulations database” or TTB API in this repository.
@@ -34,6 +35,17 @@ Use this when mapping “what the UI shows” to “what actually runs.”
 | Name & address | Same — fuzzy when both sides present | P1 / F-17 | Explicitly defers strict COLA address rules in messages. |
 | Country of origin | Same — `not_applicable` if not import; else fuzzy | P1 / F-18 | Conditional on `isImport` in application JSON. |
 
+### Mandatory application values (distilled spirits prototype)
+
+Before fuzzy or parse comparison, **`validateLabelFields`** returns **`fail`** when a required application value is missing or blank:
+
+| Field | Required when |
+|-------|----------------|
+| `brandName`, `classType`, `alcoholContent`, `netContents`, `nameAddress`, `governmentWarning` | Always (distilled-spirits slice) |
+| `countryOfOrigin` | `isImport === true` |
+
+The formatted editor hides **`governmentWarning`**; **`ensureApplicationComplianceJson`** injects **`CANONICAL_GOVERNMENT_WARNING`** on submit. Other mandatory fields must be entered in formatted mode or JSON.
+
 **Extraction** for each of the above (values read from the image) is assembled in **`lib/verify-pipeline.ts`** calling **`lib/extraction/*`** before `validateLabelFields` runs.
 
 ### Government warning decision table
@@ -42,7 +54,7 @@ Authoritative logic: `validateLabelFields` in **`lib/validator.ts`**. Threshold:
 
 | Application warning present | Extracted empty | Confidence vs gate | Exact match | Fuzzy similarity vs threshold | Status |
 |-----------------------------|-----------------|--------------------|-------------|-------------------------------|--------|
-| No | * | * | * | * | `manual_review` |
+| No (blank/missing) | * | * | * | * | **`fail`** (mandatory application value) |
 | Yes | Yes | * | * | * | `manual_review` |
 | Yes | No | Low | n/a | &lt; threshold | `fail` |
 | Yes | No | Low | n/a | ≥ threshold | `manual_review` |

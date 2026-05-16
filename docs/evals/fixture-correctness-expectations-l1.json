@@ -13,6 +13,7 @@
       "synthetic_eval_vodka_import_obvious_fail_alcohol",
       "synthetic_eval_vodka_import_obvious_fail_net_contents",
       "synthetic_eval_vodka_import_obvious_fail_country_of_origin",
+      "synthetic_eval_vodka_import_missing_name_address",
       "synthetic_eval_whiskey_cream_baseline_front",
       "synthetic_eval_whiskey_cream_glare_brand",
       "synthetic_eval_whiskey_cream_angle_30",
@@ -349,6 +350,46 @@
           "manual_review"
         ],
         "countryOfOrigin": [
+          "fail"
+        ]
+      }
+    },
+    "synthetic_eval_vodka_import_missing_name_address": {
+      "allowedExtractionProviders": [
+        "openai",
+        "unavailable"
+      ],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": [
+          "pass",
+          "manual_review"
+        ],
+        "classType": [
+          "pass",
+          "manual_review"
+        ],
+        "alcoholContent": [
+          "pass",
+          "manual_review"
+        ],
+        "netContents": [
+          "pass",
+          "manual_review"
+        ],
+        "governmentWarning": [
+          "pass",
+          "manual_review",
+          "fail"
+        ],
+        "nameAddress": [
+          "fail"
+        ],
+        "countryOfOrigin": [
+          "pass",
+          "manual_review",
           "fail"
         ]
       }

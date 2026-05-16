@@ -5,7 +5,7 @@
 HTTP-level handling for verify requests:
 
 - Require `multipart/form-data`; read `image` and `application` parts per `VERIFY_FORM_FIELDS`.
-- Validate image presence/size (**max 1.5 MB per image**); parse `application` as JSON and validate with `ApplicationJsonSchema`.
+- Validate image presence/size (**max 1.5 MB per image**); parse `application` as JSON, validate with `ApplicationJsonSchema`, then **`resolveApplicationForVerify`** (`lib/application-compliance.ts`): inject canonical government warning when blank and reject missing mandatory fields with **400** / `MISSING_REQUIRED_APPLICATION_FIELDS`.
 - **Non-production only:** optional **`VERIFY_DEV_STUB`** (`true` / `1` / `yes`) — after application validation, respond **200** with **`buildStubVerifyResponse`** (no `OPENAI_API_KEY` required, no image `Buffer`, no pipeline, no OpenAI). Ignored when **`NODE_ENV === "production"`** so it cannot ship enabled by mistake.
 - Require `OPENAI_API_KEY` (trimmed); otherwise respond before pipeline work.
 - Optional **`OPENAI_DISABLED`** (`true` / `1` / `yes`) — respond **503** / `OPENAI_DISABLED` before reading image bytes or calling OpenAI (saves credits when you need the API to reject rather than return a success stub).
@@ -20,7 +20,7 @@ Exact messages live in source; typical mapping:
 | Status | Typical `code` | When |
 |--------|----------------|------|
 | 200 | — | Pipeline returned schema-valid success body, or **`VERIFY_DEV_STUB`** returned the typed stub (non-production only). |
-| 400 | `MISSING_IMAGE`, `EMPTY_IMAGE`, `MISSING_APPLICATION`, `INVALID_APPLICATION_JSON`, `INVALID_APPLICATION_SCHEMA` | Bad multipart or JSON. |
+| 400 | `MISSING_IMAGE`, `EMPTY_IMAGE`, `MISSING_APPLICATION`, `INVALID_APPLICATION_JSON`, `INVALID_APPLICATION_SCHEMA`, `MISSING_REQUIRED_APPLICATION_FIELDS` | Bad multipart, JSON, or incomplete mandatory application values. |
 | 413 | `IMAGE_TOO_LARGE` | Uploaded image exceeds the 1.5 MB guardrail. |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Wrong content type. |
 | 422 | `IMAGE_QUALITY_REJECTED` | From pipeline (`VerifyFailedError`). |

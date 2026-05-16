@@ -21,6 +21,7 @@ Canonical tier membership and stakeholder coverage classes: [`suite-plan.json`](
 |-------|---------|---------------------|
 | Obvious pass | Clean label matches application | `synthetic_eval_*_baseline_front` |
 | Obvious fail | Clear application contradiction | `synthetic_eval_vodka_import_obvious_fail_*` |
+| Mandatory field missing | Required application value blank → validator `fail` | `synthetic_eval_vodka_import_missing_name_address` |
 | Tricky pass | Image stress, still matchable | `*_glare_brand`, `*_angle_30` |
 | Tricky fail / manual_review | Ambiguous or partial evidence | `*_crop_warning_partial` |
 | Routing / fallback safety | Prefer manual_review over guessing | `*_crop_warning_partial` |

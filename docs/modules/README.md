@@ -38,6 +38,6 @@ Each file below is the **living description** of one code unit: responsibilities
 | `tests/verify-handler.test.ts` | Multipart parsing, env 503, pipeline delegation with stub. |
 | `tests/application-schema.test.ts` | `ApplicationJsonSchema` acceptance/rejection. |
 | `tests/stub-response.test.ts` | Stub builder + schema validity. |
-| `tests/fixtures-manifest.test.ts` | `fixtures/manifest.json` paths exist; default application JSON matches schema. |
+| `tests/fixtures-manifest.test.ts` | `fixtures/manifest.json` paths exist; default application JSON matches schema; happy-path fixture applications pass mandatory-field readiness. |
 
 `tests/fixtures/example-verify-response.json` is a sample Phase 0 JSON shape (not imported by tests; reference only unless wired later).

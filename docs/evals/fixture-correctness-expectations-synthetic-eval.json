@@ -857,6 +857,46 @@
           "not_applicable"
         ]
       }
+    },
+    "synthetic_eval_vodka_import_missing_name_address": {
+      "allowedExtractionProviders": [
+        "openai",
+        "unavailable"
+      ],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": [
+          "pass",
+          "manual_review"
+        ],
+        "classType": [
+          "pass",
+          "manual_review"
+        ],
+        "alcoholContent": [
+          "pass",
+          "manual_review"
+        ],
+        "netContents": [
+          "pass",
+          "manual_review"
+        ],
+        "governmentWarning": [
+          "pass",
+          "manual_review",
+          "fail"
+        ],
+        "nameAddress": [
+          "fail"
+        ],
+        "countryOfOrigin": [
+          "pass",
+          "manual_review",
+          "fail"
+        ]
+      }
     }
   }
 }

@@ -4,8 +4,8 @@
   "purpose": "Canonical eval suite definition: tiers, stakeholder coverage classes, and promotion rules.",
   "canonicalSource": true,
   "policy": {
-    "maxCoreFixtures": 16,
-    "maxCoreFixturesRationale": "L1 includes 12 image-stress fixtures plus 4 obvious-fail contradiction cases; routing proof uses existing crop-stress fixtures.",
+    "maxCoreFixtures": 17,
+    "maxCoreFixturesRationale": "L1 includes 12 image-stress fixtures, 4 obvious-fail contradiction cases, and 1 mandatory-field-missing case; routing proof uses existing crop-stress fixtures.",
     "promotionRule": "Only promote a fixture into L1 if it catches regressions not already covered by existing L1 fixtures.",
     "demotionRule": "Demote fixtures that have redundant behavior with another L1 fixture for two consecutive weekly reviews.",
     "experimentsRule": "name_address_candidate_* and backup/regenerated assets are L3 only and never PR-gating.",
@@ -36,6 +36,9 @@
       "synthetic_eval_vodka_import_obvious_fail_alcohol",
       "synthetic_eval_vodka_import_obvious_fail_net_contents",
       "synthetic_eval_vodka_import_obvious_fail_country_of_origin"
+    ],
+    "mandatory_field_missing": [
+      "synthetic_eval_vodka_import_missing_name_address"
     ],
     "tricky_pass": [
       "synthetic_eval_vodka_import_glare_brand",
@@ -78,6 +81,7 @@
         "synthetic_eval_vodka_import_obvious_fail_alcohol",
         "synthetic_eval_vodka_import_obvious_fail_net_contents",
         "synthetic_eval_vodka_import_obvious_fail_country_of_origin",
+        "synthetic_eval_vodka_import_missing_name_address",
         "synthetic_eval_whiskey_cream_baseline_front",
         "synthetic_eval_whiskey_cream_glare_brand",
         "synthetic_eval_whiskey_cream_angle_30",

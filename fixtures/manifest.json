@@ -126,6 +126,13 @@
       "includeInPrimaryLatencyEval": false
     },
     {
+      "id": "synthetic_eval_vodka_import_missing_name_address",
+      "relativePath": "labels/synthetic_eval_vodka_import_baseline_front.jpg",
+      "applicationPath": "applications/synthetic_eval_vodka_import_missing_name_address.json",
+      "description": "Mandatory-field eval: complete import application except blank name/address must fail validation.",
+      "includeInPrimaryLatencyEval": false
+    },
+    {
       "id": "synthetic_eval_vodka_import_glare_brand",
       "relativePath": "labels/synthetic_eval_vodka_import_glare_brand.jpg",
       "applicationPath": "applications/synthetic_eval_vodka_import.json",
