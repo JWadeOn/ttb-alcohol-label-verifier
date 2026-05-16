@@ -38,10 +38,17 @@ export function FixtureLoader({
         <p className="text-sm font-semibold text-stone-900">Load an existing eval fixture</p>
         <p className="mt-1 text-xs leading-relaxed text-stone-600">
           Presets include synthetic eval fixtures and on-bottle photos, each paired with committed application JSON.
+          Some on-bottle options intentionally reuse the same photo with different application payloads.
         </p>
         <div className="mt-3 max-h-[min(58vh,34rem)] space-y-2 overflow-y-auto pr-1">
           {DEMO_CASES.map((demoCase) => {
             const loadingThisCase = demoLoadingCaseId === demoCase.id;
+            const pairedAppLabel = demoCase.applicationRelativePath
+              .split("/")
+              .pop()
+              ?.replace(".json", "")
+              .replaceAll("_", " ");
+            const isIntentionalMismatch = demoCase.id.includes("mismatch");
             return (
               <button
                 key={demoCase.id}
@@ -75,6 +82,10 @@ export function FixtureLoader({
                       {demoCase.outcomeTone === "pass" ? "Pass case" : "Stress case"}
                     </span>
                   </div>
+                  <span className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-stone-500">
+                    Paired app: {pairedAppLabel}
+                    {isIntentionalMismatch ? " (intentional mismatch)" : ""}
+                  </span>
                   <span className="mt-1 block text-xs leading-relaxed text-stone-600">{demoCase.subtitle}</span>
                   <span className="mt-2 block text-[11px] font-medium text-stone-500">
                     {loadingThisCase ? "Loading fixture..." : demoCase.outcomeSummary}

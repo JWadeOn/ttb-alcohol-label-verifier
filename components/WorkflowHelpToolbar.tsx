@@ -34,24 +34,25 @@ export function WorkflowHelpToolbar({
           role="region"
           aria-label="How this works"
         >
-          <ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed marker:font-semibold marker:text-ttb-800 sm:space-y-4 sm:pl-6 sm:text-base sm:leading-relaxed">
-            <li>
-              In <strong className="font-semibold text-stone-900">Edit inputs</strong>, choose one label image and confirm
-              the application data. Use <strong className="font-semibold text-stone-900">Demo runs</strong> to preload a
-              committed fixture.
-            </li>
-            <li>
-              Click <strong className="font-semibold text-stone-900">Run verification</strong> at the bottom of the page.
-              For batch, switch to <strong className="font-semibold text-stone-900">Batch</strong> mode (up to 10 images).
-            </li>
-            <li>
-              The verify screen shows pipeline status and failure details while the server request runs.
-            </li>
-            <li>
-              Results shows field-by-field outcomes with pass, fail, and manual review statuses. Use the header controls to
-              go back and edit inputs or run verification again.
-            </li>
-          </ol>
+          <div className="space-y-3 text-sm leading-relaxed sm:text-[15px]">
+            <p className="font-semibold text-stone-900">Quick guide</p>
+            <ol className="list-decimal space-y-2 pl-5 marker:font-semibold marker:text-ttb-800">
+              <li>
+                <strong className="text-stone-900">Edit inputs:</strong> choose a label image, then enter application
+                data.
+              </li>
+              <li>
+                <strong className="text-stone-900">Run verification:</strong> click the button at the bottom.
+              </li>
+              <li>
+                <strong className="text-stone-900">Review results:</strong> check field outcomes (`pass`, `fail`,
+                `manual_review`) and rerun if you change inputs.
+              </li>
+            </ol>
+            <div className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+              Tip: use <strong className="text-stone-800">Demo runs</strong> to preload a fixture instantly.
+            </div>
+          </div>
         </div>
       </details>
     </aside>

@@ -4,8 +4,8 @@ export type DemoCaseId =
   | "difficult-impressive-pass"
   | "obvious-failure-mode"
   | "tricky-failure-mode"
-  | "on-bottle-edge-glare"
-  | "on-bottle-whiskey-glare";
+  | "on-bottle-vodka-glare-aligned"
+  | "on-bottle-vodka-glare-whiskey-mismatch";
 
 export type DemoCase = {
   id: DemoCaseId;
@@ -70,23 +70,23 @@ export const DEMO_CASES: DemoCase[] = [
     outcomeTone: "fail",
   },
   {
-    id: "on-bottle-edge-glare",
-    title: "On-bottle glare stress",
-    subtitle: "Strong glare + perspective noise; useful for a manual-review stress run.",
+    id: "on-bottle-vodka-glare-aligned",
+    title: "On-bottle vodka glare (aligned app)",
+    subtitle: "Strong glare + perspective noise with matching vodka application values.",
     fixtureId: "name_address_candidate_st_petersburg_vodka_glare_brand",
     imageRelativePath: "labels/curated/on-bottle/st_petersburg_vodka_glare_brand.png",
-    applicationRelativePath: "applications/synthetic_eval_spiced_rum.json",
-    outcomeSummary: "On-bottle stress case: expect one or more fail/manual-review outcomes.",
+    applicationRelativePath: "applications/synthetic_eval_vodka_import.json",
+    outcomeSummary: "On-bottle stress case with matching spirit class: expect mixed pass/manual-review outcomes.",
     outcomeTone: "fail",
   },
   {
-    id: "on-bottle-whiskey-glare",
-    title: "On-bottle vodka glare",
-    subtitle: "Vodka label with glare over text to test extraction resilience.",
-    fixtureId: "name_address_candidate_st_petersburg_vodka_glare_brand",
+    id: "on-bottle-vodka-glare-whiskey-mismatch",
+    title: "On-bottle vodka glare (whiskey app mismatch)",
+    subtitle: "Same vodka glare image paired with whiskey-dark application to demonstrate clear mismatches.",
+    fixtureId: "name_address_candidate_st_petersburg_vodka_glare_brand_whiskey_app_mismatch",
     imageRelativePath: "labels/curated/on-bottle/st_petersburg_vodka_glare_brand.png",
     applicationRelativePath: "applications/synthetic_eval_whiskey_dark.json",
-    outcomeSummary: "On-bottle stress case: typically includes fail/manual-review fields.",
+    outcomeSummary: "Crossed-image/application case: expected to produce multiple fail/manual-review fields.",
     outcomeTone: "fail",
   },
 ];
