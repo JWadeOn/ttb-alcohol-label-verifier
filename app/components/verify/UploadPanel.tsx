@@ -27,23 +27,23 @@ export function UploadPanel({
   onChooseFile,
 }: UploadPanelProps) {
   return (
-    <>
+    <div className="flex min-h-0 flex-col gap-1 lg:flex-1">
       {!file ? (
-        <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+        <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
           Single-label verify starts here: choose one image, then run verification before reviewing results.
         </p>
       ) : preparingFile ? (
-        <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+        <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
           Preparing an optimized upload for faster verification…
         </p>
       ) : uploadPreparation?.compressed ? (
-        <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+        <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
           Upload optimized before submit: {formatBytes(uploadPreparation.originalBytes)} to{" "}
           {formatBytes(uploadPreparation.uploadBytes)}.
         </p>
       ) : null}
       {file && !preparingFile ? (
-        <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+        <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
           {prefetchState === "prefetching"
             ? "Prefetching extraction in the background…"
             : prefetchState === "ready"
@@ -54,20 +54,20 @@ export function UploadPanel({
         </p>
       ) : null}
 
-      <div className="flex flex-col">
+      <div className="flex min-h-0 flex-col lg:flex-1">
         {previewUrl ? (
-          <div className="relative min-h-[10rem] max-h-[min(42vh,22rem)] overflow-hidden rounded-lg border border-stone-200 bg-stone-50">
+          <div className="relative min-h-[10rem] flex-1 overflow-hidden rounded-lg border border-stone-200 bg-stone-50 max-lg:max-h-[min(42vh,22rem)]">
             <Image
               src={previewUrl}
               alt={file?.name ? `Label preview: ${file.name}` : "Label preview"}
               fill
               unoptimized
               className="object-contain object-top p-1"
-              sizes="(max-width: 768px) 100vw, 50vw"
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ttb-200 bg-gradient-to-b from-ttb-50/80 to-white px-3 py-3 text-center">
+          <div className="flex min-h-[10rem] flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ttb-200 bg-gradient-to-b from-ttb-50/80 to-white px-3 py-3 text-center lg:min-h-0">
             <p className="text-xs font-semibold text-stone-800">1. Choose a label image</p>
             <p className="max-w-[18rem] text-[11px] leading-relaxed text-stone-500">
               2. Run verification, then review field outcomes in Results.
@@ -84,10 +84,10 @@ export function UploadPanel({
         )}
       </div>
       {uploadGuardrailErrorText ? (
-        <p className="mt-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
+        <p className="mt-1 shrink-0 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-900">
           {uploadGuardrailErrorText}
         </p>
       ) : null}
-    </>
+    </div>
   );
 }

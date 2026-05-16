@@ -16,7 +16,7 @@ import {
   VerifySuccessResponseSchema,
 } from "@/lib/schemas";
 import { VerifyRunStepsPanel } from "@/components/VerifyRunStepsPanel";
-import { WorkflowProcessTabs, type WorkflowPhase } from "@/components/WorkflowProcessTabs";
+import { WorkflowHelpToolbar } from "@/components/WorkflowHelpToolbar";
 import { buildVerifyUiStepsFromResponse, buildVerifyUiStepsLoading, verifyResponseIndicatesPipelineFailure } from "@/lib/verify-ui-steps";
 import type { DemoCaseId } from "@/lib/demo-cases";
 import {
@@ -32,7 +32,6 @@ import {
 } from "@/lib/validator";
 import { verifyErrorUserHeadline } from "@/lib/verify-error-messages";
 import { BatchPanel } from "@/app/components/verify/BatchPanel";
-import { FixtureLoader } from "@/app/components/verify/FixtureLoader";
 import { UploadPanel } from "@/app/components/verify/UploadPanel";
 import {
   CLIENT_BATCH_MAX_IMAGES,
@@ -53,6 +52,8 @@ type PreparedUpload = {
   uploadBytes: number;
   compressed: boolean;
 };
+
+type WorkflowPhase = "edit" | "verify" | "results";
 
 function base64ToFile(base64: string, fileName: string, mimeType: string): File {
   const binary = atob(base64);
@@ -394,11 +395,26 @@ function outcomeCardNextStepLine(d: ResultsDigest): string {
     case "pass":
       return "You can stop here for a quick green check, or scan the table to spot-check values.";
     case "fail":
-      return "Next: start with the failed rows in the table below. If the image or submitted data needs correction, use Edit inputs, then Verify again.";
+      return "Next: start with the failed rows in the table below. If the image or submitted data needs correction, return to Edit inputs, then run verification again.";
     case "manual_review":
-      return "Next: check the label image against the table below. If the photo or submitted data needs correction, use Edit inputs, then Verify again.";
+      return "Next: check the label image against the table below. If the photo or submitted data needs correction, return to Edit inputs, then run verification again.";
     default:
       return "Next: use the Field outcomes table first; expand Full comparison by field when messages differ row to row.";
+  }
+}
+
+function extractionPathSummary(payload: VerifySuccessResponse): string {
+  switch (payload.extraction.provider) {
+    case "tesseract":
+      return "Extraction path: Tesseract OCR";
+    case "openai":
+      return "Extraction path: OpenAI vision";
+    case "stub":
+      return "Extraction path: Stub response (dev mode)";
+    case "unavailable":
+      return "Extraction path: Unavailable fallback (manual review required)";
+    default:
+      return `Extraction path: ${payload.extraction.provider}`;
   }
 }
 
@@ -606,31 +622,24 @@ export default function HomePage() {
     if (batchFiles.length === 0) return "Choose one or more label images to enable batch verification.";
     return null;
   }, [applicationInputState, batchLoading, batchFiles.length]);
-  const verifyBlockedReason = useMemo(
-    () =>
-      uploadMode === "batch"
-        ? "Switch back to Single label to use Verify and Results."
-        : "Add a label image and valid application data to continue to Verify.",
-    [uploadMode],
-  );
   const workflowStatusText = useMemo(() => {
     if (uploadMode === "batch" && workflowPhase === "edit") {
       return batchLoading
         ? "Batch mode: running verification across the selected image set."
-        : "Batch mode: choose multiple images and run batch verification from Edit.";
+        : "Batch mode: choose multiple images and run batch verification from Edit inputs.";
     }
-    if (loading) return "Step 2 of 3: Running verification checks.";
+    if (loading) return "Run verification: pipeline in progress on the server.";
     if (workflowPhase === "edit") {
       return canEnterVerify
-        ? "Step 1 of 3: Inputs ready. Run verification, then review outcomes in Results."
-        : "Step 1 of 3: Add a label image and valid application data.";
+        ? "Inputs ready. Run verification, then open results."
+        : "Edit inputs: add a label image and valid application data.";
     }
     if (workflowPhase === "verify") {
       return hasCompletedRun
-        ? "Step 2 of 3: Verification finished. Open Results to review outcomes."
-        : "Step 2 of 3: Verification opens once inputs are ready.";
+        ? "Verification finished. Open results for field outcomes."
+        : "Run verification opens once Edit inputs are ready.";
     }
-    return "Step 3 of 3: Review field outcomes and supporting evidence.";
+    return "Results: compare field outcomes and supporting evidence.";
   }, [loading, batchLoading, workflowPhase, uploadMode, canEnterVerify, hasCompletedRun]);
 
   useEffect(() => {
@@ -1025,77 +1034,25 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto flex h-dvh max-h-dvh min-h-0 max-w-7xl flex-col gap-2 overflow-hidden px-4 pt-2 pb-2 sm:gap-3 sm:px-6 sm:pt-3">
-      <header className="pointer-events-none relative z-20 grid shrink-0 grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] sm:items-center sm:gap-y-0">
-        <div className="pointer-events-auto flex min-w-0 items-center gap-2 justify-self-start">
-          <span className="inline-flex shrink-0 items-center rounded-md border border-ttb-200 bg-ttb-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-ttb-800">
-            Phase 1
-          </span>
-          <h1 className="min-w-0 truncate text-base font-semibold leading-tight tracking-tight text-stone-900 sm:text-lg">
-            Label verification
-          </h1>
+      <header className="pointer-events-none relative z-20 grid shrink-0 grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="pointer-events-auto flex min-w-0 flex-col gap-1 justify-self-start">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="inline-flex shrink-0 items-center rounded-md border border-ttb-200 bg-ttb-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-ttb-800">
+              Phase 1
+            </span>
+            <h1 className="min-w-0 truncate text-base font-semibold leading-tight tracking-tight text-stone-900 sm:text-lg">
+              Label verification
+            </h1>
+          </div>
+          <p className="text-xs font-semibold leading-snug text-stone-700 sm:pl-0.5" aria-live="polite">
+            {workflowStatusText}
+          </p>
         </div>
-        <div className="pointer-events-auto flex w-full min-w-0 flex-col items-center justify-center gap-1 justify-self-stretch sm:px-0">
-          <WorkflowProcessTabs
-            phase={workflowPhase}
-            onSelect={setWorkflowPhase}
-            hasCompletedRun={hasCompletedRun}
-            canEnterVerify={canEnterVerify}
-            verifyBlockedReason={verifyBlockedReason}
-          />
-          <p className="text-center text-[11px] font-medium text-stone-500">{workflowStatusText}</p>
-        </div>
-        <div className="pointer-events-auto flex w-full min-w-0 flex-wrap justify-self-stretch gap-2 sm:w-auto sm:justify-self-end">
-          <FixtureLoader
-            demoLoadingCaseId={demoLoadingCaseId}
-            demoLoadErrorText={demoLoadErrorText}
-            onSelectDemoCase={onSelectDemoCase}
-          />
-          <details className="relative w-full min-w-0 sm:w-auto sm:max-w-[30rem]">
-            <summary className="flex h-7 cursor-pointer list-none items-center justify-center rounded-lg border-2 border-ttb-600 bg-ttb-50 px-3 text-xs font-semibold leading-none text-ttb-900 shadow-sm outline-none ring-ttb-600/25 transition hover:bg-ttb-100 hover:ring-2 focus-visible:ring-2 [&::-webkit-details-marker]:hidden open:bg-ttb-100 open:ring-2 sm:inline-flex sm:w-max sm:justify-center">
-              How this works
-            </summary>
-            <div
-              className="absolute right-0 top-full z-50 mt-1.5 w-[min(calc(100vw-2rem),30rem)] max-h-[min(70vh,36rem)] overflow-y-auto rounded-xl border border-stone-200 bg-white p-4 text-stone-700 shadow-xl sm:left-auto sm:right-0 sm:p-5"
-              role="region"
-              aria-label="How this works"
-            >
-              <ol className="list-decimal space-y-3 pl-5 text-base leading-relaxed marker:font-semibold marker:text-ttb-800 sm:space-y-4 sm:pl-6 sm:text-lg sm:leading-relaxed">
-                <li>
-                  Choose a label in <strong className="font-semibold text-stone-900">Label preview</strong>. Use the{" "}
-                  <strong className="font-semibold text-stone-900">Edit</strong> tab to adjust application fields as
-                  needed, or open <strong className="font-semibold text-stone-900">Demo runs</strong> to preload a
-                  committed eval fixture.
-                </li>
-                <li>
-                  For a single label, use{" "}
-                  <strong className="font-semibold text-stone-900">Run verification</strong> at the bottom of the
-                  workbench. For a small batch, switch the upload panel from{" "}
-                  <strong className="font-semibold text-stone-900">Single label</strong> to{" "}
-                  <strong className="font-semibold text-stone-900">Batch</strong> (up to {` ${CLIENT_BATCH_MAX_IMAGES} `}
-                  images) with the same application JSON applied to each file.
-                </li>
-                <li>
-                  The <strong className="font-semibold text-stone-900">Verify</strong> tab shows advancing pipeline
-                  status. If a step fails, you stay on <strong className="font-semibold text-stone-900">Verify</strong>{" "}
-                  with the checklist.
-                </li>
-                <li>
-                  On success, open <strong className="font-semibold text-stone-900">Results</strong> for the
-                  field-by-field table. <strong className="font-semibold text-stone-900">Approve</strong> /{" "}
-                  <strong className="font-semibold text-stone-900">Reject</strong> in the results header is optional UI
-                  state only (not saved). Use <strong className="font-semibold text-stone-900">Edit inputs</strong> to
-                  change inputs and run again.
-                </li>
-                <li>
-                  Extraction runs in hybrid mode by default (OCR first, then OpenAI vision fallback when needed), then
-                  deterministic validation assigns <strong className="font-semibold text-stone-900">pass</strong>,{" "}
-                  <strong className="font-semibold text-stone-900">fail</strong>, or{" "}
-                  <strong className="font-semibold text-stone-900">manual_review</strong> by field.
-                </li>
-              </ol>
-            </div>
-          </details>
-        </div>
+        <WorkflowHelpToolbar
+          demoLoadingCaseId={demoLoadingCaseId}
+          demoLoadErrorText={demoLoadErrorText}
+          onSelectDemoCase={onSelectDemoCase}
+        />
       </header>
 
       <form onSubmit={onSubmit} className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5">
@@ -1114,8 +1071,8 @@ export default function HomePage() {
                 {loading
                   ? "Running the verification pipeline on the server — vision extraction often takes 15–30 seconds."
                   : outcomeHasPipelineFailure
-                    ? "A pipeline step did not complete successfully — review the checklist below. Use Edit to adjust inputs, then run verify again."
-                    : "That run finished successfully. Open the Results tab for the field-by-field comparison, or go back to Edit to change inputs."}
+                    ? "A pipeline step did not complete successfully — review the checklist below. Return to Edit inputs to adjust the submission, then run verification again."
+                    : "That run finished successfully. Open results for the field-by-field comparison, or return to Edit inputs to change the submission."}
               </p>
             </div>
           ) : workflowPhase === "results" ? (
@@ -1130,7 +1087,7 @@ export default function HomePage() {
                       onClick={() => setWorkflowPhase("edit")}
                       className="cursor-pointer font-medium text-stone-700 underline decoration-stone-400 underline-offset-2 transition hover:text-stone-900"
                     >
-                      Edit
+                      Edit inputs
                     </button>
                     <span className="text-stone-300" aria-hidden>
                       ·
@@ -1143,7 +1100,7 @@ export default function HomePage() {
                         !canSubmit ? primaryActionDisabledReason ?? "Complete required inputs to run again." : undefined
                       }
                     >
-                      Verify again
+                      Run verification again
                     </button>
                   </div>
                   {!canSubmit && primaryActionDisabledReason ? (
@@ -1166,12 +1123,11 @@ export default function HomePage() {
             }`}
           >
             {workflowPhase === "edit" ? (
-          <>
-          <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:items-start lg:gap-3">
-            <section
-              aria-labelledby="workbench-label-heading"
-              className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
-            >
+              <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:items-stretch lg:gap-3">
+                <section
+                  aria-labelledby="workbench-label-heading"
+                  className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
+                >
             <input
               ref={fileInputRef}
               type="file"
@@ -1276,12 +1232,12 @@ export default function HomePage() {
                 onChooseBatchFiles={() => batchFileInputRef.current?.click()}
               />
             )}
-          </section>
+                </section>
 
-            <section
-              aria-labelledby="workbench-json-heading"
-              className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
-            >
+                <section
+                  aria-labelledby="workbench-json-heading"
+                  className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
+                >
             <header className="shrink-0 border-b border-stone-100 pb-1.5">
               <h2 id="workbench-json-heading" className="text-xs font-semibold text-stone-900 sm:text-sm">
                 Application data
@@ -1296,16 +1252,17 @@ export default function HomePage() {
                 onFormattedPageChange={setApplicationFieldPage}
               />
             </div>
-          </section>
-          </div>
-          </>
+                </section>
+              </div>
             ) : workflowPhase === "verify" ? (
-              <div className="mx-auto w-full max-w-4xl px-2 py-4 sm:py-6">
+              <div
+                className="mx-auto w-full max-w-4xl px-2 py-4 sm:py-6"
+              >
                 {!hasCompletedRun && !loading ? (
                   <p className="mb-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-base text-stone-700">
-                    Choose <strong className="font-medium text-stone-900">Edit</strong>, add a label image, then{" "}
-                    <strong className="font-medium text-stone-900">Run verification</strong>. This tab shows live
-                    pipeline status while the request runs.
+                    Complete <strong className="font-medium text-stone-900">Edit inputs</strong> first: add a label image and
+                    application data, then use <strong className="font-medium text-stone-900">Run verification</strong>.
+                    This step shows live pipeline status while the request runs.
                   </p>
                 ) : null}
                 <div className="rounded-2xl border border-stone-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
@@ -1374,6 +1331,9 @@ export default function HomePage() {
                                   </h3>
                                   <p className="mt-2 text-sm font-semibold leading-snug text-stone-900">
                                     {outcomeWorkloadSummaryLine(resultsDigest)}
+                                  </p>
+                                  <p className="mt-1 text-xs font-medium leading-snug text-stone-600">
+                                    {extractionPathSummary(successPayload)}
                                   </p>
                                   <ResultsSummaryMoreInfo d={resultsDigest} />
                                 </div>
@@ -1931,7 +1891,7 @@ export default function HomePage() {
                     </button>
                   ) : (
                     <p className="w-full py-2 text-center text-sm text-stone-600 sm:max-w-md">
-                      Use <strong className="text-stone-800">Edit</strong> to run a verification first.
+                      Use <strong className="text-stone-800">Edit inputs</strong> to run a verification first.
                     </p>
                   )
                 ) : workflowPhase === "verify" && loading ? (

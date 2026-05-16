@@ -18,8 +18,8 @@ export function BatchPanel({
   onChooseBatchFiles,
 }: BatchPanelProps) {
   return (
-    <>
-      <p className="text-[10px] leading-snug text-stone-500 sm:text-[11px]">
+    <div className="flex min-h-0 flex-col gap-1 lg:flex-1">
+      <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
         Batch mode reuses the same application JSON across up to {CLIENT_BATCH_MAX_IMAGES} images (
         {formatBytes(CLIENT_UPLOAD_MAX_BYTES)} max per file). Processing is synchronous in this MVP: expect roughly a
         few seconds per image, running with bounded server concurrency (typically 2 at a time).
@@ -126,6 +126,6 @@ export function BatchPanel({
           {batchErrorText}
         </p>
       ) : null}
-    </>
+    </div>
   );
 }
