@@ -232,6 +232,48 @@ describe("validateLabelFields", () => {
     const classType = rows.find((r) => r.fieldId === "classType");
     expect(classType?.status).toBe("fail");
   });
+
+  it("name/address compares full Distilled by/Bottled by line as printed", () => {
+    const app: ApplicationJson = {
+      ...baseApp,
+      nameAddress: "Distilled by Prime Distillery, Tampa, FL",
+    };
+    const extraction = baseExtraction({
+      brandName: confident(baseApp.brandName ?? ""),
+      classType: confident(baseApp.classType ?? ""),
+      alcoholContent: confident(baseApp.alcoholContent ?? ""),
+      netContents: confident(baseApp.netContents ?? ""),
+      governmentWarning: confident(CANONICAL_GOVERNMENT_WARNING),
+      nameAddress: confident("Distilled by Prime Distillery, Tampa, FL"),
+      countryOfOrigin: { value: null, confidence: 0 },
+    });
+
+    const rows = validateLabelFields(extraction, app);
+    const nameAddress = rows.find((r) => r.fieldId === "nameAddress");
+    expect(nameAddress?.status).toBe("pass");
+    expect(nameAddress?.extractedValue).toBe("Distilled by Prime Distillery, Tampa, FL");
+    expect(nameAddress?.applicationValue).toBe("Distilled by Prime Distillery, Tampa, FL");
+  });
+
+  it("name/address fails when application omits printed Distilled by qualifier", () => {
+    const app: ApplicationJson = {
+      ...baseApp,
+      nameAddress: "Prime Distillery, Tampa, FL",
+    };
+    const extraction = baseExtraction({
+      brandName: confident(baseApp.brandName ?? ""),
+      classType: confident(baseApp.classType ?? ""),
+      alcoholContent: confident(baseApp.alcoholContent ?? ""),
+      netContents: confident(baseApp.netContents ?? ""),
+      governmentWarning: confident(CANONICAL_GOVERNMENT_WARNING),
+      nameAddress: confident("Distilled by Prime Distillery, Tampa, FL"),
+      countryOfOrigin: { value: null, confidence: 0 },
+    });
+
+    const rows = validateLabelFields(extraction, app);
+    const nameAddress = rows.find((r) => r.fieldId === "nameAddress");
+    expect(nameAddress?.status).toBe("fail");
+  });
 });
 
 describe("parseApproxAbvPct", () => {

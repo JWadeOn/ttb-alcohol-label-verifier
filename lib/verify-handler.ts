@@ -125,6 +125,62 @@ function parseApplicationPayload(
   return { ok: true, application: ensureApplicationCompliance(appResult.data) };
 }
 
+type ParsedApplicationsArrayPayload =
+  | { ok: true; applications: ApplicationJson[] }
+  | { ok: false; response: Response };
+
+function parseApplicationsArrayPayload(
+  requestId: string,
+  applicationsRaw: string,
+): ParsedApplicationsArrayPayload {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(applicationsRaw);
+  } catch {
+    return {
+      ok: false,
+      response: jsonError(
+        requestId,
+        400,
+        "INVALID_APPLICATIONS_JSON",
+        "Applications JSON could not be parsed.",
+      ),
+    };
+  }
+
+  if (!Array.isArray(parsed)) {
+    return {
+      ok: false,
+      response: jsonError(
+        requestId,
+        400,
+        "INVALID_APPLICATIONS_JSON",
+        'Multipart part "applications" must be a JSON array of application objects.',
+      ),
+    };
+  }
+
+  const applications: ApplicationJson[] = [];
+  for (let i = 0; i < parsed.length; i++) {
+    const appResult = ApplicationJsonSchema.safeParse(parsed[i]);
+    if (!appResult.success) {
+      return {
+        ok: false,
+        response: jsonError(
+          requestId,
+          400,
+          "INVALID_APPLICATION_SCHEMA",
+          `Application at index ${i} failed validation.`,
+          appResult.error.flatten(),
+        ),
+      };
+    }
+    applications.push(ensureApplicationCompliance(appResult.data));
+  }
+
+  return { ok: true, applications };
+}
+
 export async function handleVerifyPost(
   req: Request,
   deps: VerifyHandlerDeps = {},
@@ -441,7 +497,7 @@ export async function handleVerifyBatchPost(
         requestId,
         415,
         "UNSUPPORTED_MEDIA_TYPE",
-        `Expected Content-Type multipart/form-data with fields "${VERIFY_FORM_FIELDS.images}" and "${VERIFY_FORM_FIELDS.application}".`,
+        `Expected Content-Type multipart/form-data with fields "${VERIFY_FORM_FIELDS.images}" and "${VERIFY_FORM_FIELDS.applications}".`,
       );
     }
 
@@ -477,21 +533,29 @@ export async function handleVerifyBatchPost(
       );
     }
 
-    const applicationRaw = formData.get(VERIFY_FORM_FIELDS.application);
-    if (typeof applicationRaw !== "string") {
+    const applicationsRaw = formData.get(VERIFY_FORM_FIELDS.applications);
+    if (typeof applicationsRaw !== "string" || applicationsRaw.trim().length === 0) {
       return jsonError(
         requestId,
         400,
-        "MISSING_APPLICATION",
-        `Multipart part "${VERIFY_FORM_FIELDS.application}" must be a JSON string.`,
+        "MISSING_APPLICATIONS",
+        `Multipart part "${VERIFY_FORM_FIELDS.applications}" must be a JSON array with one application object per image.`,
       );
     }
 
-    const parsedApplication = parseApplicationPayload(requestId, applicationRaw);
-    if (!parsedApplication.ok) {
-      return parsedApplication.response;
+    const parsedApplications = parseApplicationsArrayPayload(requestId, applicationsRaw);
+    if (!parsedApplications.ok) {
+      return parsedApplications.response;
     }
-    const application = parsedApplication.application;
+    if (parsedApplications.applications.length !== images.length) {
+      return jsonError(
+        requestId,
+        400,
+        "APPLICATIONS_COUNT_MISMATCH",
+        `Applications array length (${parsedApplications.applications.length}) must match image count (${images.length}).`,
+      );
+    }
+    const applicationsPerImage = parsedApplications.applications;
 
     const extractionMode = resolveVerifyExtractionMode();
     const requiresApiKey = extractionMode !== "ocr_only";
@@ -532,6 +596,7 @@ export async function handleVerifyBatchPost(
         const index = cursor++;
         if (index >= images.length) return;
         const image = images[index]!;
+        const application = applicationsPerImage[index]!;
         const fileName = image instanceof File && image.name ? image.name : `image-${index + 1}`;
         const itemRequestId = crypto.randomUUID();
         const itemStartedAt = Date.now();

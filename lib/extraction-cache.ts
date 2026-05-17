@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { applyExtractionPostProcessing } from "@/lib/extraction/post-process";
 import type { ExtractionResult } from "@/lib/extraction/types";
 
 type CachedExtraction = {
@@ -8,7 +9,7 @@ type CachedExtraction = {
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_MAX_ENTRIES = 200;
-const EXTRACTION_CACHE_SCHEMA_VERSION = "v2";
+const EXTRACTION_CACHE_SCHEMA_VERSION = "v3";
 
 const cache = new Map<string, CachedExtraction>();
 
@@ -66,13 +67,13 @@ export function getCachedExtraction(cacheKey: string): ExtractionResult | null {
     cache.delete(cacheKey);
     return null;
   }
-  return hit.extraction;
+  return applyExtractionPostProcessing(hit.extraction);
 }
 
 export function setCachedExtraction(cacheKey: string, extraction: ExtractionResult): void {
   const now = Date.now();
   cache.set(cacheKey, {
-    extraction,
+    extraction: applyExtractionPostProcessing(extraction),
     createdAtMs: now,
   });
   prune(now);

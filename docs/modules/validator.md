@@ -10,6 +10,7 @@
 - **Confidence gate** — below `CONFIDENCE_MANUAL_REVIEW` (exported, **0.65**) generally routes to `manual_review`; **exception:** government warning can still return `fail` when a low-confidence extraction is materially contradictory to the submitted warning text.
 - **Government warning** — exact text auto-passes; non-exact uses fuzzy triage with **`GOVERNMENT_WARNING_SIMILARITY_FAIL_BELOW`** (exported, **0.55**): at or above → `manual_review`, below → `fail` (normal and low-confidence paths).
 - **Brand, class, name, origin** — fuzzy match via `fuzzyRatio` + `levenshteinDistance` on normalized alphanumeric keys; thresholds **`BRAND_SIMILARITY`**, **`CLASS_SIMILARITY`**, **`NAME_SIMILARITY`**, **`ORIGIN_SIMILARITY`** are exported for UI parity with code.
+- **Name/address** — compares the **full** printed line (including `Distilled by`, `Bottled by`, or `Imported by` when present); qualifiers are not stripped before fuzzy match.
 - **Class/type modifier policy** — when extracted and application class/type share the same base spirit token (`rum`, `vodka`, `gin`, etc.) but modifiers differ (for example `Rum` vs `Spiced Rum`), validator returns `manual_review` instead of hard fail; contradictory base spirits still fail.
 - **Alcohol** — parse approximate ABV from label and application; compare within **`ABV_TOLERANCE`** (% points; exported).
 - **Net contents** — parse approximate ml; compare within max of **`VOLUME_TOLERANCE_ML`** and **`VOLUME_TOLERANCE_RATIO`** of the larger volume (both exported).

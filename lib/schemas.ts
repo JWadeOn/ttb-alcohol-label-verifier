@@ -5,6 +5,8 @@ export const VERIFY_FORM_FIELDS = {
   image: "image",
   images: "images",
   application: "application",
+  /** JSON array of ApplicationJson objects, one per image (same order as `images`). */
+  applications: "applications",
   forceFallback: "force_fallback",
   extractionCacheKey: "extraction_cache_key",
 } as const;

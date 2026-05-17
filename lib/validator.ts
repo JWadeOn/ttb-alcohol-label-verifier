@@ -441,13 +441,14 @@ export function validateLabelFields(
     });
   } else {
     const appNaNormalized = appNa?.trim() ?? "";
-    const ratio = fuzzyRatio(extractedNa.value.trim(), appNaNormalized);
+    const extractedNaRaw = extractedNa.value.trim();
+    const ratio = fuzzyRatio(extractedNaRaw, appNaNormalized);
     if (ratio >= NAME_SIMILARITY) {
       push({
         fieldId: "nameAddress",
         status: "pass",
         message: `Name/address similarity ${ratio.toFixed(2)} meets threshold.`,
-        extractedValue: extractedNa.value.trim(),
+        extractedValue: extractedNaRaw,
         applicationValue: appNaNormalized,
         evidence: null,
       });
@@ -456,7 +457,7 @@ export function validateLabelFields(
         fieldId: "nameAddress",
         status: "fail",
         message: `Name/address mismatch (similarity ${ratio.toFixed(2)}).`,
-        extractedValue: extractedNa.value.trim(),
+        extractedValue: extractedNaRaw,
         applicationValue: appNaNormalized,
         evidence: null,
       });

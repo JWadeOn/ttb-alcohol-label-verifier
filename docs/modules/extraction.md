@@ -12,6 +12,8 @@ Pluggable **extraction** from label image bytes → structured per-field values 
 | `provider.ts` | `ExtractionProvider` interface; **`extractWithFailover`** for LLM failover (`openai` → `unavailable`) with optional soft/hard timers. |
 | `openai-provider.ts` | **`createOpenAIProvider`**: OpenAI chat completions with vision (`gpt-4o-mini`), `response_format: json_object`, Zod parse of returned fields. Supports env tuning via `OPENAI_VISION_DETAIL` (`low`/`auto`/`high`) and `OPENAI_MAX_OUTPUT_TOKENS` (`200..4096`, default `500`). |
 | `tesseract-provider.ts` | **`createTesseractProvider`**: OCR-first provider (`tesseract.js`) with layout-aware parsing (left/right panel split from OCR word boxes) plus defensive quality scoring for brand and government-warning candidates (reject punctuation/noise-heavy brand lines; reduce warning confidence when OCR only captures a fragmented warning block). |
+| `government-warning.ts` | **`finalizeGovernmentWarningExtraction`**: restores `(1)`/`(2)` when dropped and fixes canonical phrase casing (e.g. `Surgeon General`). |
+| `post-process.ts` | **`applyExtractionPostProcessing`**: runs after every provider and on extraction-cache read/write so Results show repaired warning text. |
 | `hybrid-routing.ts` | Hybrid escalation policy: field-aware routing (required fields: class/alcohol/net) decides when OCR is sufficient vs escalate to LLM. |
 | `unavailable-fallback-provider.ts` | Last-resort placeholder when no extraction path yields usable fields. |
 
@@ -29,6 +31,9 @@ Pluggable **extraction** from label image bytes → structured per-field values 
 - **Two-panel parsing is gated by warning-side evidence** — left-panel-only classification text is used only when warning language is strongly right-sided; when both halves contain warning phrases (common in centered vertical layouts), extraction falls back to full-text parsing so brand/class do not drop or fragment.
 - **Class/type display is normalized for readability** — OCR class/type matches are returned in title case (for example, `spiced Rum` → `Spiced Rum`) so the Results table mirrors typical label casing even when OCR casing is inconsistent.
 - **Warning confidence uses quality signals** — OCR warning text is scored by length and phrase coverage (`surgeon general`, `pregnancy`, `(1)/(2)`, etc.); partial/garbled blocks are still surfaced as extracted text but with confidence below auto-compare threshold so they default to manual review.
+- **Government warning markers** — OpenAI prompts require verbatim `(1)` / `(2)` when printed; both OpenAI and Tesseract paths run `restoreGovernmentWarningMarkers` when the standard body is present but markers were dropped.
+- **Hybrid OCR ↔ vision reconcile** — when hybrid mode escalates to OpenAI, `reconcileGovernmentWarningAfterLlm` prefers partial OCR warning text over a suspiciously “completed” vision result when OCR captured only a cropped prefix. Post-process also caps warning confidence from `scoreGovernmentWarningCompleteness` so incomplete blocks stay below auto-compare threshold.
+- **Cropped warning prompts** — vision prompts explicitly forbid completing the standard TTB warning from memory when the label is cut off at the image edge.
 - **JSON-only** model output reduces parsing brittleness; still validated with Zod before use.
 - **Primary obeys `AbortSignal`** from failover’s hard timeout so in-flight work can be cancelled.
 
@@ -43,6 +48,7 @@ Pluggable **extraction** from label image bytes → structured per-field values 
 - `tests/extract-failover.test.ts`
 - `tests/hybrid-routing.test.ts`
 - `tests/tesseract-provider.test.ts`
+- `tests/government-warning-extraction.test.ts`
 
 ## Maintenance
 
