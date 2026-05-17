@@ -6,6 +6,7 @@ import {
   type ExtractionResult,
   type ExtractedField,
 } from "@/lib/extraction/types";
+import { finalizeGovernmentWarningExtraction } from "@/lib/extraction/government-warning";
 import type { FieldId } from "@/lib/schemas";
 
 /** Primary vision extraction — defines *what is read from the image*, not TTB legal rules. See `docs/REQUIREMENTS_SOURCE_OF_TRUTH.md`. */
@@ -55,20 +56,28 @@ function normalizeLlmFields(parsed: z.infer<typeof LlmExtractionSchema>): Record
   for (const id of FIELD_IDS) {
     out[id] = parsed[id] ?? { ...base };
   }
+  const warning = out.governmentWarning;
+  if (warning.value) {
+    warning.value = finalizeGovernmentWarningExtraction(warning.value);
+  }
   return out;
 }
 
 const SYSTEM_PROMPT = `You extract printed text from US alcohol beverage labels for TTB-style compliance checks.
 Return ONLY valid JSON matching the requested shape. Use null for a field value when the text is not visible or unreadable.
 For each field include confidence between 0 and 1 (honest: foil, glare, curves, script fonts → lower confidence).
-Never invent brand names or government warning wording; transcribe what you see.
+Never invent brand names or government warning wording; transcribe only text visible in the image.
+If the government warning is cropped, cut off, or illegible at the bottom, return only the visible portion (do not complete the standard warning from memory) and use low confidence.
+For nameAddress, include the full responsible-party line with any printed qualifier (Distilled by, Bottled by, Imported by, etc.).
+For governmentWarning, transcribe verbatim including the "(1)" and "(2)" markers when they appear before each sentence on the label; use title case for "Surgeon General" when that phrase appears.
 Fields: brandName, classType, alcoholContent, netContents, governmentWarning, nameAddress, countryOfOrigin.`;
 
 const USER_PROMPT = `Read this label image and extract these JSON fields with { "value": string|null, "confidence": number, "reason"?: string } each:
 brandName, classType, alcoholContent, netContents, governmentWarning, nameAddress, countryOfOrigin.
 Use null value when absent or illegible.
 Include "reason" only when value is null (omit "reason" when value is present).
-governmentWarning must be the full warning paragraph as printed (including the GOVERNMENT WARNING heading line if present).`;
+governmentWarning: transcribe only what is visible. If the warning is cropped or truncated at the image edge, return the visible fragment only (never fill in missing sentences). When fully visible, return the full paragraph as printed (including the GOVERNMENT WARNING heading line if present). Preserve "(1)" and "(2)" exactly when printed before each sentence; do not paraphrase or renumber. Match label casing for proper nouns (e.g. "Surgeon General", not "surgeon general").
+nameAddress must be the full responsible-party line as printed, including any leading qualifier (for example "Distilled by ...", "Bottled by ...", or "Imported by ...") through the distillery/company and location.`;
 
 type VisionDetail = "low" | "high" | "auto";
 const DEFAULT_VISION_DETAIL: VisionDetail = "low";

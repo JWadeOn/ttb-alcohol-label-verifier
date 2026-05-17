@@ -1,4 +1,5 @@
 import path from "node:path";
+import { finalizeGovernmentWarningExtraction } from "@/lib/extraction/government-warning";
 import type { ExtractionProvider } from "@/lib/extraction/provider";
 import {
   emptyExtractedField,
@@ -607,7 +608,7 @@ function assessGovernmentWarning(value: string | null): WarningAssessment {
     };
   }
 
-  const normalized = value.replace(/\s+/g, " ").trim();
+  const normalized = finalizeGovernmentWarningExtraction(value.replace(/\s+/g, " ").trim());
   const lower = normalized.toLowerCase();
   const stats = lineStats(normalized);
   const printable = stats.letters + stats.digits + stats.symbols;

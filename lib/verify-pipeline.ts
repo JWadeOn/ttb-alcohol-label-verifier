@@ -6,6 +6,8 @@ import {
 import { createOpenAIProvider } from "@/lib/extraction/openai-provider";
 import { createTesseractProvider } from "@/lib/extraction/tesseract-provider";
 import { createUnavailableFallbackProvider } from "@/lib/extraction/unavailable-fallback-provider";
+import { reconcileGovernmentWarningAfterLlm } from "@/lib/extraction/government-warning";
+import { applyExtractionPostProcessing } from "@/lib/extraction/post-process";
 import type { ExtractionResult } from "@/lib/extraction/types";
 import { assessImageQuality } from "@/lib/image-quality";
 import {
@@ -256,7 +258,17 @@ export async function runExtractionStage(params: {
             minMeanCriticalConfidence,
             minRequiredFieldConfidence,
           });
-          extraction = await extractViaLlm();
+          const llmExtraction = await extractViaLlm();
+          extraction = {
+            ...llmExtraction,
+            fields: {
+              ...llmExtraction.fields,
+              governmentWarning: reconcileGovernmentWarningAfterLlm(
+                llmExtraction.fields.governmentWarning,
+                ocrExtraction.fields.governmentWarning,
+              ),
+            },
+          };
         } else {
           extraction = ocrExtraction;
           console.info("[verify-pipeline] accepted OCR extraction", {
@@ -295,7 +307,7 @@ export async function runExtractionStage(params: {
 
   return {
     imageQuality: { ok: true },
-    extraction,
+    extraction: applyExtractionPostProcessing(extraction),
     timings: {
       imageQualityMs,
       ocrMs,
