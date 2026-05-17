@@ -1,6 +1,6 @@
 # Evaluator Start Here
 
-Use this short path to review the submission without internal planning noise.
+Use this short path to review the submission quickly without digging through implementation details first.
 
 ## Architecture diagram
 
@@ -40,4 +40,4 @@ Use this short path to review the submission without internal planning noise.
 
 ## Notes
 
-- `docs/internal/` contains planning/history artifacts intentionally excluded from evaluator-first review.
+- This repository view is curated for evaluator review; planning scratch notes are intentionally not part of submission materials.

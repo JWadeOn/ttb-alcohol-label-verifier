@@ -6,8 +6,8 @@ For **full `POST /api/verify`** outcomes on arbitrary manifest fixtures (stress 
 
 | Generated (UTC) | Artifact | Fixtures | Providers (per fixture) | Max `durationMs` | Notes |
 |-------------------|----------|----------|-------------------------|------------------|--------|
-| 2026-05-11T21:27:22Z | [`primary-latency-production-2026-05-11.json`](../internal/evals/primary-latency-production-2026-05-11.json) | 2 (seeds only) | unavailable, unavailable | 4134 | Historical baseline snapshot (archived to internal docs). |
-| 2026-05-12T15:44:30Z | [`primary-latency-production-2026-05-12.json`](../internal/evals/primary-latency-production-2026-05-12.json) | 3 (happy path + seeds) | openai ×3 | 6330 | Historical baseline snapshot (archived to internal docs). |
+| 2026-05-11T21:27:22Z | `primary-latency-production-2026-05-11.json` (historical, local archive) | 2 (seeds only) | unavailable, unavailable | 4134 | Baseline snapshot retained in local notes; excluded from evaluator repo to reduce noise. |
+| 2026-05-12T15:44:30Z | `primary-latency-production-2026-05-12.json` (historical, local archive) | 3 (happy path + seeds) | openai x3 | 6330 | Baseline snapshot retained in local notes; excluded from evaluator repo to reduce noise. |
 
 ## How to add the next run
 
