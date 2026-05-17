@@ -9,6 +9,7 @@
  *
  * Run:
  *   node scripts/generate-synthetic-eval-fixtures-gemini.mjs
+ *   node scripts/generate-synthetic-eval-fixtures-gemini.mjs --defects-only
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -26,8 +27,8 @@ const MAX_BYTES = 1.5 * 1024 * 1024;
 const DEFAULT_JPEG_QUALITY = 80;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_IMAGE_MODEL =
-  process.env.GEMINI_IMAGE_MODEL ?? "gemini-3.1-flash-image-preview";
-const GEMINI_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? "120000");
+  process.env.GEMINI_IMAGE_MODEL ?? "gemini-2.5-flash-image";
+const GEMINI_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? "180000");
 const GEMINI_MAX_ATTEMPTS = Number(process.env.GEMINI_MAX_ATTEMPTS ?? "3");
 
 const VARIANTS = [
@@ -37,6 +38,45 @@ const VARIANTS = [
   "low_light_grain",
   "crop_warning_partial",
 ];
+
+/** Vodka import family — label-printed defects with canonical application JSON on verify. */
+const DEFECT_FAMILY_ID_PREFIX = "synthetic_eval_vodka_import";
+
+const LABEL_DEFECTS = [
+  {
+    idSuffix: "obvious_fail_government_warning_title_case",
+    description: "Title-case GOVERNMENT WARNING heading on label",
+    warningText(canonical) {
+      return canonical.replace("GOVERNMENT WARNING:", "Government Warning:");
+    },
+  },
+  {
+    idSuffix: "obvious_fail_government_warning_lowercase_surgeon",
+    description: "Lowercase surgeon general on label",
+    warningText(canonical) {
+      return canonical.replace(/Surgeon General/g, "surgeon general");
+    },
+  },
+  {
+    idSuffix: "obvious_fail_government_warning_misspell",
+    description: "Misspelled machinery in warning body on label",
+    warningText(canonical) {
+      return canonical.replace("machinery", "machinerv");
+    },
+  },
+  {
+    idSuffix: "obvious_fail_name_address",
+    description: "Wrong bottler line printed on label",
+    familyOverride: {
+      nameAddress: "Imported by Silver Coast Spirits, Boston, MA",
+    },
+    warningText(canonical) {
+      return canonical;
+    },
+  },
+];
+
+const defectsOnly = process.argv.includes("--defects-only");
 
 const FAMILY_CONFIGS = [
   {
@@ -295,11 +335,36 @@ async function buildVariant(baseBuffer, variant) {
   throw new Error(`Unknown variant: ${variant}`);
 }
 
-async function main() {
-  await mkdir(labelsDir, { recursive: true });
-  await mkdir(applicationsDir, { recursive: true });
-  const warning = await readCanonicalWarning();
+async function writeDefectLabel(family, defect, canonicalWarning) {
+  const effectiveFamily = defect.familyOverride
+    ? { ...family, ...defect.familyOverride }
+    : family;
+  const labelWarning = defect.warningText(canonicalWarning);
+  const geminiRaw = await generateBaselineWithGemini(effectiveFamily, labelWarning);
+  const baseImage = await sharp(geminiRaw)
+    .resize({ width: WIDTH, height: HEIGHT, fit: "cover", position: "centre" })
+    .toBuffer();
+  const jpeg = await encodeJpegWithinLimit(baseImage);
+  const name = `${family.idPrefix}_${defect.idSuffix}.jpg`;
+  const outPath = path.join(labelsDir, name);
+  await writeFile(outPath, jpeg);
+  console.log("wrote", path.relative(root, outPath), `${Math.round(jpeg.byteLength / 1024)} KB`);
+  console.log("      ", defect.description);
+}
 
+async function generateLabelDefects(canonicalWarning) {
+  const family = FAMILY_CONFIGS.find((f) => f.idPrefix === DEFECT_FAMILY_ID_PREFIX);
+  if (!family) {
+    throw new Error(`Missing family config: ${DEFECT_FAMILY_ID_PREFIX}`);
+  }
+  console.log(`[generate] label defects for ${family.idPrefix} (${LABEL_DEFECTS.length} fixtures)`);
+  for (const defect of LABEL_DEFECTS) {
+    console.log(`[generate] defect ${defect.idSuffix}`);
+    await writeDefectLabel(family, defect, canonicalWarning);
+  }
+}
+
+async function generateBaselineFamilies(canonicalWarning) {
   for (const family of FAMILY_CONFIGS) {
     console.log(`[generate] family ${family.idPrefix}`);
     const appPath = path.join(applicationsDir, `${family.idPrefix}.json`);
@@ -330,6 +395,20 @@ async function main() {
       console.log("wrote", path.relative(root, outPath), `${Math.round(jpeg.byteLength / 1024)} KB`);
     }
   }
+}
+
+async function main() {
+  await mkdir(labelsDir, { recursive: true });
+  await mkdir(applicationsDir, { recursive: true });
+  const warning = await readCanonicalWarning();
+
+  if (defectsOnly) {
+    await generateLabelDefects(warning);
+    return;
+  }
+
+  await generateBaselineFamilies(warning);
+  await generateLabelDefects(warning);
 }
 
 main().catch((error) => {

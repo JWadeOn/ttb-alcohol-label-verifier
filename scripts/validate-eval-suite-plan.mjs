@@ -64,6 +64,9 @@ function assertExpectationsSync(tierKey, expectationsPath) {
 
 // L0 / L1 manifest + expectations sync
 assertManifestIds(plan.tiers.L0_sanity.fixtureIds, "L0");
+if (plan.tiers.L0_batch_sanity?.fixtureIds) {
+  assertManifestIds(plan.tiers.L0_batch_sanity.fixtureIds, "L0_batch");
+}
 assertManifestIds(plan.tiers.L1_core_gate.fixtureIds, "L1");
 
 const l1Count = plan.tiers.L1_core_gate.fixtureIds.length;
@@ -73,6 +76,9 @@ if (typeof maxCore === "number" && l1Count > maxCore) {
 }
 
 await assertExpectationsSync("L0_sanity", plan.tiers.L0_sanity.expectationsProfile);
+if (plan.tiers.L0_batch_sanity?.expectationsProfile) {
+  await assertExpectationsSync("L0_batch_sanity", plan.tiers.L0_batch_sanity.expectationsProfile);
+}
 await assertExpectationsSync("L1_core_gate", plan.tiers.L1_core_gate.expectationsProfile);
 
 // Coverage matrix ids exist in manifest
@@ -82,10 +88,18 @@ for (const [cls, ids] of Object.entries(matrix)) {
   assertManifestIds(ids, `coverageMatrix.${cls}`);
 }
 
-// All coverage matrix ids should be represented in L1 (union check)
+// L1-gated coverage classes must be represented in L1 (union check)
+const L1_GATED_COVERAGE_CLASSES = new Set([
+  "obvious_pass",
+  "obvious_fail",
+  "mandatory_field_missing",
+  "tricky_pass",
+  "tricky_fail_manual_review",
+  "routing_fallback_safety",
+]);
 const matrixIds = new Set();
 for (const [cls, ids] of Object.entries(matrix)) {
-  if (!Array.isArray(ids)) continue;
+  if (!Array.isArray(ids) || !L1_GATED_COVERAGE_CLASSES.has(cls)) continue;
   for (const id of ids) ids.forEach((x) => matrixIds.add(x));
 }
 const l1Set = new Set(plan.tiers.L1_core_gate.fixtureIds);
@@ -109,4 +123,7 @@ if (errors.length > 0) {
 }
 
 console.log("eval suite plan validation passed.");
-console.log(`L0=${plan.tiers.L0_sanity.fixtureIds.length} L1=${l1Count} L2=synthetic_eval (full pack)`);
+const l0BatchCount = plan.tiers.L0_batch_sanity?.fixtureIds?.length ?? 0;
+console.log(
+  `L0=${plan.tiers.L0_sanity.fixtureIds.length} L0_batch=${l0BatchCount} L1=${l1Count} L2=synthetic_eval (full pack)`,
+);

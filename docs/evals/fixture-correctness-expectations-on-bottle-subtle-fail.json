@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "profile": "synthetic-app-mismatch-v1",
+  "thresholds": {
+    "minOverallScore": 0.5,
+    "minFixturePassRate": 0,
+    "requiredFixtureIds": ["synthetic_eval_whiskey_cream_obvious_fail_brand"]
+  },
+  "fixtures": {
+    "synthetic_eval_whiskey_cream_obvious_fail_brand": {
+      "allowedExtractionProviders": ["openai", "unavailable"],
+      "requireImageQualityOk": true,
+      "maxDurationMs": 20000,
+      "minScore": 0.5,
+      "expectedFieldStatuses": {
+        "brandName": ["fail"],
+        "classType": ["pass", "manual_review"],
+        "alcoholContent": ["pass", "manual_review"],
+        "netContents": ["pass", "manual_review"],
+        "governmentWarning": ["pass", "manual_review"],
+        "nameAddress": ["pass", "manual_review"],
+        "countryOfOrigin": ["not_applicable"]
+      }
+    }
+  }
+}

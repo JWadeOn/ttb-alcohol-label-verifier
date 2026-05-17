@@ -1,0 +1,514 @@
+{
+  "eval": "batch-fixture-verify",
+  "generatedAt": "2026-05-16T23:52:02.962Z",
+  "base": "http://127.0.0.1:3000",
+  "fixtureIds": [
+    "synthetic_eval_vodka_import_baseline_front",
+    "synthetic_eval_whiskey_cream_baseline_front",
+    "synthetic_eval_spiced_rum_baseline_front"
+  ],
+  "expectationsPath": "docs/evals/fixture-correctness-expectations-l0.json",
+  "batch": {
+    "httpStatus": 200,
+    "wallMs": 13937,
+    "transport": {
+      "checks": [
+        {
+          "name": "itemCount",
+          "pass": true,
+          "expected": 3,
+          "actual": 3
+        },
+        {
+          "name": "summaryTotal",
+          "pass": true,
+          "expected": 3,
+          "actual": 3
+        },
+        {
+          "name": "summarySuccess",
+          "pass": true,
+          "expected": 3,
+          "actual": 3
+        },
+        {
+          "name": "errorItemCount",
+          "pass": true,
+          "expected": {
+            "maxErrorItems": 0
+          },
+          "actual": 0
+        },
+        {
+          "name": "batchWallMs",
+          "pass": true,
+          "expected": {
+            "maxWallMs": 180000
+          },
+          "actual": 10246
+        }
+      ],
+      "pass": true,
+      "outcomeCounts": {
+        "pass": 2,
+        "fail": 1,
+        "manual_review": 0,
+        "error": 0
+      },
+      "summary": {
+        "total": 3,
+        "success": 3,
+        "error": 0,
+        "pass": 2,
+        "fail": 1,
+        "manualReview": 0,
+        "totalMs": 10246
+      }
+    },
+    "summary": {
+      "total": 3,
+      "success": 3,
+      "error": 0,
+      "pass": 2,
+      "fail": 1,
+      "manualReview": 0,
+      "totalMs": 10246
+    }
+  },
+  "results": [
+    {
+      "id": "synthetic_eval_vodka_import_baseline_front",
+      "relativePath": "labels/synthetic_eval_vodka_import_baseline_front.jpg",
+      "applicationPath": "fixtures/applications/synthetic_eval_vodka_import.json",
+      "batchIndex": 0,
+      "batchFileName": "synthetic_eval_vodka_import_baseline_front.jpg",
+      "batchOutcome": "fail",
+      "httpStatus": 200,
+      "durationMs": 10238,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 10071,
+      "validationSummary": {
+        "pass": 6,
+        "fail": 1,
+        "manual_review": 0,
+        "not_applicable": 0
+      },
+      "fieldStatuses": {
+        "brandName": "pass",
+        "classType": "pass",
+        "alcoholContent": "pass",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "pass",
+        "countryOfOrigin": "fail"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "synthetic_eval_whiskey_cream_baseline_front",
+      "relativePath": "labels/synthetic_eval_whiskey_cream_baseline_front.jpg",
+      "applicationPath": "fixtures/applications/synthetic_eval_whiskey_cream.json",
+      "batchIndex": 1,
+      "batchFileName": "synthetic_eval_whiskey_cream_baseline_front.jpg",
+      "batchOutcome": "pass",
+      "httpStatus": 200,
+      "durationMs": 4638,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 4493,
+      "validationSummary": {
+        "pass": 6,
+        "fail": 0,
+        "manual_review": 0,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "pass",
+        "classType": "pass",
+        "alcoholContent": "pass",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "pass",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    },
+    {
+      "id": "synthetic_eval_spiced_rum_baseline_front",
+      "relativePath": "labels/synthetic_eval_spiced_rum_baseline_front.jpg",
+      "applicationPath": "fixtures/applications/synthetic_eval_spiced_rum.json",
+      "batchIndex": 2,
+      "batchFileName": "synthetic_eval_spiced_rum_baseline_front.jpg",
+      "batchOutcome": "pass",
+      "httpStatus": 200,
+      "durationMs": 3814,
+      "extractionProvider": "openai",
+      "extractionDurationMs": 3736,
+      "validationSummary": {
+        "pass": 6,
+        "fail": 0,
+        "manual_review": 0,
+        "not_applicable": 1
+      },
+      "fieldStatuses": {
+        "brandName": "pass",
+        "classType": "pass",
+        "alcoholContent": "pass",
+        "netContents": "pass",
+        "governmentWarning": "pass",
+        "nameAddress": "pass",
+        "countryOfOrigin": "not_applicable"
+      },
+      "code": null,
+      "imageQualityOk": true
+    }
+  ],
+  "latency": {
+    "request": {
+      "count": 3,
+      "minMs": 3814,
+      "maxMs": 10238,
+      "meanMs": 6230,
+      "medianMs": 4638,
+      "p95Ms": 10238
+    },
+    "extraction": {
+      "count": 3,
+      "minMs": 3736,
+      "maxMs": 10071,
+      "meanMs": 6100,
+      "medianMs": 4493,
+      "p95Ms": 10071
+    }
+  },
+  "correctness": {
+    "fixtureScores": [
+      {
+        "id": "synthetic_eval_vodka_import_baseline_front",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 10238
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:nameAddress",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "fail"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.8,
+        "pass": true
+      },
+      {
+        "id": "synthetic_eval_whiskey_cream_baseline_front",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 4638
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:nameAddress",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.8,
+        "pass": true
+      },
+      {
+        "id": "synthetic_eval_spiced_rum_baseline_front",
+        "scored": true,
+        "checks": [
+          {
+            "name": "allowedExtractionProvider",
+            "pass": true,
+            "expected": [
+              "openai",
+              "unavailable"
+            ],
+            "actual": "openai"
+          },
+          {
+            "name": "imageQualityOk",
+            "pass": true,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "name": "durationMs",
+            "pass": true,
+            "expected": {
+              "maxDurationMs": 20000
+            },
+            "actual": 3814
+          },
+          {
+            "name": "fieldStatus:brandName",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:classType",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:alcoholContent",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:netContents",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:governmentWarning",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review",
+              "fail"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:nameAddress",
+            "pass": true,
+            "expected": [
+              "pass",
+              "manual_review"
+            ],
+            "actual": "pass"
+          },
+          {
+            "name": "fieldStatus:countryOfOrigin",
+            "pass": true,
+            "expected": [
+              "not_applicable"
+            ],
+            "actual": "not_applicable"
+          }
+        ],
+        "score": 1,
+        "minScore": 0.8,
+        "pass": true
+      }
+    ],
+    "totals": {
+      "totalChecks": 30,
+      "passedChecks": 30,
+      "overallScore": 1,
+      "scoredFixtures": 3,
+      "fixturesPassed": 3,
+      "fixturePassRate": 1
+    },
+    "thresholdChecks": [
+      {
+        "name": "minOverallScore",
+        "pass": true,
+        "expected": 0.6,
+        "actual": 1
+      },
+      {
+        "name": "minFixturePassRate",
+        "pass": true,
+        "expected": 0.5,
+        "actual": 1
+      },
+      {
+        "name": "requiredFixtureIdsPresent",
+        "pass": true,
+        "expected": [
+          "synthetic_eval_vodka_import_baseline_front",
+          "synthetic_eval_whiskey_cream_baseline_front",
+          "synthetic_eval_spiced_rum_baseline_front"
+        ],
+        "actual": [
+          "synthetic_eval_vodka_import_baseline_front",
+          "synthetic_eval_whiskey_cream_baseline_front",
+          "synthetic_eval_spiced_rum_baseline_front"
+        ],
+        "missing": []
+      }
+    ],
+    "thresholdsPass": true
+  }
+}
