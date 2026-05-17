@@ -40,6 +40,7 @@ describe("golden path vs fixtures/default-application.json", () => {
     const raw = await readFile(path.join(root, "fixtures", "default-application.json"), "utf8");
     const parsed = ApplicationJsonSchema.safeParse(JSON.parse(raw));
     expect(parsed.success, parsed.success ? "" : JSON.stringify(parsed.error.flatten())).toBe(true);
+    if (!parsed.success) return;
     const app = parsed.data;
 
     const extraction = goldenExtractionFromApplication(app);
