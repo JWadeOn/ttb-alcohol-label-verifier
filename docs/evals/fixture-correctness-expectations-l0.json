@@ -1,6 +1,10 @@
 {
   "version": 1,
   "profile": "l0-sanity-v1",
+  "batch": {
+    "maxErrorItems": 0,
+    "maxWallMs": 180000
+  },
   "thresholds": {
     "minOverallScore": 0.6,
     "minFixturePassRate": 0.5,

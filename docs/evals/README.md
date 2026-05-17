@@ -42,14 +42,28 @@ Details and fixture IDs: [`suite-plan.json`](./suite-plan.json) → `coverageMat
 ```bash
 npm run eval:validate-suite-plan   # drift check (no API)
 npm run eval:l0                    # 3 fixtures, non-blocking correctness
+npm run eval:batch:l0              # same 3 fixtures via POST /api/verify/batch (one request)
 npm run eval:l1                    # 16 fixtures, blocking correctness
 npm run eval:l2                    # full synthetic_eval, non-blocking
+npm run eval:batch-fixture-verify  # batch runner (EVAL_FIXTURE_SET / EVAL_FIXTURE_IDS)
 npm run eval:on-bottle:candidates  # L3 manual lane
 npm run eval:fixture-verify:prod   # production BASE_URL
 npm run eval:primary-latency       # latency-only
 ```
 
 Model-backed evals are intentionally run manually to avoid cost and drift from unattended scheduled jobs.
+
+## Batch fixture verify
+
+[`evals/run-batch-fixture-verify.mjs`](../../evals/run-batch-fixture-verify.mjs) reuses the same assets as single-label eval:
+
+- **`fixtures/manifest.json`** — label paths and optional `applicationPath`
+- **`fixtures/default-application.json`** — fallback when a fixture has no `applicationPath`
+- **`docs/evals/fixture-correctness-expectations-*.json`** — per-fixture field rules (same `fixtures` map)
+
+One `POST /api/verify/batch` sends all selected images plus a JSON `applications` array (one object per image, same order). Output is written to `docs/evals/fixture-batch-correctness-<scope>-YYYY-MM-DD.json` and includes per-fixture rows plus optional `batch.*` transport checks (`maxErrorItems`, `maxWallMs`).
+
+Tier **`L0_batch_sanity`** in [`suite-plan.json`](./suite-plan.json) runs the L0 fixture set through the batch runner (`npm run eval:batch:l0`).
 
 ## Pre-PR checklist
 

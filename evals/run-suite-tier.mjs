@@ -53,9 +53,13 @@ if (Array.isArray(tier.fixtureIds) && tier.fixtureIds.length > 0) {
   process.exit(1);
 }
 
-console.error(`[run-suite-tier] tier=${tierKey} expectations=${env.EVAL_EXPECTATIONS ?? "(default)"} failOnCorrectness=${env.EVAL_FAIL_ON_CORRECTNESS}`);
+const runner = tier.runner === "batch-fixture-verify" ? "run-batch-fixture-verify.mjs" : "run-fixture-verify.mjs";
 
-const child = spawn("node", [path.join(__dirname, "run-fixture-verify.mjs")], {
+console.error(
+  `[run-suite-tier] tier=${tierKey} runner=${runner} expectations=${env.EVAL_EXPECTATIONS ?? "(default)"} failOnCorrectness=${env.EVAL_FAIL_ON_CORRECTNESS}`,
+);
+
+const child = spawn("node", [path.join(__dirname, runner)], {
   cwd: root,
   env,
   stdio: "inherit",
