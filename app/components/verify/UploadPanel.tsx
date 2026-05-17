@@ -30,7 +30,7 @@ export function UploadPanel({
     <div className="flex min-h-0 flex-col gap-1 lg:flex-1">
       {!file ? (
         <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">
-          Single-label verify starts here: choose one image, then run verification before reviewing results.
+          Choose a label image, then run verification.
         </p>
       ) : preparingFile ? (
         <p className="shrink-0 text-[10px] leading-snug text-stone-500 sm:text-[11px]">

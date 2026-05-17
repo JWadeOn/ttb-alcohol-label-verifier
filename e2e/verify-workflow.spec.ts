@@ -1,7 +1,10 @@
 import { expect, test, type Route } from "@playwright/test";
 import {
+  fillValidApplication,
+  mockBatchVerifyResponse,
   mockManualReviewVerifyResponse,
   mockVerifySuccessResponse,
+  VALID_APPLICATION_JSON,
   tinyPngBuffer,
 } from "./helpers";
 
@@ -56,11 +59,12 @@ test.describe("label verification workbench", () => {
       mimeType: "image/png",
       buffer: tinyPngBuffer(),
     });
+    await fillValidApplication(page);
     await expect(page.getByRole("button", { name: "Run verification", exact: true })).toBeEnabled({
       timeout: 15_000,
     });
     await page.getByRole("button", { name: "Run verification", exact: true }).click();
-    await expect(page.getByText("All checks passed")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Passed" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("cell", { name: "Brand name" })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Pass", exact: true }).first()).toBeVisible();
   });
@@ -81,12 +85,13 @@ test.describe("label verification workbench", () => {
       mimeType: "image/png",
       buffer: tinyPngBuffer(),
     });
+    await fillValidApplication(page);
     await expect(page.getByRole("button", { name: "Run verification", exact: true })).toBeEnabled({
       timeout: 15_000,
     });
     await page.getByRole("button", { name: "Run verification", exact: true }).click();
-    await expect(page.getByText("Human review required")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Manual review", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Needs Review" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Needs review", { exact: true }).first()).toBeVisible();
   });
 
   test("oversized upload shows actionable client error", async ({ page }) => {
@@ -101,20 +106,47 @@ test.describe("label verification workbench", () => {
     await expect(page.getByRole("button", { name: "Run verification", exact: true })).toBeDisabled();
   });
 
-  test("batch path returns per-item results table", async ({ page }) => {
+  test("batch path navigates to results with applications table and field detail", async ({ page }) => {
+    await page.route("**/api/verify/batch", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockBatchVerifyResponse(["a.png", "b.png"])),
+      });
+    });
+
     await page.goto("/");
-    await page.getByRole("button", { name: "Batch", exact: true }).click();
-    await page.getByLabel("Choose batch label image files").setInputFiles([
+    await page.getByRole("tab", { name: "Batch", exact: true }).click();
+    await page.getByLabel("Upload batch label images").setInputFiles([
       { name: "a.png", mimeType: "image/png", buffer: tinyPngBuffer() },
       { name: "b.png", mimeType: "image/png", buffer: tinyPngBuffer() },
+    ]);
+    await page.getByLabel("Upload batch application JSON files").setInputFiles([
+      {
+        name: "a.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(VALID_APPLICATION_JSON, "utf8"),
+      },
+      {
+        name: "b.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(VALID_APPLICATION_JSON, "utf8"),
+      },
     ]);
     await expect(page.getByRole("button", { name: "Run batch verification", exact: true })).toBeEnabled({
       timeout: 10_000,
     });
     await page.getByRole("button", { name: "Run batch verification", exact: true }).click();
-    await expect(page.getByText(/total 2/i)).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("Batch outcome & review")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/2 labels verified/i)).toBeVisible();
     await expect(page.getByRole("cell", { name: "a.png" })).toBeVisible();
     await expect(page.getByRole("cell", { name: "b.png" })).toBeVisible();
+    await page.getByRole("cell", { name: "a.png" }).click();
+    const firstAppDetails = page.locator("#batch-app-details-0");
+    await expect(firstAppDetails).toBeVisible();
+    await expect(firstAppDetails.getByRole("heading", { name: "Field outcomes" })).toBeVisible();
+    await expect(firstAppDetails.getByRole("cell", { name: "Brand name" })).toBeVisible();
   });
 
   test("missing API key surfaces expected failure headline", async ({ page }) => {
@@ -137,6 +169,7 @@ test.describe("label verification workbench", () => {
       mimeType: "image/png",
       buffer: tinyPngBuffer(),
     });
+    await fillValidApplication(page);
     await expect(page.getByRole("button", { name: "Run verification", exact: true })).toBeEnabled({
       timeout: 15_000,
     });

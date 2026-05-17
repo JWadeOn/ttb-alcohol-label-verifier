@@ -40,7 +40,7 @@ export const FIELD_REQUIREMENTS: Record<FieldId, string> = {
   governmentWarning:
     "Required on the application (auto-filled from canonical text when hidden in formatted mode). Auto-pass only on exact, case-sensitive equality; near matches → manual review; material mismatch → fail.",
   nameAddress:
-    "Required on the application. Fuzzy match when label text is read confidently; blank application value → fail before comparison.",
+    "Required on the application. Compare the full printed line (including Distilled by, Bottled by, or Imported by when present) via fuzzy match; blank application value → fail before comparison.",
   countryOfOrigin:
     "Required when import is checked; not applicable otherwise. Fuzzy match when both sides include text.",
 };
