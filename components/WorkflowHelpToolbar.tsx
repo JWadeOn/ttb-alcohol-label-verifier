@@ -1,18 +1,24 @@
 "use client";
 
 import { FixtureLoader } from "@/app/components/verify/FixtureLoader";
-import type { DemoCaseId } from "@/lib/demo-cases";
+import type { BatchDemoSuiteId, DemoCaseId } from "@/lib/demo-cases";
 
 type WorkflowHelpToolbarProps = {
+  uploadMode: "single" | "batch";
   demoLoadingCaseId: DemoCaseId | null;
+  demoLoadingBatchSuiteId: BatchDemoSuiteId | null;
   demoLoadErrorText: string | null;
   onSelectDemoCase: (id: DemoCaseId) => void | Promise<void>;
+  onSelectBatchDemo: (suiteId: BatchDemoSuiteId) => void | Promise<void>;
 };
 
 export function WorkflowHelpToolbar({
+  uploadMode,
   demoLoadingCaseId,
+  demoLoadingBatchSuiteId,
   demoLoadErrorText,
   onSelectDemoCase,
+  onSelectBatchDemo,
 }: WorkflowHelpToolbarProps) {
   return (
     <aside
@@ -21,9 +27,12 @@ export function WorkflowHelpToolbar({
     >
       <FixtureLoader
         variant="toolbar"
+        uploadMode={uploadMode}
         demoLoadingCaseId={demoLoadingCaseId}
+        demoLoadingBatchSuiteId={demoLoadingBatchSuiteId}
         demoLoadErrorText={demoLoadErrorText}
         onSelectDemoCase={onSelectDemoCase}
+        onSelectBatchDemo={onSelectBatchDemo}
       />
       <details className="relative min-w-0 flex-1 sm:flex-none sm:max-w-[18rem]">
         <summary className="flex h-8 w-full cursor-pointer list-none items-center justify-center rounded-lg border border-stone-300 bg-stone-50 px-3 text-xs font-medium leading-none text-stone-800 shadow-sm outline-none transition hover:bg-white hover:ring-2 hover:ring-stone-400/30 focus-visible:ring-2 focus-visible:ring-stone-500/40 [&::-webkit-details-marker]:hidden open:bg-white open:ring-2 sm:inline-flex sm:w-max sm:justify-center">

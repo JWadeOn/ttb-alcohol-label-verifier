@@ -1,4 +1,5 @@
-import type { VerifySuccessResponse } from "@/lib/schemas";
+import type { Page } from "@playwright/test";
+import type { VerifyBatchResponse, VerifySuccessResponse } from "@/lib/schemas";
 
 /** 1×1 valid PNG for browser image decode / upload prep. */
 export function tinyPngBuffer(): Buffer {
@@ -24,6 +25,12 @@ export const VALID_APPLICATION_JSON = JSON.stringify(
   null,
   2,
 );
+
+/** Paste valid application JSON so Run verification is enabled (default editor state is blank). */
+export async function fillValidApplication(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "JSON", exact: true }).click();
+  await page.getByLabel("Application JSON").fill(VALID_APPLICATION_JSON);
+}
 
 export function mockVerifySuccessResponse(
   overrides?: Partial<VerifySuccessResponse>,
@@ -71,6 +78,31 @@ export function mockVerifySuccessResponse(
       cacheHit: false,
     },
     ...overrides,
+  };
+}
+
+export function mockBatchVerifyResponse(fileNames: string[]): VerifyBatchResponse {
+  return {
+    requestId: "00000000-0000-4000-8000-000000000010",
+    summary: {
+      total: fileNames.length,
+      success: fileNames.length,
+      error: 0,
+      pass: fileNames.length,
+      fail: 0,
+      manualReview: 0,
+      totalMs: 42,
+    },
+    items: fileNames.map((fileName, index) => ({
+      index,
+      fileName,
+      ok: true,
+      status: 200,
+      durationMs: 20 + index,
+      result: mockVerifySuccessResponse({
+        requestId: `00000000-0000-4000-8000-0000000000${11 + index}`,
+      }),
+    })),
   };
 }
 

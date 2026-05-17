@@ -37,6 +37,7 @@
       "synthetic_eval_vodka_import_obvious_fail_net_contents",
       "synthetic_eval_vodka_import_obvious_fail_country_of_origin"
     ],
+    "synthetic_app_mismatch": ["synthetic_eval_whiskey_cream_obvious_fail_brand"],
     "mandatory_field_missing": [
       "synthetic_eval_vodka_import_missing_name_address"
     ],
@@ -62,6 +63,17 @@
   "tiers": {
     "L0_sanity": {
       "goal": "Fast smoke check for pipeline health and obvious routing regressions.",
+      "fixtureIds": [
+        "synthetic_eval_vodka_import_baseline_front",
+        "synthetic_eval_whiskey_cream_baseline_front",
+        "synthetic_eval_spiced_rum_baseline_front"
+      ],
+      "expectationsProfile": "docs/evals/fixture-correctness-expectations-l0.json",
+      "failOnCorrectness": false
+    },
+    "L0_batch_sanity": {
+      "goal": "Batch API smoke: same L0 fixtures in one POST /api/verify/batch request.",
+      "runner": "batch-fixture-verify",
       "fixtureIds": [
         "synthetic_eval_vodka_import_baseline_front",
         "synthetic_eval_whiskey_cream_baseline_front",
@@ -115,6 +127,7 @@
       "fixtureSet": "name_address_candidates",
       "notes": [
         "On-bottle fixtures are temporarily excluded from L0/L1/L2 until handpicked curation is ready.",
+        "Application-data mismatch demos (same label, wrong application field) run via npm run eval:synthetic-app-mismatch.",
         "Never include L3 artifacts in PR-gating suites."
       ]
     }

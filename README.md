@@ -14,18 +14,40 @@ Evaluator quick path: [`docs/EVALUATOR_START_HERE.md`](docs/EVALUATOR_START_HERE
 - Extraction depends on hybrid OCR + vision LLM; low-confidence rows route to **manual review** (government warning can still fail when clearly inconsistent).
 - Real-photo evidence is growing; see [`docs/evals/REAL_PHOTO_PACK.md`](docs/evals/REAL_PHOTO_PACK.md) and committed eval JSON under `docs/evals/`.
 
-## Evaluator repro (local)
+## Quick start (local)
+
+Requirements:
+
+- Node.js 20+
+- npm 10+
+
+Install and run:
 
 ```bash
 npm ci
-npm run test:e2e:install   # first time only (Playwright Chromium)
-npm test
-npm run test:e2e           # browser workflow (starts dev server with VERIFY_DEV_STUB)
-npm run dev                # in another terminal if not using test:e2e webServer
+npm run dev
 open http://localhost:3000
 ```
 
-Set `OPENAI_API_KEY` in `.env.local` for non-stub verify runs. See [`docs/EVALUATOR_START_HERE.md`](docs/EVALUATOR_START_HERE.md).
+Optional validation commands:
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Set `OPENAI_API_KEY` in `.env.local` when you want non-stub extraction runs. For evaluator navigation, see [`docs/EVALUATOR_START_HERE.md`](docs/EVALUATOR_START_HERE.md).
+
+## Fast evaluator demo path (Demo runs button)
+
+Use this path when you want to demonstrate behavior quickly without preparing files.
+
+1. Open the app (`http://localhost:3000` or the Railway URL).
+2. In **Help and demo tools**, click **Demo runs**.
+3. Keep **Single label** selected, then click any fixture under **Load an existing eval fixture**.
+4. Click **Run verification** and review `pass` / `fail` / `manual_review` field outcomes.
+5. For batch, switch to the **Batch** tab, open **Demo runs**, choose a **Batch demo** preset, then click **Run batch verification**.
 
 ## Project Objective
 
@@ -118,19 +140,11 @@ This prototype is decision support, not legal automation.
 - Public prototype deployment is acceptable for this exercise; production path would move to Azure OpenAI private endpoints
 - Upload and eval fixture policy uses the current TTB guidance ceiling of **1.5 MB per image**; older COLA attachment references that mention **750 KB** are treated as superseded for this prototype.
 
-## Local development (Phase 1)
+## Local development and configuration details
 
-After cloning:
-
-```bash
-npm install
-```
+If you already completed **Quick start (local)** above, keep going here for runtime configuration options.
 
 Set **`OPENAI_API_KEY`** (for example in `.env.local` at the project root). Next.js loads that file automatically in dev.
-
-```bash
-npm run dev
-```
 
 Use **`npm run dev:clean`** (`rm -rf .next && next dev`) if the dev overlay throws transient manifest/cache errors.
 

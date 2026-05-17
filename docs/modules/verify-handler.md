@@ -11,7 +11,7 @@ HTTP-level handling for verify requests:
 - Optional **`OPENAI_DISABLED`** (`true` / `1` / `yes`) — respond **503** / `OPENAI_DISABLED` before reading image bytes or calling OpenAI (saves credits when you need the API to reject rather than return a success stub).
 - Convert image `Blob` to `Buffer`, call `runVerifyPipeline` (injectable for tests).
 - Map `VerifyFailedError` to JSON error responses; catch unexpected errors as `500` / `INTERNAL_ERROR`.
-- Expose `POST /api/verify/batch` handling: accept `images[]` + single `application`, enforce max batch size (default **20**, env `VERIFY_BATCH_MAX_IMAGES`, clamped to 1..50), run bounded-concurrency verification (default 2, env `VERIFY_BATCH_CONCURRENCY`), and return per-item outcomes with **`durationMs`**, optional **`error.message`**, and aggregate summary counts (`totalMs` wall clock for the batch).
+- Expose `POST /api/verify/batch` handling: accept `images[]` + `applications` JSON array (one application object per image, same order), enforce max batch size (default **20**, env `VERIFY_BATCH_MAX_IMAGES`, clamped to 1..50), run bounded-concurrency verification (default 2, env `VERIFY_BATCH_CONCURRENCY`), and return per-item outcomes with **`durationMs`**, optional **`error.message`**, and aggregate summary counts (`totalMs` wall clock for the batch).
 
 ## HTTP and error contract
 
@@ -20,7 +20,7 @@ Exact messages live in source; typical mapping:
 | Status | Typical `code` | When |
 |--------|----------------|------|
 | 200 | — | Pipeline returned schema-valid success body, or **`VERIFY_DEV_STUB`** returned the typed stub (non-production only). |
-| 400 | `MISSING_IMAGE`, `EMPTY_IMAGE`, `MISSING_APPLICATION`, `INVALID_APPLICATION_JSON`, `INVALID_APPLICATION_SCHEMA` | Bad multipart or JSON. |
+| 400 | `MISSING_IMAGE`, `EMPTY_IMAGE`, `MISSING_APPLICATION`, `INVALID_APPLICATION_JSON`, `INVALID_APPLICATION_SCHEMA`, `MISSING_APPLICATIONS`, `INVALID_APPLICATIONS_JSON`, `APPLICATIONS_COUNT_MISMATCH`, `BATCH_TOO_LARGE` | Bad multipart payload, invalid JSON/schema, or batch contract violations. |
 | 413 | `IMAGE_TOO_LARGE` | Uploaded image exceeds the 1.5 MB guardrail. |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Wrong content type. |
 | 422 | `IMAGE_QUALITY_REJECTED` | From pipeline (`VerifyFailedError`). |

@@ -18,7 +18,8 @@ import {
 import { VerifyRunStepsPanel } from "@/components/VerifyRunStepsPanel";
 import { WorkflowHelpToolbar } from "@/components/WorkflowHelpToolbar";
 import { buildVerifyUiStepsFromResponse, buildVerifyUiStepsLoading, verifyResponseIndicatesPipelineFailure } from "@/lib/verify-ui-steps";
-import type { DemoCaseId } from "@/lib/demo-cases";
+import type { BatchDemoSuiteId, DemoCaseId } from "@/lib/demo-cases";
+import { base64ToFile, batchDemoItemsToUploadFiles, type BatchDemoLoadItem } from "@/lib/demo-load";
 import {
   ABV_TOLERANCE,
   BRAND_SIMILARITY,
@@ -32,6 +33,32 @@ import {
 } from "@/lib/validator";
 import { verifyErrorUserHeadline } from "@/lib/verify-error-messages";
 import { BatchPanel } from "@/app/components/verify/BatchPanel";
+import { BatchResultsView } from "@/app/components/verify/BatchResultsView";
+import { BatchVerifyProgressPanel } from "@/app/components/verify/BatchVerifyProgressPanel";
+import { FieldOutcomesTable } from "@/app/components/verify/FieldOutcomesTable";
+import type { ReviewDisposition } from "@/app/components/verify/ReviewDispositionCompact";
+import type { BatchApplicationStatusFilter } from "@/lib/batch-results";
+import {
+  batchVerifyProgressIntervalMs,
+  type BatchVerifyProgressPhase,
+} from "@/lib/batch-verify-progress";
+import type { BatchPairingPreview } from "@/app/components/verify/BatchApplicationsPanel";
+import {
+  buildBatchApplicationListItems,
+  buildBatchApplicationsPayload,
+  type BatchApplicationListItem,
+} from "@/lib/batch-applications";
+import { BatchApplicationsPanel } from "@/app/components/verify/BatchApplicationsPanel";
+import { pairBatchFiles } from "@/lib/batch-pairing";
+import {
+  normalizeBatchApplicationFiles,
+  normalizeBatchImageFiles,
+} from "@/lib/batch-upload";
+import {
+  ResultsSummaryCard,
+  type OutcomeStatusFilter,
+} from "@/app/components/verify/ResultsSummaryCard";
+import { ReviewDispositionControls } from "@/app/components/verify/ReviewDispositionControls";
 import { UploadPanel } from "@/app/components/verify/UploadPanel";
 import {
   CLIENT_BATCH_MAX_IMAGES,
@@ -55,15 +82,6 @@ type PreparedUpload = {
 };
 
 type WorkflowPhase = "edit" | "verify" | "results";
-
-function base64ToFile(base64: string, fileName: string, mimeType: string): File {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return new File([bytes], fileName, { type: mimeType });
-}
 
 function replaceFileExtension(fileName: string, nextExt: string): string {
   const i = fileName.lastIndexOf(".");
@@ -182,7 +200,7 @@ function formatStatusLabel(status: FieldStatus): string {
     case "fail":
       return "Fail";
     case "manual_review":
-      return "Manual review";
+      return "Needs review";
     case "not_applicable":
       return "Not applicable";
     default:
@@ -263,6 +281,8 @@ type ResultsDigest = {
   uniqueMessage: string | null;
   overall: "pass" | "fail" | "manual_review" | "mixed";
   fieldCount: number;
+  notApplicableFieldIds: FieldId[];
+  notApplicableFieldLabels: string[];
   /** Long text for native tooltip on the Not applicable chip; null when count is 0. */
   notApplicableTooltip: string | null;
   blankExtractedCount: number;
@@ -334,74 +354,56 @@ function buildResultsDigest(payload: VerifySuccessResponse): ResultsDigest {
     uniqueMessage,
     overall,
     fieldCount: fields.length,
+    notApplicableFieldIds,
+    notApplicableFieldLabels,
     notApplicableTooltip,
     blankExtractedCount,
     blankManualReviewCount,
   };
 }
 
-function overallResultsHeadline(d: ResultsDigest): string {
+function reviewActionBulletLabel(d: ResultsDigest): string {
+  if (d.overall === "fail" || (d.overall === "mixed" && d.counts.fail > 0)) {
+    return "Review mismatches";
+  }
+  if (d.overall === "manual_review") {
+    return "Review flagged fields";
+  }
+  return "Review outcomes";
+}
+
+function buildReviewActionBullet(d: ResultsDigest): string {
   switch (d.overall) {
+    case "fail":
+      return "Check the failed rows below. To fix an error, return to Edit inputs to correct the application data or upload new artwork, then run verification again.";
+    case "manual_review":
+      if (d.blankManualReviewCount >= Math.max(2, d.counts.manual_review)) {
+        return "Several rows lack confident extracted label text. Compare the label image to the table below. To correct data or artwork, return to Edit inputs, then run verification again.";
+      }
+      return "Check the rows flagged for review below. Compare the label image to extracted values. Return to Edit inputs to correct application data or upload new artwork, then run verification again.";
+    case "mixed":
+      return "Check failed and review rows in the table below. Return to Edit inputs to correct application data or upload new artwork, then run verification again.";
     case "pass":
-      return "All checks passed";
-    case "fail":
-      return "One or more fields failed";
-    case "manual_review":
-      return "Human review required";
+      return "Every comparison that ran passed. Spot-check the table if you want extra assurance, or return to Edit inputs before running verification again after any changes.";
     default:
-      return "Mixed outcomes — review the table";
+      return "Use the field outcomes table below, then Edit inputs and Run verification again after any corrections.";
   }
 }
 
-function joinWorkloadSegments(segments: string[]): string {
-  if (segments.length === 1) return segments[0]!;
-  if (segments.length === 2) return `${segments[0]} and ${segments[1]}`;
-  return `${segments.slice(0, -1).join(", ")}, and ${segments.at(-1)}`;
-}
-
-/**
- * One line: how many rows fall into each outcome bucket (the only reason to show counts here).
- * The table below repeats per field; this is the roll-up.
- */
-function outcomeWorkloadSummaryLine(d: ResultsDigest): string {
-  const { counts, fieldCount } = d;
-  const segments: string[] = [];
-  if (counts.fail > 0) segments.push(`${counts.fail} failed`);
-  if (counts.manual_review > 0) segments.push(`${counts.manual_review} need human review`);
-  if (counts.pass > 0) segments.push(`${counts.pass} passed automatically`);
-  if (counts.not_applicable > 0) segments.push(`${counts.not_applicable} skipped as not applicable`);
-  if (segments.length === 0) {
-    return `This verification includes ${fieldCount} field row${fieldCount === 1 ? "" : "s"}.`;
+function buildSkippedFieldsBullet(d: ResultsDigest): string | null {
+  if (d.counts.not_applicable === 0) return null;
+  const ids = d.notApplicableFieldIds;
+  if (ids.length > 0 && ids.every((id) => id === "countryOfOrigin")) {
+    return "Country of origin was skipped because this product is not marked as an import.";
   }
-  return `Across ${fieldCount} field${fieldCount === 1 ? "" : "s"}: ${joinWorkloadSegments(segments)}.`;
-}
-
-/** Plain-language purpose: what this run means for the reader in one breath. */
-function outcomeCardLeadLine(d: ResultsDigest): string {
-  switch (d.overall) {
-    case "pass": {
-      return `Within this prototype’s rules, every comparison that ran passed. Expand sections below only if you want to audit a specific value.`;
-    }
-    case "fail":
-      return `Automated comparison reported at least one mismatch between label and application. Treat failures as blockers until you change the data or follow your own override process.`;
-    case "manual_review":
-      return `Automation could not confidently pass or fail every compared row. Use this screen to compare the submitted application with the label image before deciding what to do next.`;
-    default:
-      return "Different fields landed in different states. Use the Field outcomes table for a row-by-row picture, then open Full comparison by field only where you need rules or per-field messages.";
-  }
-}
-
-function outcomeCardNextStepLine(d: ResultsDigest): string {
-  switch (d.overall) {
-    case "pass":
-      return "You can stop here for a quick green check, or scan the table to spot-check values.";
-    case "fail":
-      return "Next: start with the failed rows in the table below. If the image or submitted data needs correction, return to Edit inputs, then run verification again.";
-    case "manual_review":
-      return "Next: check the label image against the table below. If the photo or submitted data needs correction, return to Edit inputs, then run verification again.";
-    default:
-      return "Next: use the Field outcomes table first; expand Full comparison by field when messages differ row to row.";
-  }
+  const labels = d.notApplicableFieldLabels;
+  const list =
+    labels.length === 1
+      ? labels[0]!
+      : labels.length === 0
+        ? `${d.counts.not_applicable} field${d.counts.not_applicable === 1 ? "" : "s"}`
+        : `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`;
+  return `${list} ${labels.length === 1 ? "was" : "were"} skipped because ${labels.length === 1 ? "it does" : "they do"} not apply to this application as submitted.`;
 }
 
 function extractionPathSummary(payload: VerifySuccessResponse): string {
@@ -419,22 +421,8 @@ function extractionPathSummary(payload: VerifySuccessResponse): string {
   }
 }
 
-function outcomePrimaryReasonLine(d: ResultsDigest): string | null {
-  if (d.overall === "manual_review") {
-    if (d.blankManualReviewCount >= Math.max(2, d.counts.manual_review)) {
-      return "Most review rows do not have confident extracted label text yet, so the verifier is intentionally deferring to a human reviewer.";
-    }
-    return d.uniqueMessage ?? "The verifier could not confidently automate every comparison for this run.";
-  }
-  if (d.overall === "fail") {
-    return d.uniqueMessage ?? "At least one automated comparison found a mismatch between the label and the submitted application.";
-  }
-  return null;
-}
-
 function ResultsSummaryMoreInfo({ d }: { d: ResultsDigest }) {
-  const showInlineGuidance = d.overall === "manual_review" || d.overall === "fail";
-  const primaryReason = outcomePrimaryReasonLine(d);
+  const skippedFields = buildSkippedFieldsBullet(d);
   return (
     <div className="mt-3 text-left">
       <details
@@ -453,113 +441,32 @@ function ResultsSummaryMoreInfo({ d }: { d: ResultsDigest }) {
               clipRule="evenodd"
             />
           </svg>
-          <span>{showInlineGuidance ? "More context" : "Expand for more information"}</span>
+          <span>Next steps &amp; context</span>
         </summary>
         <div
-          className="space-y-2 border-t border-stone-200/70 px-2 pb-2 pt-2 text-xs leading-relaxed text-stone-700"
+          className="border-t border-stone-200/70 px-2 pb-2.5 pt-2.5"
           role="region"
-          aria-label="Additional outcome guidance"
+          aria-label="Next steps and context"
         >
-          {showInlineGuidance ? (
-            <>
-              {primaryReason ? (
-                <p className="text-sm leading-relaxed text-stone-800">
-                  <span className="font-semibold text-stone-900">Why this happened: </span>
-                  {primaryReason}
-                </p>
-              ) : null}
-              <p className="text-sm leading-relaxed text-stone-800">{outcomeCardNextStepLine(d)}</p>
-              <p>{outcomeCardLeadLine(d)}</p>
-            </>
-          ) : (
-            <>
-              <p>{outcomeCardLeadLine(d)}</p>
-              <p>{outcomeCardNextStepLine(d)}</p>
-            </>
-          )}
-          {d.notApplicableTooltip ? <p>{d.notApplicableTooltip}</p> : null}
-          {d.uniqueMessage && d.uniqueMessage !== primaryReason ? (
-            <p>
-              <span className="font-medium text-stone-800">Same note on every row: </span>
-              {d.uniqueMessage}
-            </p>
-          ) : (
-            <p>
-              Validator messages differ by field or need more room — expand{" "}
-              <strong className="font-medium text-stone-800">Full comparison by field</strong> below for each row’s
-              explanation and extraction confidence.
-            </p>
-          )}
+          <ul className="list-none space-y-2.5 text-sm leading-snug text-stone-800">
+            <li>
+              <span className="font-semibold text-stone-900">{reviewActionBulletLabel(d)}: </span>
+              {buildReviewActionBullet(d)}
+            </li>
+            {skippedFields ? (
+              <li>
+                <span className="font-semibold text-stone-900">Skipped fields: </span>
+                {skippedFields}
+              </li>
+            ) : null}
+            <li>
+              <span className="font-semibold text-stone-900">Review AI logic: </span>
+              Expand the <strong className="font-medium text-stone-900">Full comparison by field</strong> section below
+              for specific extraction details and confidence scores.
+            </li>
+          </ul>
         </div>
       </details>
-    </div>
-  );
-}
-
-function truncateFieldCell(value: string | null, maxLen: number): string {
-  if (value == null) return "—";
-  const t = String(value).trim();
-  if (t === "") return "—";
-  if (t.length <= maxLen) return t;
-  return `${t.slice(0, Math.max(1, maxLen - 1))}…`;
-}
-
-type ReviewDisposition = "approved" | "rejected" | null;
-
-function ReviewDispositionControls({
-  disposition,
-  onDisposition,
-}: {
-  disposition: ReviewDisposition;
-  onDisposition: (next: ReviewDisposition) => void;
-}) {
-  return (
-    <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end" role="group" aria-label="Review disposition">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-        Your review
-      </span>
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onDisposition("approved")}
-          aria-pressed={disposition === "approved"}
-          className={`min-w-[6.5rem] cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-            disposition === "approved"
-              ? "bg-emerald-700 text-white ring-2 ring-emerald-800 ring-offset-1 hover:bg-emerald-800"
-              : "bg-emerald-600 text-white hover:bg-emerald-700"
-          }`}
-        >
-          Approve
-        </button>
-        <button
-          type="button"
-          onClick={() => onDisposition("rejected")}
-          aria-pressed={disposition === "rejected"}
-          className={`min-w-[6.5rem] cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 ${
-            disposition === "rejected"
-              ? "bg-red-700 text-white ring-2 ring-red-900 ring-offset-1 hover:bg-red-800"
-              : "bg-red-600 text-white hover:bg-red-700"
-          }`}
-        >
-          Reject
-        </button>
-        {disposition ? (
-          <button
-            type="button"
-            onClick={() => onDisposition(null)}
-            className="cursor-pointer px-1 text-xs font-medium text-stone-600 underline decoration-stone-400 underline-offset-2 hover:text-stone-900"
-          >
-            Clear
-          </button>
-        ) : null}
-      </div>
-      {disposition ? (
-        <span className="text-[11px] text-stone-500" role="status" aria-live="polite">
-          {disposition === "approved" ? "Approved" : "Rejected"} — not saved.
-        </span>
-      ) : (
-        <span className="text-[11px] text-stone-500">Optional — records locally only.</span>
-      )}
     </div>
   );
 }
@@ -567,6 +474,7 @@ function ReviewDispositionControls({
 export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
+  const batchApplicationFileInputRef = useRef<HTMLInputElement>(null);
   const fileSelectionTokenRef = useRef(0);
   const [applicationJson, setApplicationJson] = useState(DEFAULT_APPLICATION);
   const [file, setFile] = useState<File | null>(null);
@@ -592,13 +500,32 @@ export default function HomePage() {
   /** Human approve/reject for the current successful run — client only, not sent to the server. */
   const [reviewDisposition, setReviewDisposition] = useState<"approved" | "rejected" | null>(null);
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchApplicationFiles, setBatchApplicationFiles] = useState<File[]>([]);
+  const [batchApplicationItems, setBatchApplicationItems] = useState<BatchApplicationListItem[]>([]);
+  const [selectedBatchApplicationIndex, setSelectedBatchApplicationIndex] = useState(0);
+  const [batchApplicationsLoading, setBatchApplicationsLoading] = useState(false);
   const [batchLoading, setBatchLoading] = useState(false);
+  const [batchProgressIndex, setBatchProgressIndex] = useState(0);
+  const [batchProgressPhase, setBatchProgressPhase] = useState<BatchVerifyProgressPhase>("prepare");
   const [batchErrorText, setBatchErrorText] = useState<string | null>(null);
   const [batchResponse, setBatchResponse] = useState<VerifyBatchResponse | null>(null);
+  const [batchApplicationFilter, setBatchApplicationFilter] =
+    useState<BatchApplicationStatusFilter>(null);
+  const [batchItemDispositions, setBatchItemDispositions] = useState<Record<number, ReviewDisposition>>(
+    {},
+  );
+  const [batchExpandedIndices, setBatchExpandedIndices] = useState<Record<number, boolean>>({});
   const [demoLoadingCaseId, setDemoLoadingCaseId] = useState<DemoCaseId | null>(null);
+  const [demoLoadingBatchSuiteId, setDemoLoadingBatchSuiteId] = useState<BatchDemoSuiteId | null>(
+    null,
+  );
   const [demoLoadErrorText, setDemoLoadErrorText] = useState<string | null>(null);
+  const [fieldStatusFilter, setFieldStatusFilter] = useState<OutcomeStatusFilter>(null);
 
   const hasCompletedRun = runGeneration > 0;
+  const hasCompletedBatchRun = batchResponse !== null;
+  const showBatchResults = uploadMode === "batch" && hasCompletedBatchRun;
+  const showSingleResults = uploadMode === "single" && hasCompletedRun && !!successPayload;
   const applicationJsonForVerify = useMemo(
     () => ensureApplicationComplianceJson(applicationJson),
     [applicationJson],
@@ -612,10 +539,77 @@ export default function HomePage() {
     [uploadMode, file, applicationInputState, preparingFile],
   );
   const canSubmit = useMemo(() => canEnterVerify && !loading, [canEnterVerify, loading]);
-  const canRunBatch = useMemo(
-    () => uploadMode === "batch" && batchFiles.length > 0 && applicationInputState.ok && !batchLoading,
-    [uploadMode, batchFiles.length, applicationInputState, batchLoading],
-  );
+  const batchPairingState = useMemo(() => {
+    if (batchApplicationFiles.length === 0) {
+      return {
+        ok: false as const,
+        preview: null,
+        error: "Upload one application JSON file per label.",
+      };
+    }
+    if (batchFiles.length === 0) {
+      return { ok: false as const, preview: null, error: null };
+    }
+    const paired = pairBatchFiles(batchFiles, batchApplicationFiles);
+    if (!paired.ok) {
+      return { ok: false as const, preview: null, error: paired.message };
+    }
+    const preview: BatchPairingPreview = {
+      method: paired.result.method,
+      warning: paired.result.warning,
+      rows: paired.result.pairs.map(({ image, application }) => ({
+        imageName: image.name,
+        applicationName: application.name,
+      })),
+    };
+    return { ok: true as const, preview, error: null };
+  }, [batchFiles, batchApplicationFiles]);
+
+  useEffect(() => {
+    if (batchApplicationFiles.length === 0) {
+      setBatchApplicationItems([]);
+      setBatchApplicationsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setBatchApplicationsLoading(true);
+    void buildBatchApplicationListItems(
+      batchApplicationFiles,
+      batchPairingState.preview?.rows ?? null,
+    ).then((items) => {
+      if (cancelled) return;
+      setBatchApplicationItems(items);
+      setSelectedBatchApplicationIndex((prev) =>
+        items.length === 0 ? 0 : Math.min(prev, items.length - 1),
+      );
+      setBatchApplicationsLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [batchApplicationFiles, batchPairingState.preview]);
+
+  const selectedBatchApplicationJson = useMemo(() => {
+    return batchApplicationItems[selectedBatchApplicationIndex]?.applicationJson ?? "";
+  }, [batchApplicationItems, selectedBatchApplicationIndex]);
+
+  const selectedBatchPairedImageName = useMemo(() => {
+    return batchApplicationItems[selectedBatchApplicationIndex]?.pairedImageName ?? null;
+  }, [batchApplicationItems, selectedBatchApplicationIndex]);
+
+  const canRunBatch = useMemo(() => {
+    if (uploadMode !== "batch" || batchLoading) return false;
+    if (batchFiles.length === 0 || batchApplicationFiles.length === 0) return false;
+    return batchPairingState.ok && batchPairingState.preview !== null;
+  }, [
+    uploadMode,
+    batchLoading,
+    batchFiles.length,
+    batchApplicationFiles.length,
+    batchPairingState,
+  ]);
   const primaryActionDisabledReason = useMemo(() => {
     if (preparingFile) return "Please wait for image preparation to finish.";
     if (!file) return "Choose a label image to enable verification.";
@@ -624,16 +618,18 @@ export default function HomePage() {
     return null;
   }, [preparingFile, file, applicationInputState, loading]);
   const batchActionDisabledReason = useMemo(() => {
-    if (!applicationInputState.ok) return applicationInputState.reason;
     if (batchLoading) return "Batch verification is already running.";
-    if (batchFiles.length === 0) return "Choose one or more label images to enable batch verification.";
+    if (batchFiles.length === 0) return "Upload label images to enable batch verification.";
+    if (batchApplicationFiles.length === 0) return "Upload one application JSON file per label.";
+    if (!batchPairingState.ok) return batchPairingState.error;
     return null;
-  }, [applicationInputState, batchLoading, batchFiles.length]);
+  }, [batchLoading, batchFiles.length, batchApplicationFiles.length, batchPairingState]);
   const workflowStatusText = useMemo(() => {
+    if (uploadMode === "batch" && batchLoading) {
+      return "Batch verification in progress — see status below.";
+    }
     if (uploadMode === "batch" && workflowPhase === "edit") {
-      return batchLoading
-        ? "Batch mode: running verification across the selected image set."
-        : "Batch mode: choose multiple images and run batch verification from Edit inputs.";
+      return "Batch mode: upload label images and one matching application JSON per label, then run batch verification.";
     }
     if (loading) return "Run verification: pipeline in progress on the server.";
     if (workflowPhase === "edit") {
@@ -645,6 +641,9 @@ export default function HomePage() {
       return hasCompletedRun
         ? "Verification finished. Open results for field outcomes."
         : "Run verification opens once Edit inputs are ready.";
+    }
+    if (uploadMode === "batch" && workflowPhase === "results") {
+      return "Batch results: filter applications, expand rows for field-level comparison.";
     }
     return "Results: compare field outcomes and supporting evidence.";
   }, [loading, batchLoading, workflowPhase, uploadMode, canEnterVerify, hasCompletedRun]);
@@ -660,6 +659,21 @@ export default function HomePage() {
     }, 880);
     return () => window.clearInterval(id);
   }, [loading]);
+
+  useEffect(() => {
+    if (!batchLoading || uploadMode !== "batch") {
+      setBatchProgressIndex(0);
+      setBatchProgressPhase("prepare");
+      return;
+    }
+    if (batchProgressPhase !== "processing") return;
+    const total = batchFiles.length;
+    if (total <= 1) return;
+    const id = window.setInterval(() => {
+      setBatchProgressIndex((i) => Math.min(i + 1, total - 1));
+    }, batchVerifyProgressIntervalMs(total));
+    return () => window.clearInterval(id);
+  }, [batchLoading, batchFiles.length, uploadMode, batchProgressPhase]);
 
   const outcomeHasPipelineFailure = useMemo(
     () => verifyResponseIndicatesPipelineFailure({ successPayload, errorPayload, errorText }),
@@ -791,8 +805,10 @@ export default function HomePage() {
     await loadSelectedFile(nextFile);
   }
 
-  function resetLoadedRunState() {
-    setUploadMode("single");
+  function resetLoadedRunState(options?: { uploadMode?: "single" | "batch" }) {
+    if (options?.uploadMode !== undefined) {
+      setUploadMode(options.uploadMode);
+    }
     setWorkflowPhase("edit");
     setLoading(false);
     setErrorText(null);
@@ -803,8 +819,16 @@ export default function HomePage() {
     setRunGeneration(0);
     setReviewDisposition(null);
     setBatchFiles([]);
+    setBatchApplicationFiles([]);
     setBatchErrorText(null);
     setBatchResponse(null);
+    setBatchLoading(false);
+    setBatchProgressIndex(0);
+    setBatchProgressPhase("prepare");
+    setBatchApplicationFilter(null);
+    setBatchItemDispositions({});
+    setBatchExpandedIndices({});
+    setFieldStatusFilter(null);
   }
 
   function startFresh() {
@@ -820,9 +844,68 @@ export default function HomePage() {
     setExtractionCacheKey(null);
     setPrefetchState("idle");
     setDemoLoadingCaseId(null);
+    setDemoLoadingBatchSuiteId(null);
     setDemoLoadErrorText(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (batchFileInputRef.current) batchFileInputRef.current.value = "";
+    if (batchApplicationFileInputRef.current) batchApplicationFileInputRef.current.value = "";
+  }
+
+  async function onSelectBatchDemo(suiteId: BatchDemoSuiteId) {
+    setDemoLoadingBatchSuiteId(suiteId);
+    setDemoLoadErrorText(null);
+    try {
+      const res = await fetch(`/api/demo-cases/batch/${suiteId}`);
+      const raw: unknown = await res.json();
+      if (!res.ok || !raw || typeof raw !== "object") {
+        throw new Error("Could not load batch demo fixtures.");
+      }
+      const payload = raw as { items?: unknown };
+      if (!Array.isArray(payload.items)) {
+        throw new Error("Batch demo response was incomplete.");
+      }
+
+      const items: BatchDemoLoadItem[] = [];
+      for (const entry of payload.items) {
+        if (!entry || typeof entry !== "object") continue;
+        const row = entry as BatchDemoLoadItem;
+        if (
+          typeof row.caseId !== "string" ||
+          typeof row.applicationJson !== "string" ||
+          typeof row.image?.fileName !== "string" ||
+          typeof row.image?.mimeType !== "string" ||
+          typeof row.image?.base64 !== "string"
+        ) {
+          throw new Error("Batch demo response was incomplete.");
+        }
+        items.push(row);
+      }
+      if (items.length === 0) {
+        throw new Error("Batch demo response contained no items.");
+      }
+
+      fileSelectionTokenRef.current += 1;
+      resetLoadedRunState({ uploadMode: "batch" });
+      setFile(null);
+      setSelectedFileName(null);
+      setPreparingFile(false);
+      setUploadPreparation(null);
+      setUploadGuardrailErrorText(null);
+      setExtractionCacheKey(null);
+      setPrefetchState("idle");
+      setApplicationJson(DEFAULT_APPLICATION);
+
+      const { images, applications } = batchDemoItemsToUploadFiles(items);
+      setBatchFiles(images);
+      setBatchApplicationFiles(applications);
+      setSelectedBatchApplicationIndex(0);
+      setBatchErrorText(null);
+      setBatchResponse(null);
+    } catch (err) {
+      setDemoLoadErrorText(err instanceof Error ? err.message : "Could not load batch demo fixtures.");
+    } finally {
+      setDemoLoadingBatchSuiteId(null);
+    }
   }
 
   async function onSelectDemoCase(caseId: DemoCaseId) {
@@ -847,7 +930,7 @@ export default function HomePage() {
         throw new Error("Demo fixture response was incomplete.");
       }
 
-      resetLoadedRunState();
+      resetLoadedRunState({ uploadMode: "single" });
       setApplicationJson(payload.applicationJson);
       await loadSelectedFile(
         base64ToFile(payload.image.base64, payload.image.fileName, payload.image.mimeType),
@@ -886,6 +969,7 @@ export default function HomePage() {
     setRawResponseJson(null);
     setHttpStatus(null);
     setReviewDisposition(null);
+    setFieldStatusFilter(null);
 
     try {
       const formData = new FormData();
@@ -964,8 +1048,8 @@ export default function HomePage() {
 
   async function onBatchSubmit() {
     if (batchFiles.length === 0) return;
-    if (!applicationInputState.ok) {
-      setBatchErrorText(applicationInputState.reason);
+    if (!batchPairingState.ok) {
+      setBatchErrorText(batchPairingState.error ?? "Upload matching label images and application JSON.");
       return;
     }
     if (batchFiles.length > CLIENT_BATCH_MAX_IMAGES) {
@@ -978,15 +1062,25 @@ export default function HomePage() {
       );
       return;
     }
+    setWorkflowPhase("verify");
     setBatchLoading(true);
     setBatchErrorText(null);
     setBatchResponse(null);
+    setBatchProgressIndex(0);
+    setBatchProgressPhase("prepare");
     try {
       const formData = new FormData();
       for (const batchFile of batchFiles) {
         formData.append(VERIFY_FORM_FIELDS.images, batchFile);
       }
-      formData.append(VERIFY_FORM_FIELDS.application, applicationJsonForVerify);
+      const built = await buildBatchApplicationsPayload(batchFiles, batchApplicationFiles);
+      if (!built.ok) {
+        setBatchErrorText(built.message);
+        setWorkflowPhase("edit");
+        return;
+      }
+      formData.append(VERIFY_FORM_FIELDS.applications, JSON.stringify(built.applications));
+      setBatchProgressPhase("processing");
       const res = await fetch("/api/verify/batch", {
         method: "POST",
         body: formData,
@@ -1002,21 +1096,45 @@ export default function HomePage() {
             `Batch request failed (HTTP ${res.status}).`,
           ),
         );
+        setWorkflowPhase("edit");
         return;
       }
       if (!parsed.success) {
         setBatchErrorText("Batch response schema mismatch.");
+        setWorkflowPhase("edit");
         return;
       }
+      setBatchProgressPhase("finishing");
+      setBatchProgressIndex(Math.max(0, batchFiles.length - 1));
       setBatchResponse(parsed.data);
+      setBatchApplicationFilter(null);
+      setBatchItemDispositions({});
+      setBatchExpandedIndices({});
+      setWorkflowPhase("results");
     } catch (err) {
       setBatchErrorText(err instanceof Error ? err.message : String(err));
+      setWorkflowPhase("edit");
     } finally {
       setBatchLoading(false);
     }
   }
 
-  const showResultsBody = hasCompletedRun;
+  const showResultsBody = showBatchResults || showSingleResults;
+
+  function onUploadModeChange(next: "single" | "batch") {
+    if (next === uploadMode) return;
+    setUploadMode(next);
+    if (workflowPhase !== "results") return;
+
+    const canShowResultsForMode =
+      next === "batch"
+        ? hasCompletedBatchRun && batchResponse !== null
+        : hasCompletedRun && successPayload !== null;
+
+    if (!canShowResultsForMode) {
+      setWorkflowPhase("edit");
+    }
+  }
 
   const resultsDigest = useMemo(
     () => (successPayload?.validation?.fields?.length ? buildResultsDigest(successPayload) : null),
@@ -1024,68 +1142,116 @@ export default function HomePage() {
   );
 
   function onBatchFilesChange(ev: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(ev.target.files ?? []);
+    const raw = Array.from(ev.target.files ?? []);
     ev.target.value = "";
-    if (selected.length === 0) {
+    if (raw.length === 0) {
       setBatchFiles([]);
+      setBatchResponse(null);
       setBatchErrorText(null);
       return;
     }
-    if (selected.length > CLIENT_BATCH_MAX_IMAGES) {
+    const normalized = normalizeBatchImageFiles(raw);
+    if (!normalized.ok) {
       setBatchFiles([]);
       setBatchResponse(null);
-      setBatchErrorText(
-        `Batch size exceeds maximum of ${CLIENT_BATCH_MAX_IMAGES} images.`,
-      );
-      return;
-    }
-    const oversized = selected.filter((f) => f.size > CLIENT_UPLOAD_MAX_BYTES);
-    if (oversized.length > 0) {
-      const sample = oversized
-        .slice(0, 2)
-        .map((f) => `"${f.name}" (${formatBytes(f.size)})`)
-        .join(", ");
-      setBatchFiles([]);
-      setBatchResponse(null);
-      setBatchErrorText(
-        `Each batch image must be ${formatBytes(CLIENT_UPLOAD_MAX_BYTES)} or smaller. Oversized: ${sample}${oversized.length > 2 ? `, +${oversized.length - 2} more` : ""}.`,
-      );
+      setBatchErrorText(normalized.message);
       return;
     }
     setBatchErrorText(null);
-    setBatchFiles(selected);
+    setBatchFiles(normalized.files);
+    setBatchResponse(null);
+  }
+
+  function onBatchApplicationsChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const raw = Array.from(ev.target.files ?? []);
+    ev.target.value = "";
+    if (raw.length === 0) {
+      setBatchApplicationFiles([]);
+      setBatchResponse(null);
+      return;
+    }
+    const normalized = normalizeBatchApplicationFiles(raw);
+    if (!normalized.ok) {
+      setBatchApplicationFiles([]);
+      setBatchResponse(null);
+      setBatchErrorText(normalized.message);
+      return;
+    }
+    setBatchErrorText(null);
+    setBatchApplicationFiles(normalized.files);
+    setBatchResponse(null);
   }
 
   return (
     <main className="mx-auto flex h-dvh max-h-dvh min-h-0 max-w-7xl flex-col gap-2 overflow-hidden px-4 pt-2 pb-2 sm:gap-3 sm:px-6 sm:pt-3">
-      <header className="pointer-events-none relative z-20 grid shrink-0 grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="pointer-events-auto flex min-w-0 flex-col gap-1 justify-self-start">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex shrink-0 items-center rounded-md border border-ttb-200 bg-ttb-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-ttb-800">
-              Phase 1
-            </span>
-            <h1 className="min-w-0 truncate text-base font-semibold leading-tight tracking-tight text-stone-900 sm:text-lg">
-              Label verification
-            </h1>
-          </div>
-          <p className="text-xs font-semibold leading-snug text-stone-700 sm:pl-0.5" aria-live="polite">
-            {workflowStatusText}
-          </p>
+      <header className="pointer-events-none relative z-20 grid shrink-0 grid-cols-1 gap-x-3 gap-y-2 border-b border-stone-200 py-1 pb-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-rows-[auto_auto] sm:items-center">
+        <div className="pointer-events-auto flex min-w-0 items-center gap-2 justify-self-start sm:col-start-1 sm:row-start-1">
+          <span className="inline-flex shrink-0 items-center rounded-md border border-ttb-200 bg-ttb-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-ttb-800">
+            Phase 1
+          </span>
+          <h1 className="min-w-0 truncate text-base font-semibold leading-tight tracking-tight text-stone-900 sm:text-lg">
+            Label verification
+          </h1>
         </div>
-        <WorkflowHelpToolbar
-          demoLoadingCaseId={demoLoadingCaseId}
-          demoLoadErrorText={demoLoadErrorText}
-          onSelectDemoCase={onSelectDemoCase}
-        />
+        <p
+          className="pointer-events-auto text-xs font-semibold leading-snug text-stone-700 sm:col-start-1 sm:row-start-2 sm:pl-0.5"
+          aria-live="polite"
+        >
+          {workflowStatusText}
+        </p>
+        <div
+          className="pointer-events-auto flex justify-center sm:col-start-2 sm:row-start-1 sm:self-center"
+          role="tablist"
+          aria-label="Upload mode"
+        >
+          <div className="inline-flex rounded-lg border border-stone-200 bg-white p-0.5 shadow-sm">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={uploadMode === "single"}
+              onClick={() => onUploadModeChange("single")}
+              className={`cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition ${
+                uploadMode === "single"
+                  ? "bg-ttb-600 text-white shadow-sm"
+                  : "text-stone-600 hover:text-stone-900"
+              }`}
+            >
+              Single label
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={uploadMode === "batch"}
+              onClick={() => onUploadModeChange("batch")}
+              className={`cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition ${
+                uploadMode === "batch"
+                  ? "bg-ttb-600 text-white shadow-sm"
+                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+              }`}
+            >
+              Batch
+            </button>
+          </div>
+        </div>
+        <div className="pointer-events-auto sm:col-start-3 sm:row-start-1 sm:row-span-2 sm:justify-self-end sm:self-center">
+          <WorkflowHelpToolbar
+            uploadMode={uploadMode}
+            demoLoadingCaseId={demoLoadingCaseId}
+            demoLoadingBatchSuiteId={demoLoadingBatchSuiteId}
+            demoLoadErrorText={demoLoadErrorText}
+            onSelectDemoCase={onSelectDemoCase}
+            onSelectBatchDemo={onSelectBatchDemo}
+          />
+        </div>
       </header>
 
       <form onSubmit={onSubmit} className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5">
         <div
           className={`grid min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ${
             workflowPhase === "edit"
-              ? "grid-rows-[auto_auto]"
+              ? "grid-rows-[minmax(0,1fr)_auto]"
               : workflowPhase === "results"
-                ? "grid-rows-[auto_minmax(0,1fr)]"
+                ? "grid-rows-[auto_minmax(0,1fr)_auto]"
                 : "grid-rows-[auto_minmax(0,1fr)_auto]"
           }`}
         >
@@ -1103,35 +1269,29 @@ export default function HomePage() {
             <div className="sticky top-0 z-20 shrink-0 border-b border-stone-200 bg-stone-50/95 px-3 py-3 shadow-sm backdrop-blur-sm sm:px-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-stone-900">Outcome &amp; field review</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-600">
-                    <span className="font-medium text-stone-500">Change inputs:</span>
-                    <button
-                      type="button"
-                      onClick={() => setWorkflowPhase("edit")}
-                      className="cursor-pointer font-medium text-stone-700 underline decoration-stone-400 underline-offset-2 transition hover:text-stone-900"
-                    >
-                      Edit inputs
-                    </button>
-                    <span className="text-stone-300" aria-hidden>
-                      ·
-                    </span>
-                    <button
-                      type="submit"
-                      disabled={!canSubmit}
-                      className="cursor-pointer font-medium text-ttb-800 underline decoration-ttb-300 underline-offset-2 transition hover:text-ttb-950 disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
-                      title={
-                        !canSubmit ? primaryActionDisabledReason ?? "Complete required inputs to run again." : undefined
-                      }
-                    >
-                      Run verification again
-                    </button>
-                  </div>
-                  {!canSubmit && primaryActionDisabledReason ? (
-                    <p className="mt-1 text-[11px] text-stone-500">{primaryActionDisabledReason}</p>
-                  ) : null}
+                  <p className="text-sm font-semibold text-stone-900">
+                    {showBatchResults ? "Batch outcome & review" : "Outcome & field review"}
+                  </p>
+                  <p className="mt-1 text-xs text-stone-600">
+                    {showBatchResults ? (
+                      <>
+                        Review each application in the batch. Use filters to focus on pass, needs review, fail, or
+                        error outcomes. Expand a row for field-level comparison. Use{" "}
+                        <strong className="font-medium text-stone-800">Edit inputs</strong> or{" "}
+                        <strong className="font-medium text-stone-800">Run batch verification again</strong> in the bar
+                        below.
+                      </>
+                    ) : (
+                      <>
+                        Compare label extraction to your application. Use{" "}
+                        <strong className="font-medium text-stone-800">Edit inputs</strong> or{" "}
+                        <strong className="font-medium text-stone-800">Run verification again</strong> in the bar at
+                        the bottom.
+                      </>
+                    )}
+                  </p>
                 </div>
-                {successPayload ? (
+                {showSingleResults && successPayload ? (
                   <ReviewDispositionControls
                     disposition={reviewDisposition}
                     onDisposition={setReviewDisposition}
@@ -1142,41 +1302,24 @@ export default function HomePage() {
           ) : null}
 
           <div
-            className={`min-h-0 px-2.5 pt-0 lg:px-3 ${
-              workflowPhase === "edit" ? "overflow-visible pb-1" : "overflow-y-auto pb-2"
+            className={`min-h-0 ${
+              workflowPhase === "edit"
+                ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                : "overflow-y-auto px-2.5 pb-2 pt-0 lg:px-3"
             }`}
           >
             {workflowPhase === "edit" ? (
-              <>
-                <div className="mb-2 flex justify-center">
-                  <div className="inline-flex rounded-xl border border-stone-200 bg-stone-100/90 p-0.5 shadow-inner">
-                    <button
-                      type="button"
-                      onClick={() => setUploadMode("single")}
-                      aria-pressed={uploadMode === "single"}
-                      className={`cursor-pointer rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                        uploadMode === "single"
-                          ? "bg-ttb-600 text-white shadow-sm"
-                          : "text-stone-600 hover:text-stone-900"
-                      }`}
-                    >
-                      Single label
-                    </button>
-                    <button
-                      type="button"
-                      disabled
-                      aria-disabled
-                      title="Batch mode coming soon."
-                      className="cursor-not-allowed rounded-lg px-3 py-1 text-xs font-semibold text-stone-400"
-                    >
-                      Batch
-                    </button>
-                  </div>
-                </div>
-                <div className="flex min-h-0 flex-col gap-2 lg:flex-row lg:items-stretch lg:gap-3">
+              <div className="mx-1.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm sm:mx-2">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
                 <section
                   aria-labelledby="workbench-label-heading"
-                  className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
+                  className={`flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden p-1.5 lg:min-h-0 lg:flex-1 ${
+                    uploadMode === "batch"
+                      ? "lg:w-[31.5rem] lg:flex-none lg:shrink-0 lg:border-r lg:border-stone-200"
+                      : uploadMode === "single"
+                        ? "min-h-[10rem] flex-none lg:min-h-0 lg:max-w-[42%] lg:flex-1 lg:basis-0 lg:border-r lg:border-stone-200"
+                        : "lg:basis-0 lg:border-r lg:border-stone-200"
+                  }`}
                 >
             <input
               ref={fileInputRef}
@@ -1186,17 +1329,8 @@ export default function HomePage() {
               aria-label="Choose label image file"
               onChange={onFileChange}
             />
-            <input
-              ref={batchFileInputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              multiple
-              className="sr-only"
-              aria-label="Choose batch label image files"
-              onChange={onBatchFilesChange}
-            />
-            <div className="shrink-0 border-b border-stone-100 pb-1.5">
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+            <div className="shrink-0 border-b border-stone-100 pb-1">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                 <h2
                   id="workbench-label-heading"
                   className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1 text-xs font-semibold text-stone-900 sm:text-sm"
@@ -1212,9 +1346,12 @@ export default function HomePage() {
                         &apos;{selectedFileName ?? file.name}&apos;
                       </span>
                     </>
-                  ) : uploadMode === "batch" && batchFiles.length > 0 ? (
+                  ) : uploadMode === "batch" ? (
                     <span className="font-normal text-stone-500">
-                      {batchFiles.length} file{batchFiles.length === 1 ? "" : "s"} selected
+                      {batchFiles.length} image{batchFiles.length === 1 ? "" : "s"}
+                      {batchApplicationFiles.length > 0
+                        ? ` · ${batchApplicationFiles.length} application JSON`
+                        : ""}
                     </span>
                   ) : null}
                 </h2>
@@ -1232,7 +1369,7 @@ export default function HomePage() {
                     onClick={() => batchFileInputRef.current?.click()}
                     className="cursor-pointer shrink-0 rounded-lg border border-ttb-300 bg-ttb-50 px-2.5 py-1 text-xs font-semibold text-ttb-900 shadow-sm transition hover:bg-ttb-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-600/30"
                   >
-                    Change files
+                    Replace images
                   </button>
                 ) : null}
               </div>
@@ -1251,51 +1388,99 @@ export default function HomePage() {
             ) : (
               <BatchPanel
                 batchFiles={batchFiles}
-                batchResponse={batchResponse}
+                highlightedImageName={selectedBatchPairedImageName}
+                batchImageInputRef={batchFileInputRef}
                 batchErrorText={batchErrorText}
-                onChooseBatchFiles={() => batchFileInputRef.current?.click()}
+                onBatchImagesChange={onBatchFilesChange}
               />
             )}
                 </section>
 
                 <section
                   aria-labelledby="workbench-json-heading"
-                  className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 rounded-xl border border-stone-200 bg-white p-2 shadow-sm lg:basis-0"
+                  className={`flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden p-1.5 lg:min-h-0 lg:flex-1 ${
+                    uploadMode === "batch" ? "min-w-0" : "lg:basis-0"
+                  }`}
                 >
-            <header className="shrink-0 border-b border-stone-100 pb-1.5">
-              <h2 id="workbench-json-heading" className="text-xs font-semibold text-stone-900 sm:text-sm">
+            {uploadMode === "single" ? (
+              <h2
+                id="workbench-json-heading"
+                className="shrink-0 px-0.5 text-xs font-semibold text-stone-900 sm:text-sm"
+              >
                 Application data
               </h2>
-            </header>
+            ) : (
+              <div className="flex shrink-0 items-center justify-between gap-x-2 border-b border-stone-100 pb-1">
+                <h2 id="workbench-json-heading" className="text-xs font-semibold text-stone-900 sm:text-sm">
+                  Application data
+                </h2>
+                {batchApplicationFiles.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => batchApplicationFileInputRef.current?.click()}
+                    className="cursor-pointer shrink-0 rounded-lg border border-ttb-300 bg-ttb-50 px-2.5 py-1 text-xs font-semibold text-ttb-900 shadow-sm transition hover:bg-ttb-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttb-600/30"
+                  >
+                    Replace JSON
+                  </button>
+                ) : null}
+              </div>
+            )}
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              <ApplicationEditor
-                value={applicationJson}
-                onChange={setApplicationJson}
-                density="compact"
-              />
+              {uploadMode === "batch" ? (
+                <BatchApplicationsPanel
+                  applicationFiles={batchApplicationFiles}
+                  applicationInputRef={batchApplicationFileInputRef}
+                  onApplicationsChange={onBatchApplicationsChange}
+                  items={batchApplicationItems}
+                  pairingPreview={batchPairingState.preview}
+                  pairingError={batchPairingState.error}
+                  selectedIndex={selectedBatchApplicationIndex}
+                  onSelectIndex={setSelectedBatchApplicationIndex}
+                  applicationJson={selectedBatchApplicationJson}
+                  loading={batchApplicationsLoading}
+                />
+              ) : (
+                <ApplicationEditor
+                  value={applicationJson}
+                  onChange={setApplicationJson}
+                  columnMode="one"
+                  connectedToolbar
+                />
+              )}
             </div>
                 </section>
                 </div>
-              </>
+              </div>
             ) : workflowPhase === "verify" ? (
               <div
                 className="mx-auto w-full max-w-4xl px-2 py-4 sm:py-6"
               >
-                {!hasCompletedRun && !loading ? (
-                  <p className="mb-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-base text-stone-700">
-                    Complete <strong className="font-medium text-stone-900">Edit inputs</strong> first: add a label image and
-                    application data, then use <strong className="font-medium text-stone-900">Run verification</strong>.
-                    This step shows live pipeline status while the request runs.
-                  </p>
-                ) : null}
-                <div className="rounded-2xl border border-stone-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
-                  <VerifyRunStepsPanel
-                    steps={verifySteps}
-                    compact={false}
-                    heading="Verification pipeline"
-                    subheading="One server request — status updates when the response returns."
+                {uploadMode === "batch" && batchLoading ? (
+                  <BatchVerifyProgressPanel
+                    fileNames={batchFiles.map((f) => f.name)}
+                    activeIndex={batchProgressIndex}
+                    phase={batchProgressPhase}
                   />
-                </div>
+                ) : (
+                  <>
+                    {!hasCompletedRun && !loading ? (
+                      <p className="mb-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-base text-stone-700">
+                        Complete <strong className="font-medium text-stone-900">Edit inputs</strong> first: add a label
+                        image and application data, then use{" "}
+                        <strong className="font-medium text-stone-900">Run verification</strong>. This step shows live
+                        pipeline status while the request runs.
+                      </p>
+                    ) : null}
+                    <div className="rounded-2xl border border-stone-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+                      <VerifyRunStepsPanel
+                        steps={verifySteps}
+                        compact={false}
+                        heading="Verification pipeline"
+                        subheading="One server request — status updates when the response returns."
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="space-y-5 pt-2">
@@ -1322,7 +1507,21 @@ export default function HomePage() {
 
                 {showResultsBody ? (
                   <section className="mx-auto w-full max-w-none space-y-4">
-                    {successPayload && resultsDigest ? (
+                    {showBatchResults && batchResponse ? (
+                      <BatchResultsView
+                        response={batchResponse}
+                        applicationFilter={batchApplicationFilter}
+                        onApplicationFilterChange={setBatchApplicationFilter}
+                        dispositions={batchItemDispositions}
+                        onDisposition={(index, next) =>
+                          setBatchItemDispositions((prev) => ({ ...prev, [index]: next }))
+                        }
+                        expandedIndices={batchExpandedIndices}
+                        onExpandedChange={(index, open) =>
+                          setBatchExpandedIndices((prev) => ({ ...prev, [index]: open }))
+                        }
+                      />
+                    ) : successPayload && resultsDigest ? (
                       <>
                         {(() => {
                           const showReviewImage =
@@ -1338,128 +1537,19 @@ export default function HomePage() {
                               }
                             >
                               <div className="min-w-0 space-y-4">
-                                <div
-                                  className={`rounded-xl border px-3 py-3 shadow-sm sm:px-4 ${
-                                    resultsDigest.overall === "fail"
-                                      ? "border-red-200 bg-red-50/90"
-                                      : resultsDigest.overall === "manual_review"
-                                        ? "border-amber-200 bg-amber-50/80"
-                                        : resultsDigest.overall === "pass"
-                                          ? "border-emerald-200 bg-emerald-50/70"
-                                          : "border-stone-200 bg-white"
-                                  }`}
-                                >
-                                  <h3 className="text-base font-semibold leading-snug tracking-tight text-stone-900 sm:text-lg">
-                                    {overallResultsHeadline(resultsDigest)}
-                                  </h3>
-                                  <p className="mt-2 text-sm font-semibold leading-snug text-stone-900">
-                                    {outcomeWorkloadSummaryLine(resultsDigest)}
-                                  </p>
-                                  <p className="mt-1 text-xs font-medium leading-snug text-stone-600">
-                                    {extractionPathSummary(successPayload)}
-                                  </p>
-                                  <ResultsSummaryMoreInfo d={resultsDigest} />
-                                </div>
+                                <ResultsSummaryCard
+                                  digest={resultsDigest}
+                                  extractionPathLine={extractionPathSummary(successPayload)}
+                                  activeFilter={fieldStatusFilter}
+                                  onFilterChange={setFieldStatusFilter}
+                                  moreInfo={<ResultsSummaryMoreInfo d={resultsDigest} />}
+                                />
 
-                                <div>
-                                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
-                                    Field outcomes
-                                  </h3>
-                                  <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
-                                    <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
-                                      <thead>
-                                        <tr className="border-b border-stone-200 bg-stone-50 text-[11px] font-semibold uppercase tracking-wide text-stone-600">
-                                          <th className="px-3 py-2">Field</th>
-                                          <th className="whitespace-nowrap px-3 py-2">Status</th>
-                                          <th className="px-3 py-2">From label</th>
-                                          <th className="px-3 py-2">From application</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {successPayload.validation.fields.map((row) => {
-                                          const extractedDisplay =
-                                            row.status === "manual_review" && !hasFieldValue(row.extractedValue)
-                                              ? "No confident label text"
-                                              : truncateFieldCell(row.extractedValue, 56);
-                                          const applicationDisplay = truncateFieldCell(row.applicationValue, 56);
-                                          const extractedTrimmed = row.extractedValue?.trim() ?? "";
-                                          const applicationTrimmed = row.applicationValue?.trim() ?? "";
-                                          const extractedExpandable =
-                                            extractedDisplay !== "No confident label text" && extractedTrimmed.length > 56;
-                                          const applicationExpandable = applicationTrimmed.length > 56;
-                                          return (
-                                            <tr key={row.fieldId} className="border-b border-stone-100 last:border-0">
-                                              <td className="max-w-[10rem] px-3 py-2 font-medium text-stone-900">
-                                                {FIELD_LABELS[row.fieldId]}
-                                              </td>
-                                              <td className="max-w-[9.5rem] px-3 py-2 align-top">
-                                                <span
-                                                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold leading-snug ${statusBadgeClasses(row.status)}`}
-                                                >
-                                                  {formatStatusLabel(row.status)}
-                                                </span>
-                                              </td>
-                                              <td
-                                                className="max-w-[14rem] px-3 py-2 font-mono text-xs text-stone-800"
-                                                title={row.extractedValue ?? undefined}
-                                              >
-                                                {extractedExpandable ? (
-                                                  <details
-                                                    className="group max-w-full"
-                                                    {...(row.fieldId === "governmentWarning"
-                                                      ? { open: true }
-                                                      : {})}
-                                                  >
-                                                    <summary className="cursor-pointer list-none truncate text-xs leading-relaxed text-stone-800 [&::-webkit-details-marker]:hidden">
-                                                      {extractedDisplay}
-                                                      <span className="ml-1 text-[10px] font-medium text-ttb-700 underline underline-offset-2">
-                                                        View full
-                                                      </span>
-                                                    </summary>
-                                                    <p className="mt-1.5 rounded border border-stone-200 bg-white px-2 py-1.5 font-mono text-[11px] leading-relaxed text-stone-800 break-words whitespace-pre-wrap">
-                                                      {row.extractedValue}
-                                                    </p>
-                                                  </details>
-                                                ) : (
-                                                  extractedDisplay
-                                                )}
-                                              </td>
-                                              <td
-                                                className="max-w-[14rem] px-3 py-2 font-mono text-xs text-stone-800"
-                                                title={row.applicationValue ?? undefined}
-                                              >
-                                                {applicationExpandable ? (
-                                                  <details
-                                                    className="group max-w-full"
-                                                    {...(row.fieldId === "governmentWarning"
-                                                      ? { open: true }
-                                                      : {})}
-                                                  >
-                                                    <summary className="cursor-pointer list-none truncate text-xs leading-relaxed text-stone-800 [&::-webkit-details-marker]:hidden">
-                                                      {applicationDisplay}
-                                                      <span className="ml-1 text-[10px] font-medium text-ttb-700 underline underline-offset-2">
-                                                        View full
-                                                      </span>
-                                                    </summary>
-                                                    <p className="mt-1.5 rounded border border-stone-200 bg-white px-2 py-1.5 font-mono text-[11px] leading-relaxed text-stone-800 break-words whitespace-pre-wrap">
-                                                      {row.applicationValue}
-                                                    </p>
-                                                  </details>
-                                                ) : (
-                                                  applicationDisplay
-                                                )}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                  <p className="mt-1.5 text-[11px] leading-relaxed text-stone-500">
-                                    Full values, coded rules, and validator notes appear in{" "}
-                                    <span className="font-medium text-stone-700">Full comparison by field</span> below.
-                                  </p>
-                                </div>
+                                <FieldOutcomesTable
+                                  fields={successPayload.validation.fields}
+                                  fieldStatusFilter={fieldStatusFilter}
+                                  showFullComparisonNote
+                                />
                               </div>
 
                               {showReviewImage ? (
@@ -1861,21 +1951,36 @@ export default function HomePage() {
                       </pre>
                     </details>
                   </section>
+                ) : workflowPhase === "results" ? (
+                  <section className="mx-auto w-full max-w-lg rounded-xl border border-stone-200 bg-white px-4 py-6 text-center shadow-sm">
+                    <p className="text-sm font-semibold text-stone-900">No results in this mode yet</p>
+                    <p className="mt-2 text-xs leading-relaxed text-stone-600">
+                      {uploadMode === "single"
+                        ? "Run single-label verification from Edit inputs, or switch to Batch if you want to review a batch run."
+                        : "Run batch verification from Edit inputs, or switch to Single label if you want to review a single-label run."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setWorkflowPhase("edit")}
+                      className="mt-4 cursor-pointer rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-800 shadow-sm transition hover:bg-stone-50"
+                    >
+                      Edit inputs
+                    </button>
+                  </section>
                 ) : null}
               </div>
             )}
           </div>
 
-          {workflowPhase !== "results" ? (
-            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.08)] sm:px-4">
-              <div className="mx-auto flex w-full max-w-lg flex-col items-stretch gap-2">
+          <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.08)] sm:px-4">
+              <div className="mx-auto flex w-full max-w-lg flex-col items-stretch">
                 {workflowPhase === "edit" ? (
                   <>
-                    <div className="grid w-full grid-cols-2 gap-2">
+                    <div className="grid w-full grid-cols-2 gap-1.5">
                       <button
                         type="button"
                         onClick={startFresh}
-                        className="w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50"
+                        className="w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50"
                       >
                         Start over
                       </button>
@@ -1891,7 +1996,7 @@ export default function HomePage() {
                               ? primaryActionDisabledReason ?? "Complete required inputs to continue."
                               : undefined
                         }
-                        className="w-full cursor-pointer rounded-lg bg-ttb-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300"
+                        className="w-full cursor-pointer rounded-lg bg-ttb-600 px-3 py-1.5 text-sm font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300"
                       >
                         {uploadMode === "batch"
                           ? batchLoading
@@ -1904,16 +2009,23 @@ export default function HomePage() {
                               : "Run verification"}
                       </button>
                     </div>
-                    {(uploadMode === "batch"
-                      ? !canRunBatch && batchActionDisabledReason
-                      : !canSubmit && primaryActionDisabledReason) ? (
-                      <p className="text-center text-[11px] text-stone-500 sm:max-w-md">
-                        {uploadMode === "batch" ? batchActionDisabledReason : primaryActionDisabledReason}
-                      </p>
-                    ) : null}
                   </>
-                ) : workflowPhase === "verify" && !loading ? (
-                  hasCompletedRun ? (
+                ) : workflowPhase === "verify" && !loading && !batchLoading ? (
+                  uploadMode === "batch" ? (
+                    hasCompletedBatchRun ? (
+                      <button
+                        type="button"
+                        onClick={() => setWorkflowPhase("results")}
+                        className="w-full cursor-pointer rounded-lg bg-ttb-600 px-6 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-ttb-700"
+                      >
+                        View batch results
+                      </button>
+                    ) : (
+                      <p className="w-full py-2 text-center text-sm text-stone-600 sm:max-w-md">
+                        Use <strong className="text-stone-800">Edit inputs</strong> to run a batch verification first.
+                      </p>
+                    )
+                  ) : hasCompletedRun ? (
                     <button
                       type="button"
                       onClick={() => setWorkflowPhase("results")}
@@ -1926,14 +2038,64 @@ export default function HomePage() {
                       Use <strong className="text-stone-800">Edit inputs</strong> to run a verification first.
                     </p>
                   )
-                ) : workflowPhase === "verify" && loading ? (
+                ) : workflowPhase === "verify" && (loading || batchLoading) ? (
                   <p className="w-full py-2 text-center text-sm font-medium text-stone-600 sm:max-w-md">
-                    Verification in progress…
+                    {uploadMode === "batch" && batchLoading
+                      ? "Batch verification in progress — see status above."
+                      : "Verification in progress…"}
                   </p>
+                ) : workflowPhase === "results" ? (
+                  <>
+                    <div className="grid w-full grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setWorkflowPhase("edit")}
+                        className="w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50"
+                      >
+                        Edit inputs
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={
+                          uploadMode === "batch" ? !canRunBatch || batchLoading : !canSubmit || loading
+                        }
+                        title={
+                          uploadMode === "batch"
+                            ? !canRunBatch
+                              ? batchActionDisabledReason ?? "Complete batch inputs to run again."
+                              : undefined
+                            : !canSubmit
+                              ? primaryActionDisabledReason ?? "Complete required inputs to run again."
+                              : undefined
+                        }
+                        className="w-full cursor-pointer rounded-lg bg-ttb-600 px-3 py-1.5 text-sm font-semibold text-white shadow-md transition hover:bg-ttb-700 disabled:cursor-not-allowed disabled:bg-ttb-300 disabled:text-white disabled:shadow-none disabled:hover:bg-ttb-300"
+                      >
+                        {uploadMode === "batch"
+                          ? batchLoading
+                            ? "Verifying…"
+                            : "Run batch verification again"
+                          : loading
+                            ? "Verifying…"
+                            : "Run verification again"}
+                      </button>
+                    </div>
+                    {(uploadMode === "batch"
+                      ? !canRunBatch && batchActionDisabledReason
+                      : !canSubmit && primaryActionDisabledReason) ? (
+                      <p className="text-center text-[11px] text-stone-500 sm:max-w-md">
+                        {uploadMode === "batch" ? batchActionDisabledReason : primaryActionDisabledReason}
+                      </p>
+                    ) : (
+                      <p className="text-center text-[11px] text-stone-500 sm:max-w-md">
+                        {uploadMode === "batch"
+                          ? "Re-runs the same batch images and application JSON files without leaving results."
+                          : "Re-runs the same label image and application without leaving results."}
+                      </p>
+                    )}
+                  </>
                 ) : null}
               </div>
             </div>
-          ) : null}
         </div>
       </form>
 

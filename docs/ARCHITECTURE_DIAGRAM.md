@@ -23,7 +23,7 @@ flowchart TD
     A1["`POST /api/verify`<br/>single-label route"]
     A2["`POST /api/verify/batch`<br/>batch route"]
     A3["`lib/verify-handler.ts`<br/>request parsing + schema validation + orchestration"]
-    A4["Environment guard<br/>requires `OPENAI_API_KEY` for extraction path"]
+    A4["Environment guard<br/>requires `OPENAI_API_KEY` unless extraction mode is `ocr_only`"]
     A1 --> A3
     A2 --> A3
     A3 --> A4
@@ -89,5 +89,6 @@ flowchart TD
 ## Reading guide
 
 - Primary evaluator path: `UI -> API routes -> verify handler -> pipeline -> field-level outcomes`.
+- Batch contract detail: `POST /api/verify/batch` expects multipart `images` plus `applications` (JSON array aligned 1:1 with images).
 - Conservative behavior is intentional: low-confidence conditions should surface as `manual_review`, not guessed passes.
 - Distilled spirits are prioritized in this prototype; wine/beer checks are intentionally deferred.
