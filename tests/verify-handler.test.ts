@@ -34,12 +34,17 @@ function multipartExtractOnlyRequest(image: Blob): Request {
   });
 }
 
-function multipartBatchRequest(images: Blob[], applicationJson: string): Request {
+function batchApplicationsPayload(count: number): string {
+  const app = JSON.parse(validApplicationJson()) as ApplicationJson;
+  return JSON.stringify(Array.from({ length: count }, () => app));
+}
+
+function multipartBatchRequest(images: Blob[], applicationsJson: string): Request {
   const fd = new FormData();
   for (const image of images) {
     fd.append(VERIFY_FORM_FIELDS.images, image, "fixture.png");
   }
-  fd.append(VERIFY_FORM_FIELDS.application, applicationJson);
+  fd.append(VERIFY_FORM_FIELDS.applications, applicationsJson);
   return new Request("http://test.local/api/verify/batch", {
     method: "POST",
     body: fd,
@@ -263,16 +268,42 @@ describe("handleVerifyPost", () => {
     expect(json.code).toBe("IMAGE_TOO_LARGE");
   });
 
+  it("runs batch verify with per-image applications array", async () => {
+    const mockPipeline = vi.fn(
+      async (params: { requestId: string; application: ApplicationJson }) =>
+        VerifySuccessResponseSchema.parse(
+          buildStubVerifyResponse(params.requestId, params.application),
+        ),
+    );
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const appA = JSON.parse(validApplicationJson({ brandName: "Brand A" }));
+    const appB = JSON.parse(validApplicationJson({ brandName: "Brand B" }));
+    const req = multipartBatchRequest([new Blob([png]), new Blob([png])], JSON.stringify([appA, appB]));
+    const res = await handleVerifyBatchPost(req, { runVerifyPipeline: mockPipeline });
+    expect(res.status).toBe(200);
+    expect(mockPipeline).toHaveBeenCalledTimes(2);
+    expect(mockPipeline.mock.calls[0]?.[0].application.brandName).toBe("Brand A");
+    expect(mockPipeline.mock.calls[1]?.[0].application.brandName).toBe("Brand B");
+  });
+
+  it("rejects applications array length mismatch", async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const req = multipartBatchRequest([new Blob([png]), new Blob([png])], batchApplicationsPayload(1));
+    const res = await handleVerifyBatchPost(req);
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("APPLICATIONS_COUNT_MISMATCH");
+  });
+
   it("runs batch verify and returns per-item outcomes", async () => {
     const mockPipeline = vi.fn(
       async (params: { requestId: string; application: ApplicationJson }) =>
         VerifySuccessResponseSchema.parse(buildStubVerifyResponse(params.requestId, params.application)),
     );
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const application = validApplicationJson();
     const req = multipartBatchRequest(
       [new Blob([png], { type: "image/png" }), new Blob([png], { type: "image/png" })],
-      application,
+      batchApplicationsPayload(2),
     );
     const res = await handleVerifyBatchPost(req, {
       runVerifyPipeline: mockPipeline,
@@ -294,7 +325,7 @@ describe("handleVerifyPost", () => {
   it("rejects batches larger than default max images", async () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const images = Array.from({ length: 21 }, () => new Blob([png], { type: "image/png" }));
-    const req = multipartBatchRequest(images, JSON.stringify({ brandName: "Example Distillery" }));
+    const req = multipartBatchRequest(images, batchApplicationsPayload(21));
     const res = await handleVerifyBatchPost(req);
     expect(res.status).toBe(400);
     const json = (await res.json()) as { code?: string };
@@ -302,10 +333,7 @@ describe("handleVerifyPost", () => {
   });
 
   it("rejects batch uploads with oversized images", async () => {
-    const req = multipartBatchRequest(
-      [oversizedPngBlob()],
-      JSON.stringify({ brandName: "Example Distillery" }),
-    );
+    const req = multipartBatchRequest([oversizedPngBlob()], batchApplicationsPayload(1));
     const res = await handleVerifyBatchPost(req);
     expect(res.status).toBe(413);
     const json = (await res.json()) as { code?: string };
@@ -316,11 +344,24 @@ describe("handleVerifyPost", () => {
     vi.stubEnv("VERIFY_BATCH_MAX_IMAGES", "3");
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const images = Array.from({ length: 4 }, () => new Blob([png], { type: "image/png" }));
-    const req = multipartBatchRequest(images, JSON.stringify({ brandName: "Example Distillery" }));
+    const req = multipartBatchRequest(images, batchApplicationsPayload(4));
     const res = await handleVerifyBatchPost(req);
     expect(res.status).toBe(400);
     const json = (await res.json()) as { code?: string; message?: string };
     expect(json.code).toBe("BATCH_TOO_LARGE");
     expect(json.message).toContain("3");
+  });
+
+  it("rejects batch without applications array", async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const fd = new FormData();
+    fd.append(VERIFY_FORM_FIELDS.images, new Blob([png], { type: "image/png" }), "fixture.png");
+    fd.append(VERIFY_FORM_FIELDS.application, validApplicationJson());
+    const res = await handleVerifyBatchPost(
+      new Request("http://test.local/api/verify/batch", { method: "POST", body: fd }),
+    );
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code?: string };
+    expect(json.code).toBe("MISSING_APPLICATIONS");
   });
 });
